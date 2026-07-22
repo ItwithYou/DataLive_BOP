@@ -485,21 +485,26 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 #gate{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
   padding:20px;overflow-y:auto}
 #gate.hide{display:none}
-.gate-card{position:relative;width:100%;max-width:400px;background:var(--panel);
+.gate-card{position:relative;width:100%;max-width:412px;background:var(--panel);
   border:1px solid var(--glass-edge);border-radius:20px;padding:30px 26px;box-shadow:var(--sh-lg);
   isolation:isolate;-webkit-backdrop-filter:blur(26px) saturate(180%);
   backdrop-filter:blur(26px) saturate(180%)}
 .gate-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:var(--glass-sheen);z-index:-1}
-.gate-mark{width:46px;height:46px;border-radius:12px;background:var(--accent-soft);
-  display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.gate-mark{width:52px;height:52px;border-radius:14px;background:var(--accent-soft);
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.gate-mark svg{width:25px;height:25px}
 .gate-mark svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.9;
   stroke-linecap:round;stroke-linejoin:round}
-.gate-card h1{margin:0;font-size:19px;font-weight:660;letter-spacing:-.3px}
+.gate-card h1{margin:0;font-size:20px;font-weight:680;letter-spacing:-.35px}
 .gate-card .org{margin:3px 0 0;font-size:12.5px;color:var(--ink-3)}
 .gate-card form{margin-top:22px}
 .gate-card label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;
-  color:var(--ink-3);font-weight:700;margin-bottom:6px}
+  color:var(--ink-3);font-weight:700;margin-bottom:7px}
+/* The remember row is a label too, but it reads as a sentence, not a field
+   caption - so it must escape the uppercase field-label styling above. */
+.gate-card label.gate-remember{text-transform:none;letter-spacing:0;font-size:13px;
+  font-weight:500;color:var(--ink-2);margin-bottom:0}
 .gate-in{position:relative;display:flex}
 .gate-in input{width:100%;max-width:none;font-size:15px;padding:11px 42px 11px 13px;
   border:1px solid var(--line);border-radius:9px;background:var(--panel-2);min-height:46px}
@@ -507,9 +512,14 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 .gate-in button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;
   background:transparent;color:var(--ink-3);cursor:pointer;padding:8px;border-radius:6px;
   min-height:34px;font-size:11px;font-weight:600}
-.gate-remember{display:flex;align-items:center;gap:8px;margin-top:12px;
-  font-size:12.5px;color:var(--ink-3);cursor:pointer;user-select:none}
-.gate-remember input{width:16px;height:16px;accent-color:var(--accent);margin:0;flex:0 0 auto}
+.gate-remember{display:flex!important;align-items:center;gap:10px;margin-top:16px;
+  padding:10px 12px;border-radius:10px;background:var(--panel-2);
+  border:1px solid var(--line);cursor:pointer;user-select:none;
+  transition:border-color .15s,background .15s}
+.gate-remember:hover{border-color:var(--accent)}
+.gate-remember input{width:17px;height:17px;accent-color:var(--accent);margin:0;
+  flex:0 0 auto;cursor:pointer}
+.gate-remember span{line-height:1.35}
 .gate-forget{margin-top:10px;font-size:12px;color:var(--ink-3)}
 .gate-forget button{border:0;background:transparent;color:var(--accent);cursor:pointer;
   font:inherit;text-decoration:underline;padding:0}
@@ -518,9 +528,16 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 .gate-go:disabled{opacity:.6;cursor:progress}
 .gate-msg{margin-top:13px;font-size:12.5px;min-height:18px;line-height:1.5}
 .gate-msg.err{color:var(--bad)} .gate-msg.busy{color:var(--ink-3)}
-.gate-foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line-2);
-  font-size:11px;color:var(--ink-3);line-height:1.65}
-.gate-lang{position:absolute;top:14px;right:14px;display:flex;gap:6px}
+.gate-foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--line-2);
+  font-size:11.5px;color:var(--ink-3);line-height:1.6;text-align:center}
+.gate-lang{position:absolute;top:16px;right:16px;display:flex;gap:6px}
+/* Explicit colours: on the near-white gate card the translucent panel token
+   left these boxes looking empty. */
+.gate-lang .iconbtn{background:var(--panel-2);border-color:var(--line);color:var(--ink-2);
+  min-width:36px;min-height:32px;backdrop-filter:none;-webkit-backdrop-filter:none}
+.gate-lang .iconbtn svg{stroke:var(--ink-2);width:15px;height:15px}
+.gate-lang .iconbtn:hover{color:var(--accent);border-color:var(--accent)}
+.gate-lang .iconbtn:hover svg{stroke:var(--accent)}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--ink-3);
   border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;
   vertical-align:-2px;margin-right:7px}
@@ -626,6 +643,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     </div>
     <div class="hdr-right">
       <span class="pill" id="roleTag" style="margin-right:2px"></span>
+      <button class="iconbtn" id="settingsBtn" type="button" title="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
       <button class="iconbtn" id="installBtn" type="button" title="Install" hidden>
         <svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.6 5.6h2.8"/><path d="M12 10v6m0 0 2.4-2.4M12 16l-2.4-2.4"/></svg>
       </button>
@@ -642,7 +662,6 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div class="ctl"><label data-t="cBasis">Use in BOP</label>
       <div class="seg" id="basisSeg">
         <button data-v="bop" aria-pressed="true" data-t="basisBop">Customer &amp; government</button>
-        <button data-v="excl" aria-pressed="false" data-t="basisExcl">Bank own transactions</button>
         <button data-v="all" aria-pressed="false" data-t="basisAll">All transactions</button>
       </div></div>
     <div class="ctl"><label data-t="cMeasure">Measure</label>
@@ -662,7 +681,6 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="checks" aria-selected="false" data-t="tabChecks">FX &amp; Duplicates</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
     <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
-    <button data-tab="settings" aria-selected="false" data-t="tabSettings" id="navSettings">Settings</button>
   </nav>
 </header>
 
@@ -1235,7 +1253,7 @@ const monthsInRange = () => MONTHS.map((m,i)=>i).filter(i => {
   const y = yOfMonth[i]; return y>=state.yFrom && y<=state.yTo; });
 const vIdx = () => state.meas === 'usd' ? 1 : 0;
 /** The Use flag is the BOP compilation switch: Yes enters the accounts, No does not. */
-const useOK = u => state.basis === 'all' ? true : state.basis === 'excl' ? u === 0 : u === 1;
+const useOK = u => state.basis === 'all' ? true : u === 1;
 
 /* ===================== tooltip ===================== */
 const tipEl = $('#tip'); let tipRaf = null;
@@ -1581,10 +1599,14 @@ function sortableTable(host, cfg){
 function byDim(rows, dimPos, hasUse){
   const vi = rows.length ? rows[0].length-2+vIdx() : 0;
   const usePos = hasUse ? 3 : -1;
+  // country / currency / purpose now carry the bank at index 4, so the header
+  // filter reaches them too. Seven columns means the axis is present.
+  const bankPos = (rows.length && rows[0].length === 7) ? 4 : -1;
   const m = new Map();
   for (const r of rows){
     if (r[0] < state.yFrom || r[0] > state.yTo) continue;
     if (usePos >= 0 && !useOK(r[usePos])) continue;
+    if (bankPos >= 0 && state.bank >= 0 && r[bankPos] !== state.bank) continue;
     let e = m.get(r[dimPos]); if (!e) m.set(r[dimPos], e = {in:0,out:0});
     e[r[1]===REC?'in':'out'] += r[vi];
   }
@@ -1593,10 +1615,11 @@ function byDim(rows, dimPos, hasUse){
 function monthlySeries(){
   const mIdx = monthsInRange(), first = mIdx[0] ?? 0;
   const inV = new Array(mIdx.length).fill(0), outV = new Array(mIdx.length).fill(0);
-  const vi = 4+vIdx();
+  const vi = 5+vIdx();
   for (const r of cubes.month){
     const m = r[0]-first;
     if (m<0||m>=mIdx.length||!useOK(r[3])) continue;
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
     (r[1]===REC?inV:outV)[m] += r[vi];
   }
   return {labels: mIdx.map(i=>MONTHS[i]), inV, outV};
@@ -1607,7 +1630,8 @@ function monthlyCounts(flow){
   for (const r of cubes.month){
     const m = r[0]-first;
     if (m<0||m>=mIdx.length||r[1]!==flow||!useOK(r[3])) continue;
-    arr[m] += r[4];
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
+    arr[m] += r[5];
   }
   return arr;
 }
@@ -1620,19 +1644,21 @@ function yearlyTotals(){
       res[r[0]][r[1]===REC?'in':'out'] += r[vi];
     }
   } else {
+    const mvi = 5+vIdx();
     for (const r of cubes.month){
       const y = yOfMonth[r[0]];
       if (!(y in res) || !useOK(r[3])) continue;
-      res[y][r[1]===REC?'in':'out'] += r[vi];
+      res[y][r[1]===REC?'in':'out'] += r[mvi];
     }
   }
   return res;
 }
 function categoryTotals(){
-  const vi = 4+vIdx(), out = {};
+  const vi = 5+vIdx(), out = {};
   for (const r of cubes.month){
     const y = yOfMonth[r[0]];
     if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
     (out[r[2]] = out[r[2]] || {in:0,out:0})[r[1]===REC?'in':'out'] += r[vi];
   }
   return out;
@@ -1642,7 +1668,8 @@ function coverageCount(){
   for (const r of cubes.month){
     const y = yOfMonth[r[0]];
     if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
-    n += r[4];
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
+    n += r[5];
   }
   return n;
 }
@@ -1802,7 +1829,8 @@ function renderBop(){
     for (const r of cubes.month){
       const m = r[0]-first;
       if (m<0||m>=mIdx.length||r[2]!==pi||!useOK(r[3])) continue;
-      arr[m] += (r[1]===REC ? r[vi] : -r[vi]);
+      if (state.bank >= 0 && r[4] !== state.bank) continue;
+      arr[m] += (r[1]===REC ? r[5+vIdx()] : -r[5+vIdx()]);
     }
     return {name:bi(PUR2[pi]), color:cssv(SC[ci]), values:arr};
   });
@@ -1820,8 +1848,9 @@ function renderBop(){
   for (const r of cubes.month){
     const y = yOfMonth[r[0]];
     if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
     const k = y+'|'+r[2];
-    cells[k] = (cells[k]||0) + (r[1]===REC ? r[vi] : -r[vi]);
+    cells[k] = (cells[k]||0) + (r[1]===REC ? r[5+vIdx()] : -r[5+vIdx()]);
   }
   Object.values(cells).forEach(v => maxAbs = Math.max(maxAbs, Math.abs(v)));
   const shown = PUR2.map((p,i)=>i).filter(i => yrs.some(y => Math.abs(cells[y+'|'+i]||0) > 0));
@@ -3602,9 +3631,11 @@ function renderBanner(){
   // bank axis. Say so rather than letting a filtered header imply filtered
   // charts.
   if (state.bank >= 0){
-    const scope = {overview:'bankScopeKpi', bop:'bankScopeNone', timeseries:'bankScopeTs',
-      weekly:'bankScopeNone', search:'bankScopeNone', checks:'bankScopeFull',
-      banks:'bankScopeFull', quality:'bankScopeFull'}[state.tab] || 'bankScopeNone';
+    // Only the Period Report and Search still aggregate from cubes with no
+    // bank axis; everything else now filters properly.
+    const scope = (state.tab === 'weekly' || state.tab === 'search') ? 'bankScopeNone'
+      : (state.tab === 'timeseries' && state.tsDim !== 'tsBank') ? 'bankScopeTs'
+      : 'bankScopeFull';
     const ok = scope === 'bankScopeFull';
     html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
       <span class="pill ${ok?'ok':'warn'}">${esc(BANKS[state.bank])}</span>
@@ -3732,7 +3763,15 @@ function initControls(){
   // presentational; the real boundary is that a viewer's passphrase cannot
   // unwrap the data key at all without also being handed the admin one.
   if (isAdmin()) initImport();
-  else { $('#importBtn').remove(); $('#navSettings').remove(); }
+  else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
+  const sb = $('#settingsBtn');
+  if (sb) sb.addEventListener('click', () => {
+    state.tab = 'settings';
+    $$('#nav button').forEach(x => x.setAttribute('aria-selected', 'false'));
+    $$('.tab').forEach(x => x.classList.toggle('on', x.id === 'tab-settings'));
+    renderTab();
+    scrollTo({top:0, behavior:'smooth'});
+  });
   $('#roleTag').textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
   $('#roleTag').className = 'pill ' + (isAdmin() ? '' : 'ok');
 
@@ -3832,6 +3871,13 @@ function initInstall(){
   };
   let L = 0, shown = false;
   const g = id => document.getElementById(id);
+  // These must be declared above paint(): paint() calls paintRemembered(),
+  // which calls recall(). Declared lower down they sit in the temporal dead
+  // zone when paint() first runs, and the whole gate render aborts silently.
+  const RKEY = 'itrs-pass';
+  const recall = () => { try { return localStorage.getItem(RKEY) || ''; } catch (e) { return ''; } };
+  const forget = () => { try { localStorage.removeItem(RKEY); } catch (e) {} };
+
   const paint = () => {
     g('gateTitle').textContent = GT.title[L];
     g('gateOrg').textContent = GT.org[L];
@@ -3888,9 +3934,6 @@ function initInstall(){
   /* "Remember" keeps the passphrase in this browser's local storage so the
      report opens without retyping - convenient on a phone, but it does mean the
      passphrase sits on the device. Opt-in, and clearable from the same screen. */
-  const RKEY = 'itrs-pass';
-  const recall = () => { try { return localStorage.getItem(RKEY) || ''; } catch (e) { return ''; } };
-  const forget = () => { try { localStorage.removeItem(RKEY); } catch (e) {} };
   function paintRemembered(){
     const box = g('gateForget');
     if (!box) return;
