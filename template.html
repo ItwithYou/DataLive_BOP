@@ -34,9 +34,9 @@
   :root:not([data-theme="light"]){
     --bg:#080b11;
     --bg-1:#132038; --bg-2:#1d1733; --bg-3:#0e2630;
-    --panel:rgba(24,31,43,.60); --panel-solid:#161d28; --panel-2:rgba(255,255,255,.045);
-    --ink:#e8eef6; --ink-2:#9dabbd; --ink-3:#6d7d93;
-    --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.055);
+    --panel:rgba(23,30,42,.80); --panel-solid:#182029; --panel-2:rgba(255,255,255,.07);
+    --ink:#eef3fa; --ink-2:#bccada; --ink-3:#93a3b8;
+    --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.08);
     --glass-edge:rgba(255,255,255,.13);
     --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
     --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15);
@@ -132,6 +132,51 @@ select,input[type=text],input[type=date],input[type=search]{font-size:13px;paddi
   border:1px solid var(--glass-edge);border-radius:8px;background:var(--panel-2);min-height:34px;max-width:62vw;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* The native popup is drawn by the OS and cannot take our glass styling, so it
+   renders unreadably pale in dark mode. These keep it legible if the enhanced
+   dropdown below ever fails to initialise. */
+select option{background:var(--panel-solid);color:var(--ink)}
+
+/* ---------- enhanced dropdown ---------- */
+.sel{position:relative;display:inline-flex}
+.sel-native{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;margin:0}
+.sel-btn{display:inline-flex;align-items:center;gap:8px;width:100%;
+  font-size:13px;padding:6px 9px;min-height:34px;cursor:pointer;
+  border:1px solid var(--glass-edge);border-radius:8px;background:var(--panel-2);color:var(--ink);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:border-color .16s,box-shadow .16s}
+.sel-btn:hover{border-color:var(--accent)}
+.sel-btn[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.sel-btn .v{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sel-btn .chev{width:13px;height:13px;flex:0 0 auto;fill:none;stroke:var(--ink-3);stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.sel-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+
+.sel-menu{position:fixed;z-index:800;min-width:150px;max-width:min(92vw,340px);
+  background:var(--panel);border:1px solid var(--glass-edge);border-radius:13px;
+  box-shadow:var(--sh-lg);padding:6px;overflow:hidden;
+  -webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:opacity .15s ease,transform .15s ease}
+.sel-menu.open{opacity:1;transform:none;pointer-events:auto}
+.sel-menu .find{width:100%;max-width:none;margin-bottom:5px;font-size:13px;padding:8px 10px;
+  border-radius:9px;background:var(--panel-2);border:1px solid var(--line)}
+.sel-list{max-height:min(52vh,330px);overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;display:flex;flex-direction:column;gap:1px}
+.sel-opt{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;
+  cursor:pointer;font-size:13px;color:var(--ink-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-height:36px;border:0;background:transparent;
+  text-align:left;width:100%;transition:background .12s,color .12s}
+.sel-opt .tick{width:14px;height:14px;flex:0 0 auto;fill:none;stroke:var(--accent);stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.sel-opt:hover,.sel-opt.cursor{background:var(--accent-soft);color:var(--ink)}
+.sel-opt[aria-selected="true"]{color:var(--ink);font-weight:640}
+.sel-opt[aria-selected="true"] .tick{opacity:1}
+.sel-empty{padding:14px 10px;font-size:12.5px;color:var(--ink-3);text-align:center}
+@media(max-width:560px){
+  .sel-menu{left:12px!important;right:12px!important;max-width:none;width:auto}
+  .sel-list{max-height:46vh}
+}
 .yr{display:flex;align-items:center;gap:5px}
 .yr span{color:var(--ink-3);font-size:11px}
 
@@ -2065,6 +2110,144 @@ function renderQuality(){
   ], {h:250, key:'qconc', w:460, fmt:v=>v.toFixed(1)+'%', axisFmt:v=>v.toFixed(0)+'%'});
 }
 
+/* ===================== enhanced dropdown ===================== */
+/* The native <select> popup is drawn by the OS: it ignores our theme and renders
+   pale grey on white in dark mode. This replaces the popup with a styled panel
+   while keeping the real <select> as the source of truth, so every existing
+   change listener and .value assignment keeps working untouched. */
+const CHEV = '<svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+const TICK = '<svg class="tick" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg>';
+let openMenu = null;
+
+function enhanceSelect(sel, o){
+  o = o || {};
+  if (sel._sel) { sel._sel.refresh(); return sel._sel; }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'sel';
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+  sel.classList.add('sel-native');
+  sel.tabIndex = -1;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'sel-btn';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = `<span class="v"></span>${CHEV}`;
+  wrap.appendChild(btn);
+
+  // On <body>, so it is never clipped by the horizontally scrolling controls.
+  const menu = document.createElement('div');
+  menu.className = 'sel-menu';
+  menu.setAttribute('role', 'listbox');
+  const searchable = sel.options.length > 10;
+  menu.innerHTML = (searchable ? '<input class="find" type="search" autocomplete="off" spellcheck="false">' : '')
+                 + '<div class="sel-list"></div>';
+  document.body.appendChild(menu);
+  const list = menu.querySelector('.sel-list');
+  const find = menu.querySelector('.find');
+
+  let cursor = -1, items = [];
+
+  function build(filter){
+    const q = (filter || '').trim().toUpperCase();
+    list.innerHTML = '';
+    items = [];
+    [...sel.options].forEach(op => {
+      if (q && !op.textContent.toUpperCase().includes(q)) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sel-opt' + (o.lao ? ' lao' : '');
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', String(op.value === sel.value));
+      b.innerHTML = `${TICK}<span>${esc(op.textContent)}</span>`;
+      b.addEventListener('click', () => { choose(op.value); });
+      list.appendChild(b);
+      items.push({el:b, value:op.value});
+    });
+    if (!items.length)
+      list.innerHTML = `<div class="sel-empty">${esc(t('noData'))}</div>`;
+    cursor = items.findIndex(i => i.value === sel.value);
+    markCursor();
+  }
+  function markCursor(){
+    items.forEach((i,ix) => i.el.classList.toggle('cursor', ix === cursor));
+    if (cursor >= 0 && items[cursor])
+      items[cursor].el.scrollIntoView({block:'nearest'});
+  }
+  function sync(){
+    const op = sel.options[sel.selectedIndex];
+    btn.querySelector('.v').textContent = op ? op.textContent : '';
+    btn.classList.toggle('lao', !!o.lao);
+  }
+  function place(){
+    const r = btn.getBoundingClientRect();
+    menu.style.minWidth = Math.max(r.width, 150) + 'px';
+    menu.style.left = r.left + 'px';
+    menu.style.top = '-9999px';
+    const mh = menu.offsetHeight, mw = menu.offsetWidth;
+    const room = innerHeight - r.bottom - 10;
+    menu.style.top = (mh > room && r.top > room ? r.top - mh - 6 : r.bottom + 6) + 'px';
+    if (r.left + mw > innerWidth - 8)
+      menu.style.left = Math.max(8, innerWidth - mw - 8) + 'px';
+  }
+  function open(){
+    if (openMenu && openMenu !== close) openMenu();
+    build(''); if (find) find.value = '';
+    menu.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    place();
+    openMenu = close;
+    if (find && matchMedia('(hover:hover)').matches) find.focus();
+  }
+  function close(){
+    menu.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+    if (openMenu === close) openMenu = null;
+  }
+  function choose(v){
+    sel.value = v;                       // patched setter below calls sync()
+    sel.dispatchEvent(new Event('change', {bubbles:true}));
+    close(); btn.focus();
+  }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    menu.classList.contains('open') ? close() : open();
+  });
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); }
+  });
+  menu.addEventListener('click', e => e.stopPropagation());
+  if (find) find.addEventListener('input', () => build(find.value));
+  menu.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ close(); btn.focus(); }
+    else if (e.key === 'ArrowDown'){ e.preventDefault(); cursor = Math.min(cursor+1, items.length-1); markCursor(); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); cursor = Math.max(cursor-1, 0); markCursor(); }
+    else if (e.key === 'Home'){ e.preventDefault(); cursor = 0; markCursor(); }
+    else if (e.key === 'End'){ e.preventDefault(); cursor = items.length-1; markCursor(); }
+    else if (e.key === 'Enter'){ e.preventDefault(); if (items[cursor]) choose(items[cursor].value); }
+    else if (e.key === 'Tab'){ close(); }
+  });
+
+  // Any programmatic `sel.value = x` should repaint the button too.
+  const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  Object.defineProperty(sel, 'value', {
+    configurable: true,
+    get(){ return desc.get.call(sel); },
+    set(v){ desc.set.call(sel, v); sync(); },
+  });
+
+  sync();
+  sel._sel = {refresh(){ sync(); if (menu.classList.contains('open')) build(find ? find.value : ''); }, close};
+  return sel._sel;
+}
+addEventListener('click', () => { if (openMenu) openMenu(); });
+addEventListener('resize', () => { if (openMenu) openMenu(); });
+addEventListener('scroll', () => { if (openMenu) openMenu(); }, true);
+
 /* ===================== shell ===================== */
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
   weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality};
@@ -2091,6 +2274,10 @@ function applyI18n(){
   lb.title = isLo() ? 'Switch to English' : 'ປ່ຽນເປັນພາສາລາວ';
   lb.setAttribute('aria-label', lb.title);
   lb.classList.toggle('lao', !isLo());
+  // Option labels just changed language; repaint any enhanced dropdown.
+  ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
+    const el = $(s); if (el && el._sel) el._sel.refresh();
+  });
 }
 function renderAll(){ rendered = {}; renderBanner(); renderTab(); }
 function renderTab(){
@@ -2163,6 +2350,12 @@ function initControls(){
     renderTab();
     scrollTo({top:0, behavior:'smooth'});
   });
+
+  // Must run after the options above are populated.
+  enhanceSelect($('#yFrom'));
+  enhanceSelect($('#yTo'));
+  enhanceSelect($('#bankSel'));
+  enhanceSelect($('#tsDim'));
 
   ITRSTheme.bind($('#themeBtn'), isLo()
     ? {toLight:'ປ່ຽນເປັນໂໝດແຈ້ງ', toDark:'ປ່ຽນເປັນໂໝດມືດ'}

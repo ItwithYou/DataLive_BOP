@@ -137,6 +137,20 @@ headers stay opaque, otherwise rows scroll visibly through them; and browsers
 without `backdrop-filter` fall back to solid panels via `@supports`. Print styles
 drop the glass entirely.
 
+**Dropdowns** are custom, not native. A browser's `<select>` popup is drawn by
+the operating system and ignores page styling entirely — in dark mode it rendered
+pale grey on white and was effectively unreadable. Each one is replaced with a
+styled panel: tick on the current value, keyboard navigation (arrows, Home/End,
+Enter, Escape), and a filter box on any list longer than ten items, which makes
+the 66-bank selector usable.
+
+The real `<select>` is kept in the DOM as the source of truth and its `value`
+setter is patched to repaint the button, so programmatic assignment and every
+existing `change` listener keep working. Menus are appended to `<body>` and
+positioned with `position: fixed`, so they are never clipped by the horizontally
+scrolling control strip on narrow screens, and they flip above the trigger when
+there is no room below.
+
 ### What the encryption does and does not do
 
 The payload is gzipped, then encrypted with **AES-256-GCM** under a key derived
