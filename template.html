@@ -721,7 +721,15 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <h3 data-t="wkTitle">Weekly report</h3>
       <p class="sub" data-t="wkSub">Week-on-week comparison in the official report layout, with generated narrative.</p>
       <div class="row" style="margin-bottom:11px">
-        <div class="ctl"><label data-t="wkWeekEnd">Week (start date)</label><input type="date" id="wkDate"></div>
+        <div class="ctl"><label data-t="wkFrom">From</label><input type="date" id="wkFrom"></div>
+        <div class="ctl"><label data-t="wkTo">To</label><input type="date" id="wkTo"></div>
+        <div class="ctl"><label data-t="wkPreset">Quick range</label>
+          <div class="seg" id="wkPresetSeg">
+            <button data-v="7" data-t="wkP7">Week</button>
+            <button data-v="month" data-t="wkPM">Month</button>
+            <button data-v="quarter" data-t="wkPQ">Quarter</button>
+            <button data-v="year" data-t="wkPY">Year</button>
+          </div></div>
         <div class="ctl"><label data-t="wkScope">Scope</label>
           <div class="seg" id="wkScopeSeg">
             <button data-v="all" aria-pressed="true" data-t="wkAll">All transactions</button>
@@ -870,7 +878,7 @@ const I18N = {
  basisBop:["Use = Yes","Use = ແມ່ນ"], basisExcl:["Use = No","Use = ບໍ່"], basisAll:["All","ທັງໝົດ"],
  mUsd:["Value","ມູນຄ່າ"], mCount:["Count","ຈຳນວນ"], allBanks:["All banks","ທຸກທະນາຄານ"],
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
- tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Weekly Report","ລາຍງານປະຈຳອາທິດ"],
+ tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"],
  inflow:["Inflow","ເງິນໂອນເຂົ້າ"], outflow:["Outflow","ເງິນໂອນອອກ"], net:["Net","ສຸດທິ"],
@@ -914,16 +922,18 @@ const I18N = {
  flowIn:["Receive","ເງິນເຂົ້າ"], flowOut:["Payment","ເງິນອອກ"], flowNet:["Net","ສຸດທິ"],
  csv:["Download CSV","ດາວໂຫລດ CSV"], tsTable:["Series table","ຕາຕະລາງຂໍ້ມູນ"],
  tsTableSub:["USD millions. Tap a row to isolate it.","ລ້ານໂດລາ. ແຕະແຖວເພື່ອສະແດງດ່ຽວ."],
- wkTitle:["Weekly report","ລາຍງານປະຈຳອາທິດ"],
- wkSub:["Week-on-week comparison in the official report layout","ປຽບທຽບອາທິດຕໍ່ອາທິດຕາມຮູບແບບລາຍງານ"],
- wkWeekEnd:["Week (start date)","ອາທິດ (ວັນເລີ່ມ)"], wkScope:["Scope","ຂອບເຂດ"],
+ wkTitle:["Period report","ລາຍງານຕາມໄລຍະ"],
+ wkSub:["Any date range, compared with the equally long period before it","ເລືອກໄລຍະໃດກໍໄດ້ ທຽບກັບໄລຍະກ່ອນໜ້າທີ່ຍາວເທົ່າກັນ"],
+ wkFrom:["From","ຈາກວັນທີ"], wkTo:["To","ຫາວັນທີ"], wkPreset:["Quick range","ໄລຍະດ່ວນ"],
+ wkP7:["Week","ອາທິດ"], wkPM:["Month","ເດືອນ"], wkPQ:["Quarter","ໄຕມາດ"], wkPY:["Year","ປີ"],
+ wkScope:["Scope","ຂອບເຂດ"],
  wkAll:["All transactions","ທຸລະກຳທັງໝົດ"], wkNonbank:["Excl. commercial banks","ບໍ່ລວມທະນາຄານທຸລະກິດ"],
  copyText:["Copy text","ສຳເນົາຂໍ້ຄວາມ"], copied:["Copied","ສຳເນົາແລ້ວ"],
  wkNarr:["Generated narrative","ຂໍ້ຄວາມທີ່ສ້າງຂຶ້ນ"],
  wkNarrSub:["Draft text — review before publishing","ຂໍ້ຄວາມຮ່າງ — ກວດກ່ອນເຜີຍແຜ່"],
- wkCcy:["Currency composition this week","ອົງປະກອບສະກຸນເງິນອາທິດນີ້"], wkCcySub:["Share of weekly flows","ສັດສ່ວນກະແສອາທິດ"],
- wkTrend:["13-week trend","ແນວໂນ້ມ 13 ອາທິດ"], wkTrendSub:["Weekly gross inflow and outflow","ເງິນເຂົ້າ-ອອກລາຍອາທິດ"],
- wkPrior:["Prior week","ອາທິດຜ່ານມາ"], wkThis:["This week","ອາທິດນີ້"],
+ wkCcy:["Currency composition","ອົງປະກອບສະກຸນເງິນ"], wkCcySub:["Share of flows in the selected range","ສັດສ່ວນກະແສໃນໄລຍະທີ່ເລືອກ"],
+ wkTrend:["Trend, last 13 periods","ແນວໂນ້ມ 13 ໄລຍະຫຼ້າສຸດ"], wkTrendSub:["Same length as the selected range","ຍາວເທົ່າກັບໄລຍະທີ່ເລືອກ"],
+ wkPrior:["Prior period","ໄລຍະກ່ອນໜ້າ"], wkThis:["This period","ໄລຍະນີ້"],
  wkChange:["Change","ມູນຄ່າປ່ຽນແປງ"], wkPct:["% change","ເປີເຊັນປ່ຽນແປງ"],
  seTitle:["Company / counterparty search","ຄົ້ນຫາບໍລິສັດ / ຄູ່ຮ່ວມ"],
  clear:["Clear","ລຶບ"], seePlaceholder:["Type a company name…","ພິມຊື່ບໍລິສັດ…"],
@@ -1067,7 +1077,7 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
-  wkDate:null, wkScope:'all', dupTier:'A', seQuery:'',
+  wkFrom:null, wkTo:null, wkScope:'all', dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
 const yearsInRange = () => YEARS.map((y,i)=>i).filter(i => i>=state.yFrom && i<=state.yTo);
@@ -1850,11 +1860,58 @@ function tsCsv(){
 const DAY = 86400000;
 const toISO = d => d.toISOString().slice(0,10);
 const parseISO = s => new Date(s + 'T00:00:00Z');
-/** ISO-style week containing d, starting Thursday-to-Wednesday is not used here:
-    the BOL note runs a plain 7-day window, so we anchor on the chosen start date. */
-function weekRange(startISO){
-  const s = parseISO(startISO);
-  return {from:startISO, to:toISO(new Date(s.getTime() + 6*DAY))};
+const addDays = (iso, n) => toISO(new Date(parseISO(iso).getTime() + n*DAY));
+/** Length of the selected range, in days, inclusive of both endpoints. */
+const rangeDays = () =>
+  Math.max(1, Math.round((parseISO(state.wkTo) - parseISO(state.wkFrom)) / DAY) + 1);
+const curRange = () => ({from: state.wkFrom, to: state.wkTo});
+/** The comparison period.
+
+    When the selection covers whole calendar months -- which every preset and
+    most manual picks do -- step back by that many months, so March compares
+    with February rather than with "the previous 31 days". Otherwise fall back
+    to the equally long span immediately before. */
+function priorRange(){
+  const f = parseISO(state.wkFrom), t = parseISO(state.wkTo);
+  const lastDay = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const wholeMonths = f.getUTCDate() === 1 &&
+    t.getUTCDate() === lastDay(t.getUTCFullYear(), t.getUTCMonth());
+  if (wholeMonths){
+    const span = (t.getUTCFullYear() - f.getUTCFullYear()) * 12
+               + (t.getUTCMonth() - f.getUTCMonth()) + 1;
+    return {
+      from: toISO(new Date(Date.UTC(f.getUTCFullYear(), f.getUTCMonth() - span, 1))),
+      to:   toISO(new Date(Date.UTC(f.getUTCFullYear(), f.getUTCMonth(), 0))),
+    };
+  }
+  const n = rangeDays();
+  return {from: addDays(state.wkFrom, -n), to: addDays(state.wkFrom, -1)};
+}
+/** Snap the range to a calendar month / quarter / year containing wkFrom, or
+    to a plain N-day window ending at the last day with data. */
+function applyPreset(v){
+  const anchor = parseISO(state.wkTo || meta.dateMax);
+  const y = anchor.getUTCFullYear(), m = anchor.getUTCMonth();
+  const iso = (yy, mm, dd) => `${yy}-${String(mm+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  if (v === 'month'){
+    state.wkFrom = iso(y, m, 1);
+    state.wkTo = iso(y, m, new Date(Date.UTC(y, m+1, 0)).getUTCDate());
+  } else if (v === 'quarter'){
+    const q = Math.floor(m/3)*3;
+    state.wkFrom = iso(y, q, 1);
+    state.wkTo = iso(y, q+2, new Date(Date.UTC(y, q+3, 0)).getUTCDate());
+  } else if (v === 'year'){
+    state.wkFrom = iso(y, 0, 1); state.wkTo = iso(y, 11, 31);
+  } else {
+    const n = +v || 7;
+    state.wkTo = toISO(anchor);
+    state.wkFrom = addDays(state.wkTo, -(n-1));
+  }
+  syncRangeInputs();
+}
+function syncRangeInputs(){
+  $('#wkFrom').value = state.wkFrom;
+  $('#wkTo').value = state.wkTo;
 }
 /** Sum the daily line cube over [from,to]; returns per-line in/out plus totals. */
 function weekTotals(fromISO, toISO_){
@@ -1889,17 +1946,17 @@ const CCY_LO = {USD:'ໂດລາສະຫະລັດ', CNY:'ຢວນ', THB:'�
 const ccyName = c => isLo() ? (CCY_LO[c] || c) : c;
 
 function renderWeekly(){
-  if (!state.wkDate) return;
-  const cur = weekRange(state.wkDate);
-  const prevStart = toISO(new Date(parseISO(state.wkDate).getTime() - 7*DAY));
-  const prv = weekRange(prevStart);
+  if (!state.wkFrom || !state.wkTo) return;
+  const cur = curRange(), prv = priorRange();
   const A = weekTotals(prv.from, prv.to), B = weekTotals(cur.from, cur.to);
   const pct = (a,b) => (a === 0 ? null : (b-a)/Math.abs(a)*100);
   const fm = v => v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
 
   const dLabel = s => { const d = parseISO(s);
     return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); };
-  const hdr = `${dLabel(cur.from)}–${dLabel(cur.to)}/${cur.to.slice(0,4)}`;
+  const n = rangeDays();
+  const hdr = `${dLabel(cur.from)}–${dLabel(cur.to)}/${cur.to.slice(0,4)}`
+            + `  ·  ${n} ${isLo()?'ວັນ':'day'+(n===1?'':'s')}`;
 
   const block = (label, a, b, cls) => {
     const c = b - a, p = pct(a,b);
@@ -1934,7 +1991,7 @@ function renderWeekly(){
     LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].in, B.lines[i].in));
     push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout);
     LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].out, B.lines[i].out));
-    downloadCsv(`ITRS_weekly_${cur.from}_${cur.to}.csv`, out);
+    downloadCsv(`ITRS_report_${cur.from}_to_${cur.to}.csv`, out);
   };
 }
 
@@ -1947,8 +2004,8 @@ function narrative(range, A, B){
   const wow = (a,b) => { if (!a) return '';
     const p = (b-a)/Math.abs(a)*100;
     return isLo()
-      ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບອາທິດຜ່ານມາ)`
-      : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior week)`;
+      ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບໄລຍະກ່ອນໜ້າ)`
+      : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior period)`;
   };
   const parts = dir => LINES.map((L,i)=>({L, v:B.lines[i][dir]}))
       .filter(x=>x.v > 0.005).sort((a,b)=>b.v-a.v)
@@ -1983,23 +2040,25 @@ function renderWkCurrency(wc){
   rankBars($('#wkCcyIn'), mk(wc.inn), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
   rankBars($('#wkCcyOut'), mk(wc.out), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
 }
+/** Thirteen consecutive spans of the same length as the current selection, so
+    the trend stays comparable whether the range is a week, a month or a year. */
 function renderWkTrend(cur){
   const labels = [], inV = [], outV = [];
+  const n = rangeDays();
   for (let k = 12; k >= 0; k--){
-    const s = toISO(new Date(parseISO(cur.from).getTime() - k*7*DAY));
-    const r = weekRange(s), w = weekTotals(r.from, r.to);
-    labels.push(s.slice(5)); inV.push(w.tin); outV.push(w.tout);
+    const from = addDays(cur.from, -k*n), to = addDays(from, n-1);
+    const w = weekTotals(from, to);
+    labels.push(n >= 300 ? from.slice(0,4) : from.slice(5));
+    inV.push(w.tin); outV.push(w.tout);
   }
   lineChart($('#wkTrend'), labels, [
     {name:t('inflow'), color:cssv('--in'), values:inV, area:true},
     {name:t('outflow'), color:cssv('--out'), values:outV, area:true},
   ], {h:250, rotate:true, key:'wktr', w:440, fmt:v=>fmtM(v,2)});
 }
-function defaultWeek(){
-  const last = parseISO(meta.dateMax);
-  // Back up to the most recent Thursday-start window fully inside the data.
-  const s = new Date(last.getTime() - 6*DAY);
-  return toISO(s);
+/** Seed with the last full 7 days of data; any range can be picked from there. */
+function defaultRange(){
+  return {from: addDays(meta.dateMax, -6), to: meta.dateMax};
 }
 /* ===================== Search ===================== */
 const ENT_KEYS = entities.map(e => e.nm.toUpperCase());
@@ -3234,11 +3293,26 @@ function initControls(){
       setTimeout(()=>b.textContent = old, 1400);
     } catch (err) { /* clipboard blocked on file:// in some browsers */ }
   });
-  $('#wkDate').addEventListener('change', e => { state.wkDate = e.target.value; renderWeekly(); });
-  const shiftWeek = d => { state.wkDate = toISO(new Date(parseISO(state.wkDate).getTime() + d*7*DAY));
-    $('#wkDate').value = state.wkDate; renderWeekly(); };
-  $('#wkPrev').addEventListener('click', ()=>shiftWeek(-1));
-  $('#wkNext').addEventListener('click', ()=>shiftWeek(1));
+  // Editing one end never silently reorders the pair: it pushes the other end
+  // along, which is what a date-range control is expected to do.
+  $('#wkFrom').addEventListener('change', e => {
+    state.wkFrom = e.target.value;
+    if (state.wkFrom > state.wkTo) state.wkTo = state.wkFrom;
+    syncRangeInputs(); renderWeekly();
+  });
+  $('#wkTo').addEventListener('change', e => {
+    state.wkTo = e.target.value;
+    if (state.wkTo < state.wkFrom) state.wkFrom = state.wkTo;
+    syncRangeInputs(); renderWeekly();
+  });
+  segBind('#wkPresetSeg', v => { applyPreset(v); renderWeekly(); });
+  // Step by exactly one range length, so paging never overlaps or skips days.
+  const shift = dir => { const n = rangeDays();
+    state.wkFrom = addDays(state.wkFrom, dir*n);
+    state.wkTo = addDays(state.wkTo, dir*n);
+    syncRangeInputs(); renderWeekly(); };
+  $('#wkPrev').addEventListener('click', ()=>shift(-1));
+  $('#wkNext').addEventListener('click', ()=>shift(1));
 
   let seT = null;
   $('#seInput').addEventListener('input', e => {
@@ -3282,10 +3356,11 @@ function initControls(){
   addEventListener('resize', () => { clearTimeout(rzT);
     rzT = setTimeout(() => { rendered = {}; renderTab(); }, 200); });
 
-  state.wkDate = defaultWeek();
-  const wd = $('#wkDate');
-  wd.value = state.wkDate; wd.min = meta.dateMin;
-  wd.max = toISO(new Date(parseISO(meta.dateMax).getTime() - 6*DAY));
+  const dr = defaultRange();
+  state.wkFrom = dr.from; state.wkTo = dr.to;
+  ['#wkFrom','#wkTo'].forEach(id => { const el = $(id);
+    el.min = meta.dateMin; el.max = meta.dateMax; });
+  syncRangeInputs();
 }
 function initMeta(){
   $('#footMeta').innerHTML = isLo()
