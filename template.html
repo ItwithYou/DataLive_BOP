@@ -10,6 +10,7 @@
      ignores them. -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)">
@@ -127,12 +128,18 @@ header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1p
 .iconbtn.flip span{animation:flipfade .34s ease}
 @keyframes flipfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-.controls{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;gap:14px;
-  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.controls{max-width:1500px;margin:0 auto;padding:10px 12px 2px;display:flex;gap:14px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:flex-end}
 .controls::-webkit-scrollbar{display:none}
-@media(min-width:760px){.controls{padding:11px 20px 0;flex-wrap:wrap;overflow:visible;gap:18px;align-items:flex-end}}
-.ctl{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
-.ctl>label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);font-weight:700}
+@media(min-width:760px){.controls{padding:12px 20px 4px;flex-wrap:wrap;overflow:visible;gap:16px;align-items:flex-end}}
+.ctl{display:flex;flex-direction:column;gap:5px;flex:0 0 auto;position:relative;
+  padding:0 0 0 11px;border-left:2px solid var(--line)}
+.ctl:first-child{padding-left:0;border-left:0}
+.ctl>label{font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);
+  font-weight:700;white-space:nowrap;line-height:1.3}
+/* On a laptop the controls sit in one row, so a rule between them is what
+   tells you where one filter ends and the next begins. */
+@media(max-width:759px){.ctl{padding-left:0;border-left:0}}
 .seg{display:flex;background:var(--panel-2);border:1px solid var(--glass-edge);border-radius:9px;
   padding:2px;gap:2px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .seg button{border:0;background:transparent;color:var(--ink-2);font-size:12px;padding:6px 10px;
@@ -3777,6 +3784,16 @@ function initInstall(){
   let prompt = null;
   const btn = document.getElementById('installBtn');
   if (!btn) return;
+  // Already running as an installed app, or installed in a previous visit:
+  // there is nothing left to offer, so the button never appears.
+  const installed = () =>
+    matchMedia('(display-mode: standalone)').matches ||
+    matchMedia('(display-mode: window-controls-overlay)').matches ||
+    navigator.standalone === true;
+  const remember = () => { try { localStorage.setItem('itrs-installed', '1'); } catch (e) {} };
+  const wasInstalled = () => { try { return localStorage.getItem('itrs-installed') === '1'; } catch (e) { return false; } };
+  if (installed()){ remember(); btn.remove(); return; }
+  if (wasInstalled()){ btn.remove(); return; }
   addEventListener('beforeinstallprompt', e => {
     e.preventDefault();          // keep the mini-infobar out of the way
     prompt = e;
@@ -3789,7 +3806,12 @@ function initInstall(){
     prompt = null;
     btn.hidden = true;
   });
-  addEventListener('appinstalled', () => { btn.hidden = true; prompt = null; });
+  addEventListener('appinstalled', () => { remember(); btn.remove(); prompt = null; });
+  // Chrome fires appinstalled only in the tab that installed; catch the case
+  // where the user installs from the browser menu in another tab.
+  matchMedia('(display-mode: standalone)').addEventListener?.('change', e => {
+    if (e.matches){ remember(); btn.remove(); }
+  });
 }
 
 /* ===================== unlock gate ===================== */
