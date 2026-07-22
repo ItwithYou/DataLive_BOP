@@ -636,6 +636,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="checks" aria-selected="false" data-t="tabChecks">FX &amp; Duplicates</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
     <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
+    <button data-tab="settings" aria-selected="false" data-t="tabSettings" id="navSettings">Settings</button>
   </nav>
 </header>
 
@@ -868,6 +869,45 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <div id="qConcentration"></div><p class="note" data-t="qConcNote"></p></div>
     </div>
   </section>
+
+  <section class="tab" id="tab-settings">
+    <div class="banner" style="padding:0"><div class="in" id="setNote"></div></div>
+    <div class="card" style="margin-top:13px">
+      <h3 data-t="setFx">Exchange rate bands</h3>
+      <p class="sub" data-t="setFxSub">A rate outside its band is flagged as an exception</p>
+      <div class="tw" id="setFx"></div>
+    </div>
+    <div class="card">
+      <h3 data-t="setPurpose">Purpose transform rules</h3>
+      <p class="sub" data-t="setPurposeSub">Applied in order; the first match wins</p>
+      <div class="tw" id="setPurpose"></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="setUse">Use ladder</h3>
+        <p class="sub" data-t="setUseSub">Decides what enters the balance of payments</p>
+        <div class="tw" id="setUse"></div></div>
+      <div class="card"><h3 data-t="setM2">M2 ladder</h3>
+        <p class="sub" data-t="setM2Sub">Decides what affects broad money</p>
+        <div class="tw" id="setM2"></div></div>
+    </div>
+    <div class="card">
+      <h3 data-t="setDup">Duplicate detection tiers</h3>
+      <p class="sub" data-t="setDupSub">Which fields must match for a record to count as a duplicate</p>
+      <div class="tw" id="setDup"></div>
+    </div>
+    <div class="card">
+      <h3 data-t="setRaw">Advanced — full rule file</h3>
+      <p class="sub" data-t="setRawSub">Edit any rule directly. Invalid JSON is rejected before it can be saved.</p>
+      <textarea id="setJson" spellcheck="false" style="width:100%;min-height:280px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.55;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)"></textarea>
+      <div id="setMsg"></div>
+      <div class="row" style="margin-top:11px">
+        <button class="btn" id="setValidate" data-t="setCheck">Check</button>
+        <button class="btn" id="setReset" data-t="setReset">Reset</button>
+        <button class="btn pri" id="setDownload" data-t="setSave">Download bop_rules.json</button>
+      </div>
+      <p class="note" data-t="setHow"></p>
+    </div>
+  </section>
 </div>
 
 <footer><div id="footMeta"></div></footer>
@@ -897,6 +937,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 "use strict";
 function bootApp(DATA){
 const {meta, dims, cubes, exceptions, entities} = DATA;
+const RULES = DATA.rules || {};
 /* Which wrapped key opened the payload. Unencrypted local builds have no
    role and get full access, since there is nothing to gate. */
 const ROLE = DATA._role || 'admin';
@@ -913,7 +954,27 @@ const I18N = {
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
  tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
- tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"],
+ tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"], tabSettings:["Settings","ການຕັ້ງຄ່າ"],
+ setFx:["Exchange rate bands","ຂອບເຂດອັດຕາແລກປ່ຽນ"],
+ setFxSub:["A rate outside its band is flagged as an exception","ອັດຕານອກຂອບເຂດຈະຖືກໝາຍ"],
+ setPurpose:["Purpose transform rules","ກົດການປ່ຽນລະຫັດຈຸດປະສົງ"],
+ setPurposeSub:["Applied in order; the first match wins","ນຳໃຊ້ຕາມລຳດັບ"],
+ setUse:["Use ladder","ລຳດັບເງື່ອນໄຂ Use"],
+ setUseSub:["Decides what enters the balance of payments","ກຳນົດວ່າອັນໃດເຂົ້າໃນດຸນຊຳລະ"],
+ setM2:["M2 ladder","ລຳດັບເງື່ອນໄຂ M2"],
+ setM2Sub:["Decides what affects broad money","ກຳນົດວ່າອັນໃດມີຜົນຕໍ່ປະລິມານເງິນ"],
+ setDup:["Duplicate detection tiers","ລະດັບການກວດຫາຊ້ຳ"],
+ setDupSub:["Which fields must match for a record to count as a duplicate","ຊ່ອງໃດຕ້ອງກົງກັນ"],
+ setRaw:["Advanced \\u2014 full rule file","ຂັ້ນສູງ \\u2014 ໄຟລ໌ກົດ"],
+ setRawSub:["Edit any rule directly. Invalid JSON is rejected before it can be saved.","ແກ້ໄຂກົດໄດ້ໂດຍກົງ. JSON ທີ່ຜິດຈະຖືກປະຕິເສດ."],
+ setCheck:["Check","ກວດສອບ"], setReset:["Reset","ຕັ້ງຄືນ"], setSave:["Download bop_rules.json","ດາວໂຫລດ bop_rules.json"],
+ setHow:["Download the file, replace dashboard/config/bop_rules.json with it, then rebuild. The rules take effect on the next build.","ດາວໂຫລດໄຟລ໌, ແທນທີ່ dashboard/config/bop_rules.json ແລ້ວສ້າງໃໝ່."],
+ setNote:["These are the rules that produced the figures in this report. Editing here prepares a new rule file \\u2014 it does not recalculate what is on screen.","ນີ້ແມ່ນກົດທີ່ສ້າງຕົວເລກໃນລາຍງານນີ້."],
+ setValid:["Valid JSON.","JSON ຖືກຕ້ອງ."], setInvalid:["Invalid JSON:","JSON ຜິດພາດ:"],
+ setNoRules:["No rule file was bundled with this build.","ບໍ່ມີໄຟລ໌ກົດໃນການສ້າງນີ້."],
+ setCondition:["Condition","ເງື່ອນໄຂ"], setResult:["Result","ຜົນ"], setOrder:["#","#"],
+ setFrom:["From code","ຈາກລະຫັດ"], setTo:["To code","ເປັນລະຫັດ"], setWhy:["Why","ເຫດຜົນ"],
+ setMin:["Min","ຕ່ຳສຸດ"], setMax:["Max","ສູງສຸດ"], setFields:["Fields that must match","ຊ່ອງທີ່ຕ້ອງກົງ"],
  inflow:["Inflow","ເງິນໂອນເຂົ້າ"], outflow:["Outflow","ເງິນໂອນອອກ"], net:["Net","ສຸດທິ"],
  inflows:["Inflows (receipts)","ກະແສເງິນໂອນເຂົ້າ"], outflows:["Outflows (payments)","ກະແສເງິນໂອນອອກ"],
  netPos:["Net position","ຖານະສຸດທິ"], coverage:["Coverage","ຂອບເຂດຂໍ້ມູນ"],
@@ -3351,9 +3412,114 @@ function rebuildYearOptions(){
   if ($('#yTo')._sel) $('#yTo')._sel.refresh();
 }
 
+/* ===================== Settings ===================== */
+/* The rules travel inside the payload, so what is shown here is exactly what
+   produced the figures. Editing prepares a replacement config file; it does
+   not recalculate anything, because aggregation happens at build time. */
+function renderSettings(){
+  const R = RULES;
+  if (!R || !R.exchangeRate){
+    $('#setFx').innerHTML = '<p class="empty">' + esc(t('setNoRules')) + '</p>';
+    return;
+  }
+  $('#setNote').innerHTML = '<span>&#9881;</span><div>' + esc(t('setNote')) + '</div>';
+
+  const bands = R.exchangeRate.bands || {};
+  $('#setFx').innerHTML = '<table><thead><tr>'
+    + '<th style="text-align:left">' + esc(t('currency')) + '</th>'
+    + '<th>' + esc(t('setMin')) + '</th><th>' + esc(t('setMax')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('setWhy')) + '</th></tr></thead><tbody>'
+    + Object.entries(bands).map(function(e){ var c=e[0], b=e[1];
+        return '<tr><td><b>' + esc(c) + '</b></td>'
+          + '<td class="num">' + b.min + '</td><td class="num">' + b.max + '</td>'
+          + '<td style="text-align:left;white-space:normal" class="muted">' + esc(b.note||'') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+
+  const pr = (R.purposeTransform||{}).rules || [];
+  $('#setPurpose').innerHTML = '<table><thead><tr>'
+    + '<th>' + esc(t('setOrder')) + '</th><th style="text-align:left">' + esc(t('bank')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('country')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('setFrom')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('setTo')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('setWhy')) + '</th></tr></thead><tbody>'
+    + pr.map(function(r,i){
+        var from = [].concat(r.purposePrefix||[], r.purposeEquals||[]).join(', ') || '-';
+        var to = r.action === 'keep' ? '(keep)' : (r.to || '-');
+        return '<tr><td class="num muted">' + (i+1) + '</td>'
+          + '<td>' + esc([].concat(r.bank||'All').join(', ')) + '</td>'
+          + '<td>' + esc(r.country||'All') + '</td>'
+          + '<td><code>' + esc(from) + '</code></td>'
+          + '<td><code>' + esc(to) + '</code></td>'
+          + '<td style="text-align:left;white-space:normal" class="muted">' + esc(r.why||r.id||'') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+
+  function cond(c){
+    var bits = [];
+    if (c.bank) bits.push('bank ' + [].concat(c.bank).join('/'));
+    if (c.flow) bits.push('flow ' + c.flow);
+    if (c.purposePrefix) bits.push('purpose starts ' + c.purposePrefix.join('/'));
+    if (c.purposeEquals) bits.push('purpose = ' + c.purposeEquals.join('/'));
+    if (c.sectorPrefix) bits.push('sector ' + c.sectorPrefix.join('/'));
+    if (c.remarkContains) bits.push('remark has ' + c.remarkContains.join('/'));
+    if (c.nameContains) bits.push('name has ' + c.nameContains.join('/'));
+    if (c.anyOf) bits.push('any of ' + c.anyOf.length + ' conditions');
+    if (c.default) bits.push('everything else');
+    return bits.join(' AND ') || '-';
+  }
+  function ladder(host, rows, valueOf){
+    $(host).innerHTML = '<table><thead><tr><th>' + esc(t('setOrder')) + '</th>'
+      + '<th style="text-align:left">' + esc(t('setCondition')) + '</th>'
+      + '<th style="text-align:left">' + esc(t('setResult')) + '</th></tr></thead><tbody>'
+      + rows.map(function(r,i){ var v = valueOf(r);
+          return '<tr><td class="num muted">' + (i+1) + '</td>'
+            + '<td style="text-align:left;white-space:normal">' + esc(cond(r)) + '</td>'
+            + '<td><span class="pill ' + (v === 'Yes' ? 'ok' : 'bad') + '">' + esc(v) + '</span></td></tr>';
+        }).join('') + '</tbody></table>';
+  }
+  ladder('#setUse', (R.useFlag||{}).rules||[], function(r){ return r.value||'?'; });
+  var mf = R.m2Flag || {};
+  var m2 = [].concat(
+    (mf.forceYes||[]).map(function(c){ var o=Object.assign({},c); o._v='Yes'; return o; }),
+    (mf.setNo||[]).map(function(c){ var o=Object.assign({},c); o._v='No'; return o; }),
+    [{ default:true, _v:'Yes' }]);
+  ladder('#setM2', m2, function(r){ return r._v; });
+
+  var dup = R.duplicates||{};
+  $('#setDup').innerHTML = '<table><thead><tr>'
+    + '<th style="text-align:left">Tier</th>'
+    + '<th style="text-align:left">' + esc(t('setFields')) + '</th>'
+    + '<th style="text-align:left">' + esc(t('setWhy')) + '</th></tr></thead><tbody>'
+    + ['tierA','tierB','tierC'].filter(function(k){ return dup[k]; }).map(function(k){
+        return '<tr><td><b>' + k.replace('tier','') + '</b></td>'
+          + '<td style="text-align:left;white-space:normal"><code>' + esc((dup[k].keys||[]).join(', ')) + '</code></td>'
+          + '<td style="text-align:left;white-space:normal" class="muted">' + esc(dup[k].why||'') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+
+  var ta = $('#setJson');
+  if (!ta.value) ta.value = JSON.stringify(R, null, 2);
+  function say(cls, txt){
+    $('#setMsg').innerHTML = '<div class="imp-msg ' + cls + '" style="margin-top:11px">' + esc(txt) + '</div>';
+  }
+  function check(){
+    try { JSON.parse(ta.value); say('ok', t('setValid')); return true; }
+    catch (e){ say('err', t('setInvalid') + ' ' + e.message); return false; }
+  }
+  $('#setValidate').onclick = check;
+  $('#setReset').onclick = function(){ ta.value = JSON.stringify(R, null, 2); $('#setMsg').innerHTML = ''; };
+  $('#setDownload').onclick = function(){
+    if (!check()) return;
+    var blob = new Blob([ta.value], {type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'bop_rules.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+  $$('[data-t="setHow"]').forEach(function(el){ el.textContent = t('setHow'); });
+}
+
 /* ===================== shell ===================== */
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
-  weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality};
+  weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality, settings:renderSettings};
 let rendered = {};
 function renderBanner(){
   const msg = {
@@ -3500,7 +3666,7 @@ function initControls(){
   // presentational; the real boundary is that a viewer's passphrase cannot
   // unwrap the data key at all without also being handed the admin one.
   if (isAdmin()) initImport();
-  else $('#importBtn').remove();
+  else { $('#importBtn').remove(); $('#navSettings').remove(); }
   $('#roleTag').textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
   $('#roleTag').className = 'pill ' + (isAdmin() ? '' : 'ok');
 

@@ -305,6 +305,17 @@ def create_clean_view(con):
 # Dimensions
 # --------------------------------------------------------------------------
 
+def load_bop_rules():
+    """Classification rules, shown on the dashboard's Settings tab.
+
+    Carried into the payload so the rules that produced the figures travel
+    with them: a reader can see exactly which conditions were in force."""
+    path = CONFIG / "bop_rules.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_purpose_names():
     """Official ITRS purpose names, Lao and English, from Purpose_manual.
 
@@ -1062,7 +1073,8 @@ def main():
 
     meta = build_meta(con, files, ent_meta, cfg)
     payload = {"meta": meta, "dims": dims, "cubes": cubes,
-               "exceptions": exceptions, "entities": entities}
+               "exceptions": exceptions, "entities": entities,
+               "rules": load_bop_rules()}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
