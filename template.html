@@ -96,23 +96,24 @@ header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1p
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .hdr-meta{display:none;text-align:right;font-size:11px;color:var(--ink-3);line-height:1.5}
 @media(min-width:1000px){.hdr-meta{display:block}}
-.lang{display:flex;border:1px solid var(--glass-edge);border-radius:9px;overflow:hidden;
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.lang button{border:0;background:var(--panel-2);padding:6px 10px;font-size:12px;font-weight:600;
-  color:var(--ink-3);cursor:pointer;min-height:34px;transition:background .16s,color .16s}
-.lang button:hover{color:var(--ink)}
-.lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
-/* Theme switch: sun / auto / moon */
-.theme{display:flex;border:1px solid var(--glass-edge);border-radius:9px;overflow:hidden;
-  background:var(--panel-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.theme button{border:0;background:transparent;color:var(--ink-3);cursor:pointer;
-  min-height:34px;width:34px;display:flex;align-items:center;justify-content:center;
-  transition:background .16s,color .16s}
-.theme button:hover{color:var(--ink)}
-.theme button[aria-pressed="true"]{background:var(--accent);color:#fff}
-.theme svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;
-  stroke-linecap:round;stroke-linejoin:round}
-.theme .dot{font-size:10px;font-weight:700;letter-spacing:.3px}
+/* Single flip buttons: one for theme, one for language. Each shows what you
+   get when you press it, so the affordance reads without a legend. */
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--glass-edge);border-radius:10px;background:var(--panel-2);
+  color:var(--ink-2);cursor:pointer;min-height:34px;min-width:38px;padding:0 9px;
+  font-size:12px;font-weight:650;letter-spacing:.2px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:color .16s,border-color .16s,background .16s,transform .1s}
+.iconbtn:hover{color:var(--ink);border-color:var(--accent);background:var(--accent-soft)}
+.iconbtn:active{transform:scale(.94)}
+.iconbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+/* The icon swaps mid-press, so a short spin hides the substitution. */
+.iconbtn.flip svg{animation:flipspin .34s ease}
+@keyframes flipspin{from{transform:rotate(-150deg) scale(.55);opacity:0}
+                    to{transform:rotate(0) scale(1);opacity:1}}
+.iconbtn.flip span{animation:flipfade .34s ease}
+@keyframes flipfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 .controls{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;gap:14px;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -304,11 +305,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 .gate-msg.err{color:var(--bad)} .gate-msg.busy{color:var(--ink-3)}
 .gate-foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line-2);
   font-size:11px;color:var(--ink-3);line-height:1.65}
-.gate-lang{position:absolute;top:14px;right:14px;display:flex;border:1px solid var(--line);
-  border-radius:7px;overflow:hidden}
-.gate-lang button{border:0;background:var(--panel-2);padding:5px 9px;font-size:11px;font-weight:600;
-  color:var(--ink-3);cursor:pointer;min-height:30px}
-.gate-lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.gate-lang{position:absolute;top:14px;right:14px;display:flex;gap:6px}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--ink-3);
   border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;
   vertical-align:-2px;margin-right:7px}
@@ -340,18 +337,30 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       paint();
       listeners.forEach(function(f){ try { f(); } catch (e) {} });
     },
+    /** Flip to the opposite of whatever is on screen right now. Starting from
+        'auto' this resolves the OS preference first, so the first press always
+        visibly changes something. */
+    toggle: function(){ this.set(this.isDark() ? 'light' : 'dark'); },
     onChange: function(f){ listeners.push(f); },
-    /** Wire a .theme button group and keep its pressed state in sync. */
-    bind: function(el){
+    /** Wire one flip button; its icon shows the mode you will get on press. */
+    bind: function(el, labels){
       if (!el) return;
+      var SUN = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/>'
+        + '<path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6'
+        + 'M7 17l-1.6 1.6M18.6 18.6L17 17M7 7 5.4 5.4"/></svg>';
+      var MOON = '<svg viewBox="0 0 24 24"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5'
+        + 'a8.5 8.5 0 1 0 10.8 10.8Z"/></svg>';
       function sync(){
-        [].forEach.call(el.children, function(b){
-          b.setAttribute('aria-pressed', String(b.dataset.v === mode));
-        });
+        var dark = window.ITRSTheme.isDark();
+        el.innerHTML = dark ? SUN : MOON;
+        var txt = (labels || {})[dark ? 'toLight' : 'toDark']
+                || (dark ? 'Switch to light mode' : 'Switch to dark mode');
+        el.title = txt;
+        el.setAttribute('aria-label', txt);
       }
-      el.addEventListener('click', function(e){
-        var b = e.target.closest('button');
-        if (b) window.ITRSTheme.set(b.dataset.v);
+      el.addEventListener('click', function(){
+        window.ITRSTheme.toggle();
+        el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
       });
       listeners.push(sync);
       sync();
@@ -367,14 +376,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 <body>
 <div id="gate" class="hide">
   <div class="gate-card">
-    <div class="gate-lang" id="gateLang">
-      <button data-v="en" aria-pressed="true">EN</button>
-      <button data-v="lo" aria-pressed="false">ລາວ</button>
-    </div>
-    <div class="theme" id="gateTheme" style="position:absolute;top:14px;left:14px">
-      <button data-v="light" title="Light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6M7 17l-1.6 1.6M18.6 18.6L17 17M7 7 5.4 5.4"/></svg></button>
-      <button data-v="auto" title="Match system" aria-pressed="true"><span class="dot">A</span></button>
-      <button data-v="dark" title="Dark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5a8.5 8.5 0 1 0 10.8 10.8Z"/></svg></button>
+    <div class="gate-lang">
+      <button class="iconbtn" id="gateTheme" type="button"></button>
+      <button class="iconbtn" id="gateLangBtn" type="button"></button>
     </div>
     <div class="gate-mark"><svg viewBox="0 0 24 24">
       <rect x="4" y="10.5" width="16" height="10" rx="2.2"/>
@@ -405,15 +409,8 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     </div>
     <div class="hdr-right">
       <div class="hdr-meta" id="hdrMeta"></div>
-      <div class="theme" id="themeSeg" role="group">
-        <button data-v="light" title="Light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6M7 17l-1.6 1.6M18.6 18.6L17 17M7 7 5.4 5.4"/></svg></button>
-        <button data-v="auto" title="Match system" aria-pressed="true"><span class="dot">A</span></button>
-        <button data-v="dark" title="Dark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5a8.5 8.5 0 1 0 10.8 10.8Z"/></svg></button>
-      </div>
-      <div class="lang" id="langSeg">
-        <button data-v="en" aria-pressed="true">EN</button>
-        <button data-v="lo" aria-pressed="false">ລາວ</button>
-      </div>
+      <button class="iconbtn" id="themeBtn" type="button"></button>
+      <button class="iconbtn" id="langBtn" type="button"></button>
     </div>
   </div>
   <div class="controls">
@@ -2088,10 +2085,12 @@ function applyI18n(){
   document.documentElement.lang = isLo() ? 'lo' : 'en';
   $$('[data-t]').forEach(el => { const v = t(el.dataset.t); if (v) el.textContent = v; });
   $('#bankSel').options[0].textContent = t('allBanks');
-  // Own the toggle state here rather than trusting the markup, so the highlight
-  // can never drift from the language actually in use.
-  $$('#langSeg button').forEach(b =>
-    b.setAttribute('aria-pressed', String((b.dataset.v === 'lo') === isLo())));
+  // The button shows the language you switch TO, not the one you are in.
+  const lb = $('#langBtn');
+  lb.innerHTML = `<span>${isLo() ? 'EN' : 'ລາວ'}</span>`;
+  lb.title = isLo() ? 'Switch to English' : 'ປ່ຽນເປັນພາສາລາວ';
+  lb.setAttribute('aria-label', lb.title);
+  lb.classList.toggle('lao', !isLo());
 }
 function renderAll(){ rendered = {}; renderBanner(); renderTab(); }
 function renderTab(){
@@ -2126,11 +2125,11 @@ function initControls(){
   segBind('#tsFlowSeg', v => { state.tsFlow = +v; renderTimeSeries(); });
   segBind('#wkScopeSeg', v => { state.wkScope = v; renderWeekly(); });
   segBind('#dupTierSeg', v => { state.dupTier = v; renderChecks(); });
-  $('#langSeg').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    LANG = b.dataset.v === 'lo' ? 1 : 0;
-    $$('#langSeg button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+  $('#langBtn').addEventListener('click', e => {
+    LANG = LANG ? 0 : 1;
     applyI18n(); initMeta(); renderAll();
+    const b = e.currentTarget;
+    b.classList.remove('flip'); void b.offsetWidth; b.classList.add('flip');
   });
   $('#tsDim').addEventListener('change', e => { state.tsDim = e.target.value; state.tsPick = null; renderTimeSeries(); });
   $('#tsCsv').addEventListener('click', tsCsv);
@@ -2165,7 +2164,9 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
-  ITRSTheme.bind($('#themeSeg'));
+  ITRSTheme.bind($('#themeBtn'), isLo()
+    ? {toLight:'ປ່ຽນເປັນໂໝດແຈ້ງ', toDark:'ປ່ຽນເປັນໂໝດມືດ'}
+    : {toLight:'Switch to light mode', toDark:'Switch to dark mode'});
   // Chart colours are read from CSS variables at draw time, so a theme change
   // has to redraw — the SVG already on screen still holds the old palette.
   ITRSTheme.onChange(() => { rendered = {}; renderTab(); });
@@ -2221,8 +2222,10 @@ renderAll();
     // label and the masking can never disagree.
     g('gatePw').type = shown ? 'text' : 'password';
     g('gateEye').textContent = shown ? GT.hide[L] : GT.show[L];
-    [...g('gateLang').children].forEach(x =>
-      x.setAttribute('aria-pressed', String((x.dataset.v === 'lo') === !!L)));
+    const lb = g('gateLangBtn');
+    lb.innerHTML = `<span>${L ? 'EN' : 'ລາວ'}</span>`;
+    lb.title = L ? 'Switch to English' : 'ປ່ຽນເປັນພາສາລາວ';
+    lb.setAttribute('aria-label', lb.title);
     document.documentElement.lang = L ? 'lo' : 'en';
   };
 
@@ -2242,10 +2245,10 @@ renderAll();
   ITRSTheme.bind(g('gateTheme'));
   setTimeout(()=>g('gatePw').focus(), 60);
 
-  g('gateLang').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    L = b.dataset.v === 'lo' ? 1 : 0;
-    paint();
+  g('gateLangBtn').addEventListener('click', e => {
+    L = L ? 0 : 1; paint();
+    const b = e.currentTarget;
+    b.classList.remove('flip'); void b.offsetWidth; b.classList.add('flip');
   });
   g('gateEye').addEventListener('click', () => {
     shown = !shown; paint(); g('gatePw').focus();

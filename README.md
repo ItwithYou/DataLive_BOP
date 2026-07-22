@@ -121,10 +121,15 @@ The build **refuses** to write a publishable file unencrypted. `--publish` witho
 
 ## Appearance
 
-**Theme** — light, dark, or match-system, from the sun / A / moon control in the
-header (and on the lock screen). The choice persists in `localStorage` and is
-applied before first paint, so there is no flash of the wrong scheme on load.
-Charts redraw on switch because their colours are read from CSS at draw time.
+**Theme and language** are one button each, in the header and on the lock screen.
+Both flip on click, and both show what you *get* rather than where you are — a
+moon while light, a sun while dark; `ລາວ` while in English, `EN` while in Lao.
+
+The theme starts on match-system; the first press resolves that to whichever is
+the opposite of what is on screen, so it always visibly changes something. The
+choice then persists in `localStorage` and is applied by an inline script before
+first paint, so there is no flash of the wrong scheme on reload. Charts redraw on
+switch because their colours are read from CSS at draw time.
 
 **Glass** — panels use `backdrop-filter` over a fixed three-point colour field,
 with a raking highlight on each card. Two deliberate exceptions: sticky table
