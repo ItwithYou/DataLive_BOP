@@ -646,6 +646,24 @@ def build_cubes(con, dims):
         GROUP BY 1,2,3,4
         HAVING SUM(t.usd) >= {ENTITY_DAY_MIN}
         ORDER BY 1,2""").fetchall()
+    # The narrative names the largest movers, so a placeholder here is printed
+    # as though it were a company: "NULL 289.99 million" appeared in a report.
+    # Same rule as the entity index, applied at the only other place names
+    # reach the reader.
+    _block = set(load_name_blocklist())
+    def _real_name(nm):
+        # Test the cleaned form as well as the raw one: clean_name strips
+        # punctuation and spacing, so "0010-0182 6211" only becomes a bare
+        # account number after cleaning, and that is the form the reader sees.
+        for v in ((nm or "").strip(), (clean_name(nm) or "").strip()):
+            if not v or len(v) < 3 or v.upper() in _block or v.isdigit():
+                return False
+            if not any(c.isalpha() for c in v):
+                return False
+        return True
+    dropped_n = len(ent_rows)
+    ent_rows = [r for r in ent_rows if _real_name(r[2])]
+    print(f"  narrative names: dropped {dropped_n - len(ent_rows):,} placeholder rows")
     big_names, big_ix = [], {}
     for _, _, nm, _, _ in ent_rows:
         cleaned = clean_name(nm) or nm
@@ -657,6 +675,15 @@ def build_cubes(con, dims):
         [d, int(f), big_ix[clean_name(nm) or nm], int(u), r2(v)]
         for d, f, nm, u, v in ent_rows
     ]
+
+    # [month, flow, reportLine, useFlag, bank, count, usdMillions]
+    # The BOP report lines are the categories the compilation actually uses, so
+    # the time series can be read by real BOP item rather than by purpose code.
+    cubes["tsLine"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, t.line_ix, t.use_ix, bk.ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} JOIN bank_lk bk ON bk.code = t.bank
+        WHERE t.line_ix >= 0
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     # [date, flow, currency, useFlag, usdMillions]
     cubes["dayCurrency"] = [

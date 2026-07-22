@@ -755,6 +755,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
             <option value="tsBank" data-t="dimBank">Bank</option>
             <option value="tsCountry" data-t="dimCountry">Country</option>
             <option value="tsCurrency" data-t="dimCurrency">Currency</option>
+            <option value="tsLine" data-t="dimLine">BOP item</option>
             <option value="tsPurpose" data-t="dimPurpose">Purpose</option>
           </select></div>
         <div class="ctl"><label data-t="tsFreq">Frequency</label>
@@ -1091,6 +1092,7 @@ const I18N = {
  tsSub:["Pick a dimension and a frequency","ເລືອກມິຕິ ແລະ ຄວາມຖີ່"],
  tsDim:["Dimension","ມິຕິ"], tsFreq:["Frequency","ຄວາມຖີ່"], tsFlow:["Flow","ທິດທາງ"],
  dimBank:["Bank","ທະນາຄານ"], dimCountry:["Country","ປະເທດ"], dimCurrency:["Currency","ສະກຸນເງິນ"], dimPurpose:["Purpose","ຈຸດປະສົງ"],
+ dimLine:["BOP item","ລາຍການ BOP"],
  freqM:["Monthly","ລາຍເດືອນ"], freqQ:["Quarterly","ລາຍໄຕມາດ"], freqY:["Yearly","ລາຍປີ"],
  flowIn:["Receive","ເງິນເຂົ້າ"], flowOut:["Payment","ເງິນອອກ"], flowNet:["Net","ສຸດທິ"],
  csv:["Download CSV","ດາວໂຫລດ CSV"], tsTable:["Series table","ຕາຕະລາງຂໍ້ມູນ"],
@@ -1473,7 +1475,13 @@ function rankBars(host, items, opt){
     const yy = i*rowH + 10;
     // Roughly 5.6px per glyph at 10px type; Lao script needs a little more room.
     const maxL = Math.max(6, Math.floor((labelW - 10) / (opt.lao ? 6.6 : 5.6)));
-    const label = d.label.length > maxL ? d.label.slice(0,maxL-1)+'…' : d.label;
+    // A pinned suffix (the share percentage) is never truncated: a label
+    // reading "ໂດລາສະຫະລັດ 74…" loses the one number the row is about, so the
+    // name gives up characters instead.
+    const pin = d.pin ? ' ' + d.pin : '';
+    const room = Math.max(4, maxL - pin.length);
+    const nm = d.label.length > room ? d.label.slice(0,room-1)+'…' : d.label;
+    const label = nm + pin;
     s += `<text x="${labelW-8}" y="${yy+rowH/2+3.5}" text-anchor="end" class="${opt.lao?'lao':''}" style="fill:var(--ink-2)">${esc(label)}</text>`;
     if (diverge){
       const wa = (d.a/maxV)*iw/2, wb = (d.b/maxV)*iw/2, mid = labelW + iw/2;
@@ -2000,8 +2008,13 @@ const TS_META = {
   tsBank:    {items:()=>BANKS.map((b,i)=>({i,label:b})), key:'dimBank'},
   tsCountry: {items:()=>dims.countries.map((c,i)=>({i,label:countryLabel(c), full:countryFull(c), lao:isLo()})), key:'dimCountry'},
   tsCurrency:{items:()=>dims.currencies.map((c,i)=>({i,label:c})), key:'dimCurrency'},
-  tsPurpose: {items:()=>PURPOSES.map((p,i)=>({i,label:purposeLabel(p)+' ['+p.code+']', lao:isLo()}))
+  // The raw purpose code means nothing to a reader of the report, and the
+  // official name already identifies the item.
+  tsPurpose: {items:()=>PURPOSES.map((p,i)=>({i,label:purposeLabel(p), lao:isLo()}))
                         .filter(x=>x.label.length), key:'dimPurpose'},
+  // The BOP report lines are the categories compilation actually publishes.
+  tsLine:    {items:()=>LINES.map((L,i)=>({i,label:isLo()?L.lo:L.en, lao:isLo()})),
+              key:'dimLine'},
 };
 /** Collapse the month axis to the chosen frequency, returning bucket labels. */
 function tsBuckets(){
@@ -2351,15 +2364,15 @@ function renderWkCurrency(wc){
     const top = list.slice(0,6);
     const rest = list.slice(6).reduce((a,d)=>a+d.v,0);
     if (rest > 0) top.push({code:t('other'), v:rest});
-    return top.map((d,i)=>({label:`${ccyName(d.code)}  ${fmtPct(100*d.v/tot)}`,
+    return top.map((d,i)=>({label:ccyName(d.code), pin:fmtPct(100*d.v/tot),
       full:ccyName(d.code), value:d.v, color:cssv(SC[i%10]),
       note:`${fmtPct(100*d.v/tot)} ${t('wkShare')}`})); };
   const host = $('#wkCurrency');
   host.innerHTML = `<div style="display:grid;gap:12px">
     <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase">${esc(t('inflow'))}</div><div id="wkCcyIn"></div></div>
     <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase">${esc(t('outflow'))}</div><div id="wkCcyOut"></div></div></div>`;
-  rankBars($('#wkCcyIn'), mk(wc.inn), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
-  rankBars($('#wkCcyOut'), mk(wc.out), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
+  rankBars($('#wkCcyIn'), mk(wc.inn), {labelW:150, w:430, rowH:24, fmt:v=>fmtM(v,2)});
+  rankBars($('#wkCcyOut'), mk(wc.out), {labelW:150, w:430, rowH:24, fmt:v=>fmtM(v,2)});
 }
 /** Thirteen consecutive spans of the same length as the current selection, so
     the trend stays comparable whether the range is a week, a month or a year. */
