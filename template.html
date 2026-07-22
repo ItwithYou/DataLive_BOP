@@ -725,9 +725,11 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <div class="ctl"><label data-t="wkTo">To</label><input type="date" id="wkTo"></div>
         <div class="ctl"><label data-t="wkPreset">Quick range</label>
           <div class="seg" id="wkPresetSeg">
+            <button data-v="1" data-t="wkP1">Day</button>
             <button data-v="7" data-t="wkP7">Week</button>
             <button data-v="month" data-t="wkPM">Month</button>
             <button data-v="quarter" data-t="wkPQ">Quarter</button>
+            <button data-v="half" data-t="wkPH">Half-year</button>
             <button data-v="year" data-t="wkPY">Year</button>
           </div></div>
         <div class="ctl"><label data-t="wkScope">Scope</label>
@@ -743,13 +745,29 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <div class="tw" id="wkTable"></div>
     </div>
     <div class="card"><h3 data-t="wkNarr">Generated narrative</h3>
-      <p class="sub" data-t="wkNarrSub">Draft text in the style of the weekly BOL note — review before publishing</p>
+      <p class="sub" data-t="wkNarrSub">Draft text — review before publishing</p>
+      <div class="row" style="margin-bottom:10px">
+        <div class="seg" id="wkNarrSeg">
+          <button data-v="summary" data-t="wkNarrShort">Summary</button>
+          <button data-v="detail" aria-pressed="true" data-t="wkNarrLong">Detailed</button>
+        </div>
+        <button class="btn" id="wkCopy2" data-t="copyText">Copy text</button>
+      </div>
       <div class="narr lao" id="wkNarrative"></div></div>
     <div class="grid g-2">
       <div class="card"><h3 data-t="wkCcy">Currency composition this week</h3>
         <p class="sub" data-t="wkCcySub">Share of weekly inflow and outflow</p><div id="wkCurrency"></div></div>
       <div class="card"><h3 data-t="wkTrend">13-week trend</h3>
         <p class="sub" data-t="wkTrendSub">Weekly gross inflow and outflow</p><div id="wkTrend"></div></div>
+    </div>
+    <div class="card"><h3 data-t="wkBanks">Bank composition</h3>
+      <p class="sub" data-t="wkBanksSub">Share of flows by reporting bank</p>
+      <div id="wkBanks"></div></div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="wkTopIn">Largest inflow contributors</h3>
+        <p class="sub" data-t="wkTopSub"></p><div id="wkTopIn"></div></div>
+      <div class="card"><h3 data-t="wkTopOut">Largest outflow contributors</h3>
+        <p class="sub" data-t="wkTopSub2"></p><div id="wkTopOut"></div></div>
     </div>
   </section>
 
@@ -925,12 +943,21 @@ const I18N = {
  wkTitle:["Period report","ລາຍງານຕາມໄລຍະ"],
  wkSub:["Any date range, compared with the equally long period before it","ເລືອກໄລຍະໃດກໍໄດ້ ທຽບກັບໄລຍະກ່ອນໜ້າທີ່ຍາວເທົ່າກັນ"],
  wkFrom:["From","ຈາກວັນທີ"], wkTo:["To","ຫາວັນທີ"], wkPreset:["Quick range","ໄລຍະດ່ວນ"],
- wkP7:["Week","ອາທິດ"], wkPM:["Month","ເດືອນ"], wkPQ:["Quarter","ໄຕມາດ"], wkPY:["Year","ປີ"],
+ wkP1:["Day","ວັນ"], wkP7:["Week","ອາທິດ"], wkPM:["Month","ເດືອນ"],
+ wkPQ:["Quarter","ໄຕມາດ"], wkPH:["Half-year","ເຄິ່ງປີ"], wkPY:["Year","ປີ"],
+ wkBanks:["Bank composition","ອົງປະກອບທະນາຄານ"],
+ wkBanksSub:["Share of flows by reporting bank","ສັດສ່ວນກະແສຕາມທະນາຄານ"],
+ wkTopIn:["Largest inflow contributors","ຜູ້ນຳເງິນເຂົ້າສູງສຸດ"],
+ wkTopOut:["Largest outflow contributors","ຜູ້ນຳເງິນອອກສູງສຸດ"],
+ wkTopSub:["Named counterparties above $0.5m in the period","ຄູ່ຮ່ວມທີ່ມີຊື່ ເກີນ 0.5 ລ້ານໂດລາ ໃນໄລຍະນີ້"],
+ wkShare:["share","ສັດສ່ວນ"],
  wkScope:["Scope","ຂອບເຂດ"],
  wkAll:["All transactions","ທຸລະກຳທັງໝົດ"], wkNonbank:["Excl. commercial banks","ບໍ່ລວມທະນາຄານທຸລະກິດ"],
  copyText:["Copy text","ສຳເນົາຂໍ້ຄວາມ"], copied:["Copied","ສຳເນົາແລ້ວ"],
  wkNarr:["Generated narrative","ຂໍ້ຄວາມທີ່ສ້າງຂຶ້ນ"],
  wkNarrSub:["Draft text — review before publishing","ຂໍ້ຄວາມຮ່າງ — ກວດກ່ອນເຜີຍແຜ່"],
+ wkNarrShort:["Summary","ຫຍໍ້"], wkNarrLong:["Detailed","ລະອຽດ"],
+ wkTopSub2:["Named counterparties above $0.5m in the period","ຄູ່ຮ່ວມທີ່ມີຊື່ ເກີນ 0.5 ລ້ານໂດລາ ໃນໄລຍະນີ້"],
  wkCcy:["Currency composition","ອົງປະກອບສະກຸນເງິນ"], wkCcySub:["Share of flows in the selected range","ສັດສ່ວນກະແສໃນໄລຍະທີ່ເລືອກ"],
  wkTrend:["Trend, last 13 periods","ແນວໂນ້ມ 13 ໄລຍະຫຼ້າສຸດ"], wkTrendSub:["Same length as the selected range","ຍາວເທົ່າກັບໄລຍະທີ່ເລືອກ"],
  wkPrior:["Prior period","ໄລຍະກ່ອນໜ້າ"], wkThis:["This period","ໄລຍະນີ້"],
@@ -1077,7 +1104,7 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
-  wkFrom:null, wkTo:null, wkScope:'all', dupTier:'A', seQuery:'',
+  wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
 const yearsInRange = () => YEARS.map((y,i)=>i).filter(i => i>=state.yFrom && i<=state.yTo);
@@ -1900,6 +1927,10 @@ function applyPreset(v){
     const q = Math.floor(m/3)*3;
     state.wkFrom = iso(y, q, 1);
     state.wkTo = iso(y, q+2, new Date(Date.UTC(y, q+3, 0)).getUTCDate());
+  } else if (v === 'half'){
+    const h = m < 6 ? 0 : 6;
+    state.wkFrom = iso(y, h, 1);
+    state.wkTo = iso(y, h+5, new Date(Date.UTC(y, h+6, 0)).getUTCDate());
   } else if (v === 'year'){
     state.wkFrom = iso(y, 0, 1); state.wkTo = iso(y, 11, 31);
   } else {
@@ -1978,9 +2009,11 @@ function renderWeekly(){
   $('#wkTable').innerHTML = h + '</tbody></table>'
     + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`;
 
-  $('#wkNarrative').textContent = narrative(cur, A, B);
+  $('#wkNarrative').textContent = narrative(cur, A, B, state.wkNarr);
   const wc = weekCurrency(cur.from, cur.to);
   renderWkCurrency(wc);
+  renderWkBanks(cur.from, cur.to);
+  renderWkTop(cur.from, cur.to);
   renderWkTrend(cur);
   $('#wkTable')._csv = () => {
     const out = [[hdr, t('wkPrior'), t('wkThis'), t('wkChange'), t('wkPct')]];
@@ -1995,44 +2028,104 @@ function renderWeekly(){
   };
 }
 
-/** Draft the weekly note in the house style of the BOL weekly report. */
-function narrative(range, A, B){
+/** Draft the note in the house style of the BOL report.
+
+    Two lengths: `summary` is the short paragraph, `detail` adds the named
+    contributors, currency shares and bank shares that the published note
+    carries. Both are drafts -- review before publishing. */
+function narrative(range, A, B, mode){
   const f2 = v => v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
   const d = s => { const x = parseISO(s);
     return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+'/'+x.getUTCFullYear(); };
   const period = `${d(range.from).slice(0,5)}-${d(range.to)}`;
+  const lo = isLo();
+  const unit = lo ? ' ລ້ານໂດລາທຽບເທົ່າ' : ' m';
   const wow = (a,b) => { if (!a) return '';
     const p = (b-a)/Math.abs(a)*100;
-    return isLo()
-      ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບໄລຍະກ່ອນໜ້າ)`
-      : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior period)`;
+    return lo ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບໄລຍະກ່ອນໜ້າ)`
+              : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior period)`;
   };
   const parts = dir => LINES.map((L,i)=>({L, v:B.lines[i][dir]}))
       .filter(x=>x.v > 0.005).sort((a,b)=>b.v-a.v)
-      .map(x => `${bi(x.L)} ${f2(x.v)}`).join(isLo()?' ລ້ານໂດລາທຽບເທົ່າ, ':' m, ');
-  const unit = isLo() ? ' ລ້ານໂດລາທຽບເທົ່າ' : ' m';
+      .map(x => `${bi(x.L)} ${f2(x.v)}`).join(lo ? ' ລ້ານໂດລາທຽບເທົ່າ, ' : ' m, ');
   const scope = state.wkScope === 'nonbank'
-    ? (isLo() ? ' (ບໍ່ລວມທຸລະກຳຂອງທະນາຄານທຸລະກິດ)' : ' (excluding commercial bank own transactions)') : '';
+    ? (lo ? ' (ບໍ່ລວມທຸລະກຳຂອງທະນາຄານທຸລະກິດ)' : ' (excluding commercial bank own transactions)') : '';
 
-  if (isLo()){
-    return `ສະພາບການໂອນເງິນເຂົ້າ-ອອກຜ່ານລະບົບທະນາຄານ${scope}\n\n`
+  let txt = lo
+    ? `ສະພາບການໂອນເງິນເຂົ້າ-ອອກຜ່ານລະບົບທະນາຄານ${scope}
+
+`
       + `ໄລຍະແຕ່ວັນ ${period} ມີກະແສເງິນໂອນ${B.net>=0?'ເຂົ້າ':'ອອກ'}ຜ່ານລະບົບທະນາຄານສຸດທິ ${f2(Math.abs(B.net))}${unit}. `
-      + `ໃນນັ້ນ, ກະແສເງິນໂອນເຂົ້າມີ ${f2(B.tin)}${unit}${wow(A.tin,B.tin)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ `
-      + `${parts('in')}${unit}. `
-      + `ກະແສເງິນໂອນອອກມີ ${f2(B.tout)}${unit}${wow(A.tout,B.tout)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ `
-      + `${parts('out')}${unit}.`;
-  }
-  return `Cross-border transfers through the banking system${scope}\n\n`
-    + `Over ${period} net ${B.net>=0?'inflows':'outflows'} through the banking system were `
-    + `USD ${f2(Math.abs(B.net))}m. Inflows totalled USD ${f2(B.tin)}m${wow(A.tin,B.tin)}, mainly `
-    + `${parts('in')}${unit}. Outflows totalled USD ${f2(B.tout)}m${wow(A.tout,B.tout)}, mainly `
-    + `${parts('out')}${unit}.`;
+      + `ໃນນັ້ນ, ກະແສເງິນໂອນເຂົ້າມີ ${f2(B.tin)}${unit}${wow(A.tin,B.tin)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ ${parts('in')}${unit}. `
+      + `ກະແສເງິນໂອນອອກມີ ${f2(B.tout)}${unit}${wow(A.tout,B.tout)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ ${parts('out')}${unit}.`
+    : `Cross-border transfers through the banking system${scope}
+
+`
+      + `Over ${period} net ${B.net>=0?'inflows':'outflows'} through the banking system were `
+      + `USD ${f2(Math.abs(B.net))}m. Inflows totalled USD ${f2(B.tin)}m${wow(A.tin,B.tin)}, mainly ${parts('in')}${unit}. `
+      + `Outflows totalled USD ${f2(B.tout)}m${wow(A.tout,B.tout)}, mainly ${parts('out')}${unit}.`;
+
+  if (mode !== 'detail') return txt;
+
+  // --- named contributors -------------------------------------------------
+  const ents = rangeEntities(range.from, range.to);
+  const named = list => list.slice(0,6).map(x => `${x.name} ${f2(x.v)}`)
+      .join(lo ? ' ລ້ານໂດລາທຽບເທົ່າ, ' : ' m, ');
+  if (ents.inn.length)
+    txt += lo ? `
+
+ໃນນັ້ນມີບໍລິສັດ: ${named(ents.inn)}${unit}.`
+              : `
+
+Largest named inflow contributors: ${named(ents.inn)}${unit}.`;
+  if (ents.out.length)
+    txt += lo ? ` ດ້ານເງິນໂອນອອກມີບໍລິສັດ: ${named(ents.out)}${unit}.`
+              : ` Largest named outflow contributors: ${named(ents.out)}${unit}.`;
+
+  // --- currency shares ----------------------------------------------------
+  const wc = weekCurrency(range.from, range.to);
+  const shares = (list, nameFn) => { const tot = list.reduce((a,x)=>a+(x.v),0)||1;
+    const top = list.slice(0,4).map(x => `${nameFn(x)} ${fmtPct(100*x.v/tot,2)}`);
+    const rest = list.slice(4).reduce((a,x)=>a+x.v,0);
+    if (rest > 0) top.push(`${t('other')} ${fmtPct(100*rest/tot,2)}`);
+    return top.join(', ');
+  };
+  if (wc.inn.length) txt += lo
+    ? `
+
+ໃນໄລຍະນີ້ ສະກຸນເງິນທີ່ໂອນເຂົ້າຫຼາຍກວ່າໝູ່ແມ່ນ ${shares(wc.inn, x=>ccyName(x.code))}. `
+    : `
+
+By currency, inflows were ${shares(wc.inn, x=>ccyName(x.code))}. `;
+  if (wc.out.length) txt += lo
+    ? `ສ່ວນສະກຸນເງິນໂອນອອກແມ່ນ ${shares(wc.out, x=>ccyName(x.code))}.`
+    : `Outflows were ${shares(wc.out, x=>ccyName(x.code))}.`;
+
+  // --- bank shares --------------------------------------------------------
+  const bk = rangeBanks(range.from, range.to);
+  if (bk.inn.length) txt += lo
+    ? `
+
+ກະແສເງິນໂອນເຂົ້າຜ່ານທະນາຄານ ${shares(bk.inn, x=>x.name)}. `
+    : `
+
+By reporting bank, inflows came through ${shares(bk.inn, x=>x.name)}. `;
+  if (bk.out.length) txt += lo
+    ? `ສ່ວນເງິນໂອນອອກຜ່ານທະນາຄານ ${shares(bk.out, x=>x.name)}.`
+    : `Outflows went through ${shares(bk.out, x=>x.name)}.`;
+  return txt;
 }
 
 function renderWkCurrency(wc){
+  // Percentages are what the published note quotes, so show them on the bar
+  // rather than only in the tooltip.
   const mk = list => { const tot = list.reduce((a,d)=>a+d.v,0)||1;
-    return list.slice(0,6).map((d,i)=>({label:ccyName(d.code), value:d.v, color:cssv(SC[i%10]),
-      note:fmtPct(100*d.v/tot)})); };
+    const top = list.slice(0,6);
+    const rest = list.slice(6).reduce((a,d)=>a+d.v,0);
+    if (rest > 0) top.push({code:t('other'), v:rest});
+    return top.map((d,i)=>({label:`${ccyName(d.code)}  ${fmtPct(100*d.v/tot)}`,
+      full:ccyName(d.code), value:d.v, color:cssv(SC[i%10]),
+      note:`${fmtPct(100*d.v/tot)} ${t('wkShare')}`})); };
   const host = $('#wkCurrency');
   host.innerHTML = `<div style="display:grid;gap:12px">
     <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase">${esc(t('inflow'))}</div><div id="wkCcyIn"></div></div>
@@ -2042,6 +2135,54 @@ function renderWkCurrency(wc){
 }
 /** Thirteen consecutive spans of the same length as the current selection, so
     the trend stays comparable whether the range is a week, a month or a year. */
+/** Bank and named-entity shares over an arbitrary range. */
+function rangeBanks(from, to){
+  const inM = new Map(), outM = new Map();
+  for (const r of cubes.dayBank || []){
+    if (r[0] < from || r[0] > to || !useOK(r[3])) continue;
+    const m = r[1] === REC ? inM : outM;
+    m.set(r[2], (m.get(r[2])||0) + r[5]);
+  }
+  const mk = m => [...m.entries()].map(([i,v])=>({name:BANKS[i]||'—', v}))
+      .filter(d=>d.v>0).sort((a,b)=>b.v-a.v);
+  return {inn:mk(inM), out:mk(outM)};
+}
+function rangeEntities(from, to){
+  const inM = new Map(), outM = new Map();
+  for (const r of cubes.dayEntity || []){
+    if (r[0] < from || r[0] > to || !useOK(r[3])) continue;
+    const m = r[1] === REC ? inM : outM;
+    m.set(r[2], (m.get(r[2])||0) + r[4]);
+  }
+  const names = dims.bigEntities || [];
+  const mk = m => [...m.entries()].map(([i,v])=>({name:names[i]||'—', v}))
+      .filter(d=>d.v>0).sort((a,b)=>b.v-a.v);
+  return {inn:mk(inM), out:mk(outM)};
+}
+function renderWkBanks(from, to){
+  const b = rangeBanks(from, to);
+  const mk = list => { const tot = list.reduce((a,d)=>a+d.v,0)||1;
+    const top = list.slice(0,7);
+    const rest = list.slice(7).reduce((a,d)=>a+d.v,0);
+    if (rest > 0) top.push({name:t('other'), v:rest});
+    return top.map((d,i)=>({label:`${d.name}  ${fmtPct(100*d.v/tot)}`, full:d.name,
+      value:d.v, color:cssv(SC[i%10])})); };
+  const host = $('#wkBanks');
+  host.innerHTML = `<div class="grid g-2" style="margin-top:0">
+    <div><div class="k" style="font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);font-weight:700;margin-bottom:6px">${esc(t('inflow'))}</div><div id="wkBkIn"></div></div>
+    <div><div class="k" style="font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);font-weight:700;margin-bottom:6px">${esc(t('outflow'))}</div><div id="wkBkOut"></div></div></div>`;
+  rankBars($('#wkBkIn'), mk(b.inn), {labelW:150, rowH:26, fmt:v=>fmtM(v,2)});
+  rankBars($('#wkBkOut'), mk(b.out), {labelW:150, rowH:26, fmt:v=>fmtM(v,2)});
+}
+function renderWkTop(from, to){
+  const e = rangeEntities(from, to);
+  const mk = (list, col) => list.slice(0,10).map(d=>({
+    label:d.name.length>34 ? d.name.slice(0,33)+'…' : d.name,
+    full:d.name, value:d.v, color:col}));
+  $('#wkTopSub') && ($('#wkTopSub').textContent = t('wkTopSub'));
+  rankBars($('#wkTopIn'),  mk(e.inn, cssv('--in')),  {labelW:230, rowH:26, fmt:v=>fmtM(v,2)});
+  rankBars($('#wkTopOut'), mk(e.out, cssv('--out')), {labelW:230, rowH:26, fmt:v=>fmtM(v,2)});
+}
 function renderWkTrend(cur){
   const labels = [], inV = [], outV = [];
   const n = rangeDays();
@@ -3306,6 +3447,13 @@ function initControls(){
     syncRangeInputs(); renderWeekly();
   });
   segBind('#wkPresetSeg', v => { applyPreset(v); renderWeekly(); });
+  segBind('#wkNarrSeg', v => { state.wkNarr = v; renderWeekly(); });
+  $('#wkCopy2').addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText($('#wkNarrative').textContent);
+      const b = e.currentTarget, old = b.textContent;
+      b.textContent = t('copied'); setTimeout(()=>b.textContent = old, 1400);
+    } catch (err) {}
+  });
   // Step by exactly one range length, so paging never overlaps or skips days.
   const shift = dir => { const n = rangeDays();
     state.wkFrom = addDays(state.wkFrom, dir*n);

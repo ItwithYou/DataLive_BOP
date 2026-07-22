@@ -135,6 +135,9 @@ ENTITY_TX_LIMIT = 12
 EXCEPTION_LIMIT = 300
 # Currencies carried at daily grain for the weekly report's currency paragraph.
 DAILY_CURRENCIES = 10
+# Minimum daily total, in USD, for an entity to be carried at daily grain.
+# The narrative names movers; smaller amounts would never be printed.
+ENTITY_DAY_MIN = 500_000
 
 
 # --------------------------------------------------------------------------
@@ -544,6 +547,41 @@ def build_cubes(con, dims):
             FROM txf t WHERE t.line_ix >= 0
             GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
     ]
+    # [date, flow, bank, useFlag, count, usdMillions] -- bank shares for any range.
+    # Built by hand rather than via fetch_cube: the leading dimension is a date
+    # string, which fetch_cube would try to coerce to an integer.
+    cubes["dayBank"] = [
+        [d, int(f), int(b), int(u), int(n), r2(v)]
+        for d, f, b, u, n, v in con.execute("""
+            SELECT t.ymd, t.flow_ix, b.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+            FROM txf t JOIN bank_lk b ON b.code = t.bank
+            GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
+    ]
+
+    # [date, flow, entity, useFlag, usdMillions] -- named contributors for the
+    # narrative. Only daily totals at or above the threshold are carried: the
+    # report names the movers, and keeping every small transfer would multiply
+    # the file for names that would never be printed.
+    ent_rows = con.execute(f"""
+        SELECT t.ymd, t.flow_ix, TRIM(COALESCE(t.tr_name, t.rc_name)) AS nm,
+               t.use_ix, SUM(t.usd)/1e6 AS v
+        FROM txf t
+        WHERE COALESCE(t.tr_name, t.rc_name) IS NOT NULL
+        GROUP BY 1,2,3,4
+        HAVING SUM(t.usd) >= {ENTITY_DAY_MIN}
+        ORDER BY 1,2""").fetchall()
+    big_names, big_ix = [], {}
+    for _, _, nm, _, _ in ent_rows:
+        cleaned = clean_name(nm) or nm
+        if cleaned not in big_ix:
+            big_ix[cleaned] = len(big_names)
+            big_names.append(cleaned)
+    dims["bigEntities"] = big_names
+    cubes["dayEntity"] = [
+        [d, int(f), big_ix[clean_name(nm) or nm], int(u), r2(v)]
+        for d, f, nm, u, v in ent_rows
+    ]
+
     # [date, flow, currency, useFlag, usdMillions]
     cubes["dayCurrency"] = [
         [d, int(f), int(c), int(uix), r2(u)]
