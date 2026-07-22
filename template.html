@@ -1082,6 +1082,16 @@ const I18N = {
  wkCcy:["Currency composition","ອົງປະກອບສະກຸນເງິນ"], wkCcySub:["Share of flows in the selected range","ສັດສ່ວນກະແສໃນໄລຍະທີ່ເລືອກ"],
  wkTrend:["Trend","ແນວໂນ້ມ"], wkTrendSub:["Same length as the selected range","ຍາວເທົ່າກັບໄລຍະທີ່ເລືອກ"],
  wkPrior:["Prior period","ໄລຍະກ່ອນໜ້າ"], wkThis:["This period","ໄລຍະນີ້"],
+ // The comparison columns are named after the span the analyst actually chose,
+ // so a one-day report reads "this day / previous day" rather than the vague
+ // "this period". periodKind() decides which pair applies.
+ wkThisDay:["This day","ວັນນີ້"],           wkPriorDay:["Previous day","ວັນກ່ອນໜ້ານີ້"],
+ wkThisWeek:["This week","ອາທິດນີ້"],        wkPriorWeek:["Previous week","ອາທິດກ່ອນໜ້ານີ້"],
+ wkThisMonth:["This month","ເດືອນນີ້"],      wkPriorMonth:["Previous month","ເດືອນກ່ອນໜ້ານີ້"],
+ wkThisQuarter:["This quarter","ໄຕມາດນີ້"],  wkPriorQuarter:["Previous quarter","ໄຕມາດກ່ອນໜ້ານີ້"],
+ wkThisHalf:["This half-year","ເຄິ່ງປີນີ້"],  wkPriorHalf:["Previous half-year","ເຄິ່ງປີກ່ອນໜ້ານີ້"],
+ wkThisYear:["This year","ປີນີ້"],           wkPriorYear:["Previous year","ປີກ່ອນໜ້ານີ້"],
+ wkThisPeriod:["This period","ໄລຍະນີ້"],     wkPriorPeriod:["Prior period","ໄລຍະກ່ອນໜ້ານີ້"],
  wkChange:["Change","ມູນຄ່າປ່ຽນແປງ"], wkPct:["% change","ເປີເຊັນປ່ຽນແປງ"],
  seTitle:["Company / counterparty search","ຄົ້ນຫາບໍລິສັດ / ຄູ່ຮ່ວມ"],
  clear:["Clear","ລຶບ"], seePlaceholder:["Type a company name…","ພິມຊື່ບໍລິສັດ…"],
@@ -2052,6 +2062,31 @@ const curRange = () => ({from: state.wkFrom, to: state.wkTo});
     most manual picks do -- step back by that many months, so March compares
     with February rather than with "the previous 31 days". Otherwise fall back
     to the equally long span immediately before. */
+/** Classify the chosen range so the comparison columns can be named after it.
+    Driven by the dates themselves, not by the last preset button pressed, so a
+    hand-typed 1 Jun - 30 Jun still reads as a month. */
+function periodKind(){
+  const f = parseISO(state.wkFrom), t = parseISO(state.wkTo);
+  const n = rangeDays();
+  if (n === 1) return 'Day';
+  if (n === 7) return 'Week';
+  const lastDay = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const whole = f.getUTCDate() === 1 &&
+    t.getUTCDate() === lastDay(t.getUTCFullYear(), t.getUTCMonth());
+  if (whole){
+    const span = (t.getUTCFullYear() - f.getUTCFullYear()) * 12
+               + (t.getUTCMonth() - f.getUTCMonth()) + 1;
+    const m0 = f.getUTCMonth();
+    if (span === 1) return 'Month';
+    if (span === 3 && m0 % 3 === 0) return 'Quarter';
+    if (span === 6 && m0 % 6 === 0) return 'Half';
+    if (span === 12 && m0 === 0) return 'Year';
+  }
+  return 'Period';
+}
+const thisLabel  = () => t('wkThis'  + periodKind());
+const priorLabel = () => t('wkPrior' + periodKind());
+
 function priorRange(){
   const f = parseISO(state.wkFrom), t = parseISO(state.wkTo);
   const lastDay = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
@@ -2151,7 +2186,7 @@ function renderWeekly(){
       <td class="num ${p!=null&&p<0?'neg':'pos'}">${p==null?'—':fmtPct(p,2)}</td></tr>`;
   };
   let h = `<table><thead><tr><th style="text-align:left">${esc(hdr)}</th>
-    <th>${esc(t('wkPrior'))}</th><th>${esc(t('wkThis'))}</th>
+    <th>${esc(priorLabel())}</th><th>${esc(thisLabel())}</th>
     <th>${esc(t('wkChange'))}</th><th>${esc(t('wkPct'))}</th></tr></thead><tbody>`;
   h += block(isLo()?'ສຸດທິ':'Net', A.net, B.net, 'total');
   h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total');
@@ -2170,7 +2205,7 @@ function renderWeekly(){
   renderWkTop(cur.from, cur.to);
   renderWkTrend(cur);
   $('#wkTable')._csv = () => {
-    const out = [[hdr, t('wkPrior'), t('wkThis'), t('wkChange'), t('wkPct')]];
+    const out = [[hdr, priorLabel(), thisLabel(), t('wkChange'), t('wkPct')]];
     const push = (l,a,b) => out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
       pct(a,b)==null?'':pct(a,b).toFixed(2)]);
     push(isLo()?'ສຸດທິ':'Net', A.net, B.net);
@@ -2196,8 +2231,9 @@ function narrative(range, A, B, mode){
   const unit = lo ? ' ລ້ານໂດລາທຽບເທົ່າ' : ' m';
   const wow = (a,b) => { if (!a) return '';
     const p = (b-a)/Math.abs(a)*100;
-    return lo ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບໄລຍະກ່ອນໜ້າ)`
-              : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior period)`;
+    const ref = priorLabel().toLowerCase();
+    return lo ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບ${priorLabel()})`
+              : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the ${ref})`;
   };
   const parts = dir => LINES.map((L,i)=>({L, v:B.lines[i][dir]}))
       .filter(x=>x.v > 0.005).sort((a,b)=>b.v-a.v)
