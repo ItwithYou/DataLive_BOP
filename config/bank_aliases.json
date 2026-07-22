@@ -4,16 +4,16 @@
   "punctuation, so the build cannot merge them safely on its own.",
   "",
   "Key = a spelling seen in the data, value = the spelling to merge it into.",
-  "Matching ignores case and punctuation, so \"K-Bank\" and \"kbank\" are already",
-  "handled automatically and do not need an entry here.",
+  "Case and punctuation are already ignored, so \"K-Bank\" and \"kbank\" need no entry.",
   "",
-  "Add an entry ONLY when you know the two are the same institution. Merging",
-  "two different banks silently changes every published figure for both.",
-  "",
-  "Candidates seen in the current data, left unmerged pending confirmation:",
-  "  sacombank / SACOM      ICBC / ICBCV      pbb ps / PBBVT",
-  "  AYB / AYBSV / AYBVT / AYBVC / BYB",
-  "Example: \"sacombank\": \"SACOM\""
+  "The entries below were confirmed by the BOP team on 2026-07-23.",
+  "Still unconfirmed and deliberately left separate: tcb ($22.3m), BOA ($1.3m),",
+  "ICB ($928.5m). ICB is large enough that guessing would matter."
  ],
- "aliases": {}
+ "aliases": {
+  "sacombank": "SACOM",
+  "ICBC": "ICBCV",
+  "AYB": "AYBVT",
+  "Ayb vc": "AYBVT"
+ }
 }
