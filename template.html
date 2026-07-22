@@ -641,9 +641,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <div class="yr"><select id="yFrom"></select><span>–</span><select id="yTo"></select></div></div>
     <div class="ctl"><label data-t="cBasis">Use in BOP</label>
       <div class="seg" id="basisSeg">
-        <button data-v="bop" aria-pressed="true" data-t="basisBop">Use = Yes</button>
-        <button data-v="excl" aria-pressed="false" data-t="basisExcl">Use = No</button>
-        <button data-v="all" aria-pressed="false" data-t="basisAll">All</button>
+        <button data-v="bop" aria-pressed="true" data-t="basisBop">Customer &amp; government</button>
+        <button data-v="excl" aria-pressed="false" data-t="basisExcl">Bank own transactions</button>
+        <button data-v="all" aria-pressed="false" data-t="basisAll">All transactions</button>
       </div></div>
     <div class="ctl"><label data-t="cMeasure">Measure</label>
       <div class="seg" id="measSeg">
@@ -773,11 +773,6 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
             <button data-v="quarter" data-t="wkPQ">Quarter</button>
             <button data-v="half" data-t="wkPH">Half-year</button>
             <button data-v="year" data-t="wkPY">Year</button>
-          </div></div>
-        <div class="ctl"><label data-t="wkScope">Scope</label>
-          <div class="seg" id="wkScopeSeg">
-            <button data-v="all" aria-pressed="true" data-t="wkAll">All transactions</button>
-            <button data-v="nonbank" aria-pressed="false" data-t="wkNonbank">Excl. commercial banks</button>
           </div></div>
         <div class="ctl"><label>&nbsp;</label><div class="row">
           <button class="btn" id="wkPrev">‹</button><button class="btn" id="wkNext">›</button>
@@ -974,9 +969,11 @@ const isAdmin = () => ROLE === 'admin';
 const I18N = {
  appTitle:["ITRS Live Report","ລະບົບລາຍງານເງິນໂອນລະຫວ່າງປະເທດ (ITRS)"],
  appSub:["Lao PDR — International Transactions Reporting System","ສປປ ລາວ — ລະບົບລາຍງານທຸລະກຳລະຫວ່າງປະເທດ"],
- cPeriod:["Period","ໄລຍະເວລາ"], cBasis:["Use in BOP","ການນຳໃຊ້ໃນ BOP"],
+ cPeriod:["Period","ໄລຍະເວລາ"], cBasis:["Transactions","ປະເພດທຸລະກຳ"],
  cMeasure:["Measure","ຫົວໜ່ວຍວັດ"], cBank:["Bank","ທະນາຄານ"],
- basisBop:["Use = Yes","Use = ແມ່ນ"], basisExcl:["Use = No","Use = ບໍ່"], basisAll:["All","ທັງໝົດ"],
+ basisBop:["Customer & government","ທຸລະກຳລູກຄ້າ ແລະ ລັດຖະບານ"],
+ basisExcl:["Bank own transactions","ທຸລະກຳຂອງທະນາຄານ"],
+ basisAll:["All transactions","ທຸກທຸລະກຳ"],
  mUsd:["Value","ມູນຄ່າ"], mCount:["Count","ຈຳນວນ"], allBanks:["All banks","ທຸກທະນາຄານ"],
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
  tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
@@ -3593,11 +3590,11 @@ const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTime
 let rendered = {};
 function renderBanner(){
   const msg = {
-    bop:[`Showing records flagged <code>Use = Yes</code> — the transactions that <b>enter the balance of payments</b>. This is the compilation basis and the correct default for BOP analysis.`,
-         `ສະແດງລາຍການທີ່ມີ <code>Use = Yes</code> — ທຸລະກຳທີ່ <b>ເຂົ້າໃນດຸນຊຳລະ</b>. ນີ້ແມ່ນຖານການລວບລວມ ແລະ ເປັນຄ່າເລີ່ມຕົ້ນທີ່ຖືກຕ້ອງສຳລັບການວິເຄາະ BOP.`],
-    excl:[`Showing only records flagged <code>Use = No</code> — transactions <b>excluded from the balance of payments</b>. Almost all are own-account interbank positions in the financial account. Use this view to audit what compilation drops and why.`,
+    bop:[`Showing <b>customer and government transactions</b> — the records that <b>enter the balance of payments</b>. This is the compilation basis and the correct default for BOP analysis.`,
+         `ສະແດງ <b>ທຸລະກຳລູກຄ້າ ແລະ ລັດຖະບານ</b> — ທຸລະກຳທີ່ <b>ເຂົ້າໃນດຸນຊຳລະ</b>. ນີ້ແມ່ນຖານການລວບລວມ ແລະ ເປັນຄ່າເລີ່ມຕົ້ນທີ່ຖືກຕ້ອງສຳລັບການວິເຄາະ BOP.`],
+    excl:[`Showing <b>bank own transactions</b> only — records <b>excluded from the balance of payments</b>. Almost all are own-account interbank positions in the financial account. Use this view to audit what compilation drops and why.`,
           `ສະແດງສະເພາະລາຍການທີ່ມີ <code>Use = No</code> — ທຸລະກຳທີ່ <b>ຖືກຍົກເວັ້ນຈາກດຸນຊຳລະ</b>. ເກືອບທັງໝົດແມ່ນທຸລະກຳລະຫວ່າງທະນາຄານໃນບັນຊີການເງິນ. ໃຊ້ມຸມມອງນີ້ເພື່ອກວດສອບສິ່ງທີ່ຖືກຕັດອອກ.`],
-    all:[`Showing <b>all ITRS records</b>, both <code>Use = Yes</code> and <code>Use = No</code>. This is gross reporting turnover and is <b>not</b> a balance-of-payments measure — a handful of very large interbank placements dominates it.`,
+    all:[`Showing <b>all transactions</b> — customer, government and bank own. This is gross reporting turnover and is <b>not</b> a balance-of-payments measure — a handful of very large interbank placements dominates it.`,
          `ສະແດງ <b>ທຸກລາຍການ ITRS</b> ທັງ <code>Use = Yes</code> ແລະ <code>Use = No</code>. ນີ້ແມ່ນມູນຄ່າລວມການລາຍງານ <b>ບໍ່ແມ່ນ</b> ຕົວຊີ້ວັດດຸນຊຳລະ.`],
   }[state.basis];
   let html = msg[LANG];
@@ -3669,7 +3666,6 @@ function initControls(){
   segBind('#measSeg', v => { state.meas = v; renderAll(); });
   segBind('#tsFreqSeg', v => { state.tsFreq = v; renderTimeSeries(); });
   segBind('#tsFlowSeg', v => { state.tsFlow = +v; renderTimeSeries(); });
-  segBind('#wkScopeSeg', v => { state.wkScope = v; renderWeekly(); });
   segBind('#dupTierSeg', v => { state.dupTier = v; renderChecks(); });
   $('#langBtn').addEventListener('click', e => {
     LANG = LANG ? 0 : 1;
