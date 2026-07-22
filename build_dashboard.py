@@ -332,6 +332,30 @@ def create_clean_view(con):
 # Dimensions
 # --------------------------------------------------------------------------
 
+BANK_ALIAS_MAP = {}
+
+
+def bank_key(code):
+    """Case and punctuation carry no meaning in a hand-typed bank code."""
+    return "".join(ch for ch in str(code).upper() if ch.isalnum())
+
+
+def load_bank_aliases():
+    """Optional operator-confirmed merges, keyed on bank_key() of each spelling.
+
+    Only for cases the automatic rule cannot decide, e.g. {"SACOMBANK": "SACOM"}.
+    """
+    path = CONFIG / "bank_aliases.json"
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8")).get("aliases", {})
+    except Exception as e:
+        print(f"  WARNING: bank_aliases.json unreadable ({e}); ignoring")
+        return {}
+    return {bank_key(k): bank_key(v) for k, v in raw.items() if str(k).strip()}
+
+
 def load_bank_officers():
     """Which officer is responsible for which reporting bank, so exceptions can
     be routed to the person who has to chase them."""
@@ -452,9 +476,33 @@ def build_dimensions(con, lines):
         SELECT currency FROM tx WHERE currency IS NOT NULL
         GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
 
-    dims["banks"] = [r[0] for r in con.execute("""
-        SELECT bank FROM tx WHERE bank IS NOT NULL
-        GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
+    # The bank field is typed by hand and the same bank arrives under several
+    # spellings. Case and punctuation are collapsed automatically; anything
+    # needing judgement stays separate and is reported, since merging two real
+    # banks would corrupt the figures. bank_lk maps every raw spelling to the
+    # canonical index, so every downstream join keeps working unchanged.
+    raw_banks = con.execute("""
+        SELECT bank, SUM(usd) AS usd, COUNT(*) AS n FROM tx WHERE bank IS NOT NULL
+        GROUP BY 1 ORDER BY 2 DESC NULLS LAST""").fetchall()
+    aliases = load_bank_aliases()
+    groups = {}
+    for code, usd, n in raw_banks:
+        key = aliases.get(bank_key(code), bank_key(code))
+        g = groups.setdefault(key, {"variants": [], "usd": 0.0})
+        g["variants"].append(code)
+        g["usd"] += float(usd or 0)
+    # Order banks by value, and label each group with its most-used spelling.
+    ordered = sorted(groups.items(), key=lambda kv: -kv[1]["usd"])
+    dims["banks"] = [g["variants"][0] for _, g in ordered]
+    BANK_ALIAS_MAP.clear()
+    for ix, (_, g) in enumerate(ordered):
+        for v in g["variants"]:
+            BANK_ALIAS_MAP[v] = ix
+    merged = [(g["variants"][0], g["variants"][1:]) for _, g in ordered if len(g["variants"]) > 1]
+    if merged:
+        print(f"  bank spellings merged: {len(raw_banks)} raw -> {len(dims['banks'])} banks")
+        for canon, others in merged:
+            print(f"    {canon} <- {', '.join(others)}")
 
     raw_methods = [r[0] for r in con.execute(
         "SELECT DISTINCT method_raw FROM tx WHERE method_raw IS NOT NULL").fetchall()]
@@ -495,8 +543,9 @@ def register_lookups(con, dims, method_map):
         [(c["code"], i) for i, c in enumerate(dims["countries"])])
     tbl("curr_lk", "code VARCHAR, ix INTEGER",
         [(c, i) for i, c in enumerate(dims["currencies"])])
+    # Every raw spelling, not just the canonical one, so joins on t.bank hit.
     tbl("bank_lk", "code VARCHAR, ix INTEGER",
-        [(b, i) for i, b in enumerate(dims["banks"])])
+        sorted(BANK_ALIAS_MAP.items(), key=lambda kv: kv[1]))
     tbl("pur2_lk", "code VARCHAR, ix INTEGER",
         [(p["code"], i) for i, p in enumerate(dims["pur2"])])
 

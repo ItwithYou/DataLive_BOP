@@ -1204,10 +1204,6 @@ const I18N = {
  copyChart:["Copy chart image — paste into Excel or Word","ສຳເນົາຮູບກຣາຟ — ວາງໃສ່ Excel ຫຼື Word"],
  savePng:["Download chart as PNG","ດາວໂຫລດກຣາຟເປັນ PNG"],
  saveData:["Download the data behind this chart","ດາວໂຫລດຂໍ້ມູນຂອງກຣາຟນີ້"],
- bankScopeFull:["Bank filter applies to everything on this tab.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນກັບທຸກຢ່າງໃນແຖບນີ້."],
- bankScopeKpi:["Bank filter applies to the four totals above only — the charts below cover all banks, because the underlying cubes carry no bank dimension.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນສະເພາະ 4 ຕົວເລກຂ້າງເທິງ — ກຣາຟລຸ່ມນີ້ລວມທຸກທະນາຄານ."],
- bankScopeNone:["Bank filter does not apply to this tab.","ຕົວກັ່ນຕອງທະນາຄານບໍ່ມີຜົນກັບແຖບນີ້."],
- bankScopeTs:["Bank filter applies only when Dimension is set to Bank.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນສະເພາະເມື່ອເລືອກມິຕິເປັນ ທະນາຄານ."],
 };
 let LANG = 0;                              // 0 = en, 1 = lo
 const t = k => (I18N[k] ? I18N[k][LANG] : k);
@@ -3846,16 +3842,12 @@ function renderBanner(){
          `ສະແດງ <b>ທຸກລາຍການ ITRS</b> ທັງ <code>Use = Yes</code> ແລະ <code>Use = No</code>. ນີ້ແມ່ນມູນຄ່າລວມການລາຍງານ <b>ບໍ່ແມ່ນ</b> ຕົວຊີ້ວັດດຸນຊຳລະ.`],
   }[state.basis];
   let html = msg[LANG];
-  // The bank selector cannot reach every view: only the bank cube carries a
-  // bank axis. Say so rather than letting a filtered header imply filtered
-  // charts.
+  // Every cube carries a bank axis, so the filter always applies and saying so
+  // adds nothing. The selected bank is still named - that is a fact about what
+  // is on screen, not a caveat about it.
   if (state.bank >= 0){
-    // Every cube now carries a bank axis, so the filter applies everywhere.
-    const scope = 'bankScopeFull';
-    const ok = true;
     html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
-      <span class="pill ${ok?'ok':'warn'}">${esc(BANKS[state.bank])}</span>
-      <span style="margin-left:6px">${esc(t(scope))}</span></div>`;
+      <span class="pill ok">${esc(BANKS[state.bank])}</span></div>`;
   }
   $('#bannerTxt').innerHTML = html;
 }
@@ -4017,9 +4009,11 @@ function initControls(){
   syncRangeInputs();
 }
 function initMeta(){
+  // Coverage and freshness are worth stating; the build command and the source
+  // file count are internal and belong nowhere near a published report.
   $('#footMeta').innerHTML = isLo()
-    ? `<b>ລາຍງານ ITRS.</b> ສ້າງເມື່ອ ${esc(meta.generated)} ຈາກ ${meta.sourceFiles.length} ໄຟລ໌ ຄອບຄຸມ ${meta.dateMin} ຫາ ${meta.dateMax}. ${int(meta.rows)} ລາຍການ, ${int(meta.uniqueIds)} ລະຫັດ <code>Hash_ID</code> ທີ່ບໍ່ຊ້ຳ${meta.rows===meta.uniqueIds?'':' <b>(ມີການຊ້ຳ)</b>'}. ມູນຄ່າ USD ຄິດຈາກ <code>Amount_Kip ÷ Exchange_Rates_USD</code>. ຊື່ຈຸດປະສົງເປັນພາສາລາວຕາມທີ່ທະນາຄານລາຍງານ.<br>ສ້າງໃໝ່ດ້ວຍ <code>python build_dashboard.py</code> ຫຼັງເພີ່ມໄຟລ໌ໃໝ່.`
-    : `<b>ITRS Live Report.</b> Generated ${esc(meta.generated)} from ${meta.sourceFiles.length} source files covering ${meta.dateMin} to ${meta.dateMax}. ${int(meta.rows)} records, ${int(meta.uniqueIds)} distinct <code>Hash_ID</code> values${meta.rows===meta.uniqueIds?' (no duplicates)':' <b>(duplicates present)</b>'}. USD amounts derived as <code>Amount_Kip ÷ Exchange_Rates_USD</code>. Purpose names are reproduced in Lao exactly as recorded by reporting banks.<br>Rebuild with <code>python build_dashboard.py</code> after adding new source files.`;
+    ? `ຂໍ້ມູນ ${esc(meta.dateMin)} ຫາ ${esc(meta.dateMax)} · ${int(meta.rows)} ລາຍການ · ປັບປຸງ ${esc(String(meta.generated).slice(0,10))}`
+    : `Data ${esc(meta.dateMin)} to ${esc(meta.dateMax)} · ${int(meta.rows)} records · updated ${esc(String(meta.generated).slice(0,10))}`;
 }
 initControls();
 applyI18n();
