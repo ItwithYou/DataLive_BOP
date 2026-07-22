@@ -254,7 +254,7 @@ def build_connection():
 def create_clean_view(con):
     """The single cleaning layer every cube reads from."""
     con.execute(f"""
-        CREATE VIEW tx AS
+        CREATE VIEW tx_all AS
         SELECT
             Hash_ID,
             NULLIF(TRIM(Banks), '')                                   AS bank,
@@ -300,10 +300,46 @@ def create_clean_view(con):
         WHERE Date_of_Transaction IS NOT NULL
     """)
 
+    # A bank that submits the same transaction twice must not be counted twice.
+    # Identity is bank + flow + date + reference + currency + amount; a blank or
+    # too-short reference cannot establish identity, so those rows are always
+    # kept rather than risk collapsing genuinely repeated small transfers.
+    con.execute("""
+        CREATE VIEW tx_ranked AS
+        SELECT *,
+          CASE WHEN ref IS NOT NULL AND LENGTH(ref) >= 4
+               THEN ROW_NUMBER() OVER (
+                    PARTITION BY bank, flow, ymd, ref, currency, amt_orig
+                    ORDER BY Hash_ID)
+               ELSE 1 END AS dup_rank,
+          CASE WHEN ref IS NOT NULL AND LENGTH(ref) >= 4
+               THEN COUNT(*) OVER (
+                    PARTITION BY bank, flow, ymd, ref, currency, amt_orig)
+               ELSE 1 END AS dup_count
+        FROM tx_all
+    """)
+    # Every cube reads `tx`, so the whole report is deduplicated by construction.
+    con.execute("CREATE VIEW tx AS SELECT * FROM tx_ranked WHERE dup_rank = 1")
+
+    kept, total = con.execute(
+        "SELECT (SELECT COUNT(*) FROM tx), (SELECT COUNT(*) FROM tx_all)").fetchone()
+    if total > kept:
+        print(f"  deduplicated: {total - kept:,} repeat submissions removed "
+              f"({kept:,} of {total:,} kept)")
+
 
 # --------------------------------------------------------------------------
 # Dimensions
 # --------------------------------------------------------------------------
+
+def load_bank_officers():
+    """Which officer is responsible for which reporting bank, so exceptions can
+    be routed to the person who has to chase them."""
+    path = CONFIG / "bank_officers.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8")).get("officers", {})
+
 
 def load_bop_rules():
     """Classification rules, shown on the dashboard's Settings tab.
@@ -728,7 +764,7 @@ def build_exceptions(con, dims):
         SELECT bank, flow, ref, ymd, amt_orig, currency, yr,
                COUNT(*) AS c, SUM(usd) AS usd, ANY_VALUE(country) AS country,
                ANY_VALUE(COALESCE(tr_name, rc_name)) AS nm
-        FROM tx
+        FROM tx_all
         WHERE ref IS NOT NULL AND LENGTH(ref) >= 4
         GROUP BY 1,2,3,4,5,6,7 HAVING COUNT(*) > 1""")
     # B: no usable reference, but every business key matches AND both entity
@@ -737,7 +773,7 @@ def build_exceptions(con, dims):
         CREATE VIEW dupB AS
         SELECT bank, flow, ymd, amt_orig, currency, country, pur5, tr_name, rc_name, yr,
                COUNT(*) AS c, SUM(usd) AS usd
-        FROM tx
+        FROM tx_all
         WHERE tr_name IS NOT NULL AND rc_name IS NOT NULL
         GROUP BY 1,2,3,4,5,6,7,8,9,10 HAVING COUNT(*) > 1""")
     # C: same business key but entity names missing, so it cannot be told
@@ -746,7 +782,7 @@ def build_exceptions(con, dims):
         CREATE VIEW dupC AS
         SELECT bank, flow, ymd, amt_orig, currency, country, pur5, yr,
                COUNT(*) AS c, SUM(usd) AS usd
-        FROM tx
+        FROM tx_all
         WHERE tr_name IS NULL AND rc_name IS NULL
         GROUP BY 1,2,3,4,5,6,7,8 HAVING COUNT(*) > 1""")
 
@@ -1074,7 +1110,7 @@ def main():
     meta = build_meta(con, files, ent_meta, cfg)
     payload = {"meta": meta, "dims": dims, "cubes": cubes,
                "exceptions": exceptions, "entities": entities,
-               "rules": load_bop_rules()}
+               "rules": load_bop_rules(), "officers": load_bank_officers()}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
