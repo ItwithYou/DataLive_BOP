@@ -57,6 +57,40 @@ python -m pip install duckdb pyarrow
 Language toggle (EN / ລາວ) is top-right. Purpose names always stay in Lao exactly
 as the reporting banks recorded them — they are never translated.
 
+## Updating data from the website
+
+The **Import** button (upload icon, top right) adds transactions without
+touching Python. The file is read in the browser and never uploaded anywhere.
+
+Two file types:
+
+- **CSV of transactions** — merged into the existing dataset. Columns are matched
+  by name, case and punctuation insensitive, so `Date_of_Transaction`,
+  `date of transaction` and `DATEOFTRANSACTION` all work. Only two things are
+  required: a transaction date, and either `Amount_USD` or `Amount_Kip` together
+  with `Exchange_Rates_USD`. Everything else is optional and degrades gracefully.
+  Dates accept ISO, `d/m/Y` and `m/d/Y`.
+- **`.json` data pack** — replaces the dataset wholesale. Produce one with
+  `python build_dashboard.py --pack`. Useful for handing a colleague a refreshed
+  dataset without rebuilding the whole HTML.
+
+New banks, countries, currencies, purpose codes, months and years are added
+automatically; the period selector grows to match. The import is previewed before
+it commits — rows read, rows usable, rows skipped and why, value added per
+direction, date range, and any new codes — so you can sanity-check the totals
+before pressing Apply.
+
+**Two limits worth knowing.** Changes last for the session only; closing the tab
+discards them. To make an update permanent, drop the file into `Payment/` or
+`Receive/` and rebuild — that is also the only way to keep the parquet database
+as the single source of truth. And submission-lag percentiles and
+value-concentration ranks are not recalculated on import, because medians and
+rankings cannot be merged additively the way counts and sums can. Every other
+figure updates.
+
+The cleaning rules applied on import mirror `create_clean_view()` in the build
+script. If you change one, change the other.
+
 ## Getting charts out
 
 Hover any chart card and three buttons appear top-right:

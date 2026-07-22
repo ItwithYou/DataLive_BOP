@@ -383,7 +383,10 @@ def build_dimensions(con, lines):
     dims["sizeBuckets"] = [b[2] for b in SIZE_BUCKETS]
     dims["qualityFields"] = [{"en": e, "lo": l} for _, e, l in QUALITY_FIELDS]
     dims["reportLines"] = [
-        {"id": l["id"], "lo": l["lo"], "en": l["en"],
+        # `codes` travels to the client so in-browser imports can classify new
+        # rows with the same longest-prefix rule the build uses.
+        {"id": l["id"], "lo": l["lo"], "en": l["en"], "codes": list(l["codes"]),
+         "catchAll": bool(l.get("catchAll")),
          "group": l.get("group", "financial"), "bankOwn": bool(l.get("bankOwn"))}
         for l in lines
     ]
@@ -877,6 +880,9 @@ def parse_args():
                                  "or docs/index.html with --encrypt --publish)")
     p.add_argument("--publish", action="store_true",
                    help="write to docs/index.html, ready for GitHub Pages")
+    p.add_argument("--pack", action="store_true",
+                   help="also write ITRS_data_pack.json, loadable from the "
+                        "dashboard's Import button to swap datasets without a rebuild")
     return p.parse_args()
 
 
@@ -925,6 +931,12 @@ def main():
                "exceptions": exceptions, "entities": entities}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+    if args.pack:
+        pack = HERE / "ITRS_data_pack.json"
+        pack.write_text(blob, encoding="utf-8")
+        print(f"  data pack: {pack.name} ({pack.stat().st_size / 1048576:.1f} MB)")
+
     html = TEMPLATE.read_text(encoding="utf-8")
     if "__ITRS_DATA__" not in html:
         sys.exit("Template is missing the __ITRS_DATA__ placeholder")

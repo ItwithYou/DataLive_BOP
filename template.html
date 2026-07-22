@@ -137,6 +137,37 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
    dropdown below ever fails to initialise. */
 select option{background:var(--panel-solid);color:var(--ink)}
 
+/* ---------- import dialog ---------- */
+.modal{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;
+  padding:16px;background:rgba(8,11,17,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.modal.open{display:flex}
+.modal-card{position:relative;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--glass-edge);border-radius:18px;padding:22px;
+  box-shadow:var(--sh-lg);isolation:isolate;
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%)}
+.modal-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:var(--glass-sheen);z-index:-1}
+.modal-card h2{margin:0 0 3px;font-size:17px;font-weight:660}
+.modal-card .lead{margin:0 0 16px;font-size:12.5px;color:var(--ink-3);line-height:1.6}
+.modal-x{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:9px;
+  border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink-3);cursor:pointer;
+  font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center}
+.modal-x:hover{color:var(--ink);border-color:var(--accent)}
+.drop{border:1.5px dashed var(--line);border-radius:13px;padding:26px 18px;text-align:center;
+  cursor:pointer;transition:border-color .16s,background .16s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop svg{width:26px;height:26px;fill:none;stroke:var(--ink-3);stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;margin-bottom:7px}
+.drop b{display:block;font-size:13.5px;margin-bottom:3px}
+.drop span{font-size:11.5px;color:var(--ink-3)}
+.imp-log{margin-top:14px;font-size:12px;max-height:230px;overflow-y:auto}
+.imp-log table{font-size:12px}
+.imp-msg{margin-top:12px;font-size:12.5px;padding:9px 12px;border-radius:9px;line-height:1.6}
+.imp-msg.ok{background:var(--in-soft);color:var(--in)}
+.imp-msg.err{background:var(--out-soft);color:var(--out)}
+.imp-msg.warn{background:var(--warn-soft);color:var(--warn)}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+
 /* ---------- per-card export toolbar ---------- */
 .cardtools{position:absolute;top:9px;right:9px;display:flex;gap:3px;z-index:5;
   opacity:0;transition:opacity .16s}
@@ -470,6 +501,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     </div>
     <div class="hdr-right">
       <div class="hdr-meta" id="hdrMeta"></div>
+      <button class="iconbtn" id="importBtn" type="button" title="Import data">
+        <svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      </button>
       <button class="iconbtn" id="themeBtn" type="button"></button>
       <button class="iconbtn" id="langBtn" type="button"></button>
     </div>
@@ -706,6 +740,25 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 
 <footer><div id="footMeta"></div></footer>
 </div>
+<div class="modal" id="importModal">
+  <div class="modal-card">
+    <button class="modal-x" id="impClose" type="button" aria-label="Close">&times;</button>
+    <h2 id="impTitle">Import data</h2>
+    <p class="lead" id="impLead"></p>
+    <div class="drop" id="impDrop">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4.5 4.5M12 4 7.5 8.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <b id="impDropTitle">Choose a file or drop it here</b>
+      <span id="impDropSub">.csv transactions, or a .json data pack</span>
+      <input type="file" id="impFile" accept=".csv,.json,.txt" hidden>
+    </div>
+    <div id="impMsg"></div>
+    <div class="imp-log" id="impLog"></div>
+    <div class="modal-foot">
+      <button class="btn" id="impCancel" type="button">Cancel</button>
+      <button class="btn pri" id="impApply" type="button" disabled>Apply</button>
+    </div>
+  </div>
+</div>
 <div id="tip"></div>
 <script id="itrs-data" type="application/json">__ITRS_DATA__</script>
 <script>
@@ -715,7 +768,7 @@ const {meta, dims, cubes, exceptions, entities} = DATA;
 
 /* ===================== i18n ===================== */
 const I18N = {
- appTitle:["ITRS Live Report","ລາຍງານ ITRS ປັດຈຸບັນ"],
+ appTitle:["ITRS Live Report","ລະບົບລາຍງານເງິນໂອນລະຫວ່າງປະເທດ (ITRS)"],
  appSub:["Lao PDR — International Transactions Reporting System","ສປປ ລາວ — ລະບົບລາຍງານທຸລະກຳລະຫວ່າງປະເທດ"],
  cPeriod:["Period","ໄລຍະເວລາ"], cBasis:["Use in BOP","ການນຳໃຊ້ໃນ BOP"],
  cMeasure:["Measure","ຫົວໜ່ວຍວັດ"], cBank:["Bank","ທະນາຄານ"],
@@ -814,6 +867,20 @@ const I18N = {
  exceptions:["exceptions per 10,000 records","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ"],
  clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
+ impBtn:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
+ impTitle:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
+ impLead:["Add new transactions to the report. The file is read in your browser and never uploaded anywhere. Changes last for this session only — to make them permanent, add the file to the Payment or Receive folder and rebuild.",
+          "ເພີ່ມທຸລະກຳໃໝ່ເຂົ້າໃນລາຍງານ. ໄຟລ໌ຖືກອ່ານໃນບຣາວເຊີຂອງທ່ານ ແລະ ບໍ່ຖືກສົ່ງໄປໃສ. ການປ່ຽນແປງມີຜົນສະເພາະຮອບນີ້ — ເພື່ອໃຫ້ຖາວອນ ໃຫ້ເພີ່ມໄຟລ໌ໃສ່ໂຟນເດີ Payment ຫຼື Receive ແລ້ວສ້າງໃໝ່."],
+ impDropTitle:["Choose a file or drop it here","ເລືອກໄຟລ໌ ຫຼື ລາກມາວາງບ່ອນນີ້"],
+ impDropSub:["CSV of transactions, or a .json data pack","CSV ຂອງທຸລະກຳ ຫຼື .json data pack"],
+ impCancel:["Cancel","ຍົກເລີກ"], impApply:["Apply to report","ນຳໃຊ້ກັບລາຍງານ"],
+ impReading:["Reading file…","ກຳລັງອ່ານໄຟລ໌…"],
+ impRows:["Rows read","ແຖວທີ່ອ່ານ"], impUsable:["Usable","ໃຊ້ໄດ້"],
+ impBadDate:["Skipped, bad date","ຂ້າມ, ວັນທີບໍ່ຖືກ"], impBadAmt:["Skipped, no amount","ຂ້າມ, ບໍ່ມີມູນຄ່າ"],
+ impRange:["Date range","ຊ່ວງວັນທີ"], impNewDims:["New codes added","ລະຫັດໃໝ່ທີ່ເພີ່ມ"],
+ impDone:["Imported. The report has been updated.","ນຳເຂົ້າແລ້ວ. ລາຍງານໄດ້ຮັບການປັບປຸງ."],
+ impNote:["Submission-lag percentiles and value-concentration ranks are not recalculated by an in-browser import — rebuild for those.",
+          "ຄ່າສະຖິຕິຄວາມຊັກຊ້າ ແລະ ການກະຈຸກຕົວຂອງມູນຄ່າ ບໍ່ຖືກຄິດໄລ່ໃໝ່ຈາກການນຳເຂົ້າໃນບຣາວເຊີ — ຕ້ອງສ້າງໃໝ່."],
  copyChart:["Copy chart image — paste into Excel or Word","ສຳເນົາຮູບກຣາຟ — ວາງໃສ່ Excel ຫຼື Word"],
  savePng:["Download chart as PNG","ດາວໂຫລດກຣາຟເປັນ PNG"],
  saveData:["Download the data behind this chart","ດາວໂຫລດຂໍ້ມູນຂອງກຣາຟນີ້"],
@@ -2149,6 +2216,252 @@ function renderQuality(){
   ], {h:250, key:'qconc', w:460, fmt:v=>v.toFixed(1)+'%', axisFmt:v=>v.toFixed(0)+'%'});
 }
 
+/* ===================== data import ===================== */
+/* Adds transactions to the loaded dataset in the browser. The cleaning rules
+   below mirror create_clean_view() in build_dashboard.py; if you change one,
+   change the other. This updates the analytical cubes only -- submission-lag
+   percentiles and value-concentration ranks cannot be merged additively and
+   are refreshed by a full rebuild. */
+const FXB = meta.fxBand;
+// Composite map keys need a separator: "1,2,3" and "12,3" must not collide.
+const SEP = String.fromCharCode(1);
+
+function parseCsv(text){
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const delim = (text.slice(0, 2000).match(/;/g) || []).length >
+                (text.slice(0, 2000).match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){
+      if (c === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === delim){ row.push(cell); cell = ''; }
+    else if (c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (c !== '\r') cell += c;
+  }
+  if (cell.length || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(v => v !== ''));
+}
+const canon = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function mapColumns(header){
+  const ix = {}; header.forEach((h, i) => { ix[canon(h)] = i; });
+  const pick = (...names) => { for (const n of names){ const k = canon(n);
+    if (k in ix) return ix[k]; } return -1; };
+  return {
+    date: pick('Date_of_Transaction','TransactionDate','Date'),
+    sub:  pick('Date_of_Submission','SubmissionDate'),
+    flow: pick('Flow','Direction','Side'),
+    bank: pick('Banks','Bank','BankCode'),
+    pur5: pick('Pur_5','Purpose_Code','PurposeCode'),
+    ctry: pick('Country_Code','Country'),
+    curr: pick('Currency_Code','Currency'),
+    usd:  pick('Amount_USD','AmountUSD'),
+    kip:  pick('Amount_Kip','AmountKip'),
+    fx:   pick('Exchange_Rates_USD','ExchangeRateUSD','FX'),
+    use:  pick('Use'), m2: pick('M2'), move: pick('Move_Fund','MoveFund'),
+    lsic: pick('LSIC_Code'), method: pick('Transfer_Method'),
+    trn:  pick('Transferor_Name'), rcn: pick('Recipient_Name'),
+    trt:  pick('Transferor_TIN'), rct: pick('Recipient_TIN'),
+    docs: pick('Supporting_Documents'),
+  };
+}
+/** Accepts ISO, d/m/Y and m/d/Y; returns YYYY-MM-DD or null. */
+function parseDate(v){
+  const s = String(v || '').trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (m){
+    let d = +m[1], mo = +m[2];
+    if (d > 12 && mo <= 12){ /* d/m/Y */ }
+    else if (mo > 12){ const tmp = d; d = mo; mo = tmp; }
+    return `${m[3]}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  const dt = new Date(s);
+  return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+}
+const yesNo = v => /^(y|yes|true|1)$/i.test(String(v || '').trim());
+
+/** Find or append a dimension member, returning its index. */
+function dimIx(arr, val, make){
+  for (let i = 0; i < arr.length; i++){
+    const k = typeof arr[i] === 'string' ? arr[i] : (arr[i].code ?? arr[i]);
+    if (k === val) return i;
+  }
+  arr.push(make ? make(val) : val);
+  return arr.length - 1;
+}
+/** Add months/years, then remap every affected cube if order changed. */
+function extendPeriods(newMonths){
+  const before = MONTHS.slice();
+  newMonths.forEach(m => { if (!MONTHS.includes(m)) MONTHS.push(m); });
+  MONTHS.sort();
+  const yrs = [...new Set(MONTHS.map(m => +m.slice(0,4)))].sort((a,b)=>a-b);
+  const yBefore = YEARS.slice();
+  YEARS.length = 0; yrs.forEach(y => YEARS.push(y));
+  yOfMonth.length = 0;
+  MONTHS.forEach(m => yOfMonth.push(YEARS.indexOf(+m.slice(0,4))));
+
+  const mMap = {}; before.forEach((m,i) => mMap[i] = MONTHS.indexOf(m));
+  const yMap = {}; yBefore.forEach((y,i) => yMap[i] = YEARS.indexOf(y));
+  const mChanged = before.some((m,i) => mMap[i] !== i);
+  const yChanged = yBefore.some((y,i) => yMap[i] !== i);
+  if (mChanged) ['month','tsBank','tsCountry','tsCurrency','tsPurpose']
+    .forEach(k => (cubes[k]||[]).forEach(r => { r[0] = mMap[r[0]] ?? r[0]; }));
+  if (yChanged) ['country','currency','bank','purpose','method','size','flags',
+    'lag','quality','completeness','concentration']
+    .forEach(k => (cubes[k]||[]).forEach(r => { r[0] = yMap[r[0]] ?? r[0]; }));
+}
+/** Merge aggregated deltas into a cube keyed on its leading dimensions. */
+function mergeCube(name, dimCount, deltas, valCount){
+  const cube = cubes[name] || (cubes[name] = []);
+  const vc = valCount === undefined ? 2 : valCount;
+  const idx = new Map();
+  cube.forEach(r => idx.set(r.slice(0, dimCount).join(SEP), r));
+  deltas.forEach((v, key) => {
+    const r = idx.get(key);
+    if (r){ for (let i = 0; i < vc; i++) r[dimCount+i] += v[i]; }
+    else {
+      const parts = key.split(SEP);
+      const nr = parts.map(p => /^-?\d+$/.test(p) ? +p : p).concat(v.slice(0, vc));
+      cube.push(nr); idx.set(key, nr);
+    }
+  });
+}
+function bump(map, key, vals){
+  const cur = map.get(key);
+  if (cur) vals.forEach((v,i) => cur[i] += v);
+  else map.set(key, vals.slice());
+}
+
+function buildImport(rows){
+  const header = rows[0], col = mapColumns(header);
+  if (col.date < 0) throw new Error('No Date_of_Transaction column found.');
+  if (col.usd < 0 && (col.kip < 0 || col.fx < 0))
+    throw new Error('Need Amount_USD, or Amount_Kip together with Exchange_Rates_USD.');
+
+  const purposeCodes = PURPOSES.map(p => p.code);
+  // Same longest-prefix rule as report_line_for() in the build script.
+  const catchAllLine = LINES.findIndex(L => L.catchAll);
+  const lineOf = code => {
+    let best = -1, bl = -1;
+    LINES.forEach((L,i) => (L.codes || []).forEach(c => {
+      if (code.startsWith(c) && c.length > bl){ best = i; bl = c.length; }
+    }));
+    return best >= 0 ? best : catchAllLine;
+  };
+  const D = {month:new Map(), country:new Map(), currency:new Map(), bank:new Map(),
+    purpose:new Map(), size:new Map(), flags:new Map(), quality:new Map(),
+    completeness:new Map(), tsBank:new Map(), tsCountry:new Map(), tsCurrency:new Map(),
+    tsPurpose:new Map(), dayLine:new Map(), dayCurrency:new Map()};
+  const months = new Set();
+  const stat = {read:0, ok:0, badDate:0, badAmt:0, usdIn:0, usdOut:0, minD:null, maxD:null,
+    newBanks:[], newCountries:[], newCurrencies:[], newPurposes:[]};
+
+  const staged = [];
+  for (let i = 1; i < rows.length; i++){
+    const r = rows[i]; stat.read++;
+    const ymd = parseDate(r[col.date]);
+    if (!ymd){ stat.badDate++; continue; }
+    let usd = col.usd >= 0 ? parseFloat(String(r[col.usd]).replace(/[, ]/g,'')) : NaN;
+    const kip = col.kip >= 0 ? parseFloat(String(r[col.kip]).replace(/[, ]/g,'')) : NaN;
+    const fx = col.fx >= 0 ? parseFloat(String(r[col.fx]).replace(/[, ]/g,'')) : NaN;
+    if (!isFinite(usd) && isFinite(kip) && isFinite(fx) && fx !== 0) usd = kip / fx;
+    if (!isFinite(usd)){ stat.badAmt++; continue; }
+    const flowRaw = col.flow >= 0 ? String(r[col.flow]).trim().toLowerCase() : '';
+    const flow = /^(r|rec|receive|in|inflow|credit)/.test(flowRaw) ? REC : PAY;
+    staged.push({ymd, usd, fx, flow,
+      bank:(r[col.bank]||'').trim(), pur5:(r[col.pur5]||'').trim(),
+      ctry:(r[col.ctry]||'').trim().toUpperCase(), curr:(r[col.curr]||'').trim().toUpperCase(),
+      use: col.use >= 0 ? (yesNo(r[col.use]) ? 1 : 0) : 1,
+      m2: col.m2 >= 0 ? (yesNo(r[col.m2]) ? 1 : 0) : 1,
+      move: col.move >= 0 ? (yesNo(r[col.move]) ? 1 : 0) : 1,
+      sub: col.sub >= 0 ? parseDate(r[col.sub]) : null,
+      nulls: [col.sub,col.ctry,col.curr,col.usd,col.method,col.lsic,col.trn,col.rcn,
+              col.trt,col.rct,col.docs].map(c => c < 0 || !String(r[c]||'').trim() ? 1 : 0),
+    });
+    months.add(ymd.slice(0,7));
+    stat.ok++; stat[flow === REC ? 'usdIn' : 'usdOut'] += usd;
+    if (!stat.minD || ymd < stat.minD) stat.minD = ymd;
+    if (!stat.maxD || ymd > stat.maxD) stat.maxD = ymd;
+  }
+  if (!stat.ok) throw new Error('No usable rows. Check the date and amount columns.');
+
+  extendPeriods([...months]);
+
+  const mIx = {}; MONTHS.forEach((m,i) => mIx[m] = i);
+  for (const s of staged){
+    const ym = s.ymd.slice(0,7), m = mIx[ym], y = yOfMonth[m];
+    const v = s.usd / 1e6, one = [1, v];
+    const p2raw = s.pur5.slice(0,2);
+    const p2code = PUR2.some(p => p.code === p2raw) ? p2raw : '99';
+    const p2 = pur2Ix[p2code] ?? PUR2.findIndex(p => p.code === '99');
+    let pIx = purposeCodes.indexOf(s.pur5);
+    if (pIx < 0 && s.pur5){
+      PURPOSES.push({code:s.pur5, name:s.pur5, parent:s.pur5.length>2?s.pur5.slice(0,-2):null,
+        pur2:p2code, line:lineOf(s.pur5)});
+      purposeCodes.push(s.pur5); pIx = purposeCodes.length-1;
+      stat.newPurposes.push(s.pur5);
+    }
+    const nb = BANKS.length, nc = dims.countries.length, nu = dims.currencies.length;
+    const bIx = s.bank ? dimIx(BANKS, s.bank) : -1;
+    const cIx = s.ctry ? dimIx(dims.countries, s.ctry, c => ({code:c, name:c})) : -1;
+    const uIx = s.curr ? dimIx(dims.currencies, s.curr) : -1;
+    if (BANKS.length > nb) stat.newBanks.push(s.bank);
+    if (dims.countries.length > nc) stat.newCountries.push(s.ctry);
+    if (dims.currencies.length > nu) stat.newCurrencies.push(s.curr);
+
+    bump(D.month, [m, s.flow, p2, s.use].join(SEP), one);
+    if (cIx >= 0){ bump(D.country, [y, s.flow, cIx, s.use].join(SEP), one);
+                   bump(D.tsCountry, [m, s.flow, cIx, s.use].join(SEP), one); }
+    if (uIx >= 0){ bump(D.currency, [y, s.flow, uIx, s.use].join(SEP), one);
+                   bump(D.tsCurrency, [m, s.flow, uIx, s.use].join(SEP), one);
+                   if (uIx < 10) bump(D.dayCurrency, [s.ymd, s.flow, uIx, s.use].join(SEP), [v]); }
+    if (bIx >= 0){ bump(D.bank, [y, s.flow, bIx, s.use].join(SEP), one);
+                   bump(D.tsBank, [m, s.flow, bIx, s.use].join(SEP), one); }
+    if (pIx >= 0){ bump(D.purpose, [y, s.flow, pIx, s.use].join(SEP), one);
+                   if (s.pur5.length <= 4) bump(D.tsPurpose, [m, s.flow, pIx, s.use].join(SEP), one); }
+    const li = lineOf(s.pur5);
+    if (li >= 0) bump(D.dayLine, [s.ymd, s.flow, li, s.use].join(SEP), one);
+    const a = Math.abs(s.usd);
+    const bIdx = a < 1e3 ? 0 : a < 1e4 ? 1 : a < 1e5 ? 2 : a < 1e6 ? 3 : a < 1e7 ? 4 : 5;
+    if (s.usd > 0) bump(D.size, [y, s.flow, bIdx, s.use].join(SEP), one);
+    bump(D.flags, [y, s.flow, s.use, s.m2, s.move].join(SEP), one);
+    if (bIx >= 0){
+      const badFx = !(isFinite(s.fx) && s.fx >= FXB[0] && s.fx <= FXB[1]);
+      bump(D.quality, [y, bIx].join(SEP),
+        [1, badFx?1:0, 0, s.usd===0?1:0, s.usd<0?1:0,
+         (s.sub && s.sub < s.ymd)?1:0, p2code==='99'?1:0, s.ctry?0:1, 0, 0]);
+    }
+    bump(D.completeness, String(y), [1, ...s.nulls]);
+  }
+
+  mergeCube('month', 4, D.month);
+  mergeCube('country', 4, D.country);
+  mergeCube('currency', 4, D.currency);
+  mergeCube('bank', 4, D.bank);
+  mergeCube('purpose', 4, D.purpose);
+  mergeCube('size', 4, D.size);
+  mergeCube('tsBank', 4, D.tsBank);
+  mergeCube('tsCountry', 4, D.tsCountry);
+  mergeCube('tsCurrency', 4, D.tsCurrency);
+  mergeCube('tsPurpose', 4, D.tsPurpose);
+  mergeCube('dayLine', 4, D.dayLine);
+  mergeCube('dayCurrency', 4, D.dayCurrency, 1);
+  mergeCube('flags', 5, D.flags);
+  mergeCube('quality', 2, D.quality, 10);
+  mergeCube('completeness', 1, D.completeness, 12);
+
+  meta.rows += stat.ok;
+  if (stat.minD < meta.dateMin) meta.dateMin = stat.minD;
+  if (stat.maxD > meta.dateMax) meta.dateMax = stat.maxD;
+  meta.grossUsdM += (stat.usdIn + stat.usdOut) / 1e6;
+  return stat;
+}
+
 /* ===================== chart export ===================== */
 /* Charts are inline SVG whose colours come from CSS variables and classes.
    Serialising the node alone loses all of that, so the clone gets every
@@ -2413,6 +2726,129 @@ addEventListener('click', () => { if (openMenu) openMenu(); });
 addEventListener('resize', () => { if (openMenu) openMenu(); });
 addEventListener('scroll', () => { if (openMenu) openMenu(); }, true);
 
+/* ===================== import UI ===================== */
+function initImport(){
+  const modal = $('#importModal'), drop = $('#impDrop'), file = $('#impFile');
+  const msg = $('#impMsg'), log = $('#impLog'), apply = $('#impApply');
+  let pending = null;                     // {kind, payload, stat}
+
+  const paint = () => {
+    $('#impTitle').textContent = t('impTitle');
+    $('#impLead').textContent = t('impLead');
+    $('#impDropTitle').textContent = t('impDropTitle');
+    $('#impDropSub').textContent = t('impDropSub');
+    $('#impCancel').textContent = t('impCancel');
+    apply.textContent = t('impApply');
+    $('#importBtn').title = t('impBtn');
+  };
+  const reset = () => { pending = null; apply.disabled = true;
+    msg.innerHTML = ''; log.innerHTML = ''; file.value = ''; };
+  const open = () => { paint(); reset(); modal.classList.add('open'); };
+  const close = () => { modal.classList.remove('open'); reset(); };
+  const say = (cls, html) => { msg.innerHTML = `<div class="imp-msg ${cls}">${html}</div>`; };
+
+  async function handle(f){
+    if (!f) return;
+    say('warn', `<span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}`);
+    log.innerHTML = '';
+    try {
+      const text = await f.text();
+      if (/^\s*[{[]/.test(text)){
+        const pack = JSON.parse(text);
+        if (!pack.cubes || !pack.dims) throw new Error('Not a valid ITRS data pack.');
+        pending = {kind:'pack', payload:pack};
+        say('ok', `Data pack: <b>${int(pack.meta.rows)}</b> transactions, `
+          + `${esc(pack.meta.dateMin)} → ${esc(pack.meta.dateMax)}. `
+          + `Applying replaces the current dataset.`);
+      } else {
+        const rows = parseCsv(text);
+        if (rows.length < 2) throw new Error('The file has no data rows.');
+        pending = {kind:'csv', payload:rows};
+        const cols = mapColumns(rows[0]);
+        const missing = [];
+        if (cols.date < 0) missing.push('Date_of_Transaction');
+        if (cols.usd < 0 && (cols.kip < 0 || cols.fx < 0)) missing.push('Amount_USD');
+        if (missing.length) throw new Error('Missing column(s): ' + missing.join(', '));
+        say('ok', `<b>${int(rows.length-1)}</b> data rows, `
+          + `<b>${rows[0].length}</b> columns recognised. Press Apply to merge.`);
+        const named = Object.entries(cols).filter(([,v]) => v >= 0).map(([k]) => k);
+        log.innerHTML = `<p class="note" style="margin:0">Mapped: ${esc(named.join(', '))}</p>`;
+      }
+      apply.disabled = false;
+    } catch (err){
+      pending = null; apply.disabled = true;
+      say('err', esc(err.message || String(err)));
+    }
+  }
+
+  drop.addEventListener('click', () => file.click());
+  file.addEventListener('change', e => handle(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => handle(e.dataTransfer.files[0]));
+
+  apply.addEventListener('click', () => {
+    if (!pending) return;
+    try {
+      if (pending.kind === 'pack'){
+        // Wholesale replacement: reload with the new payload in place.
+        const p = pending.payload;
+        Object.keys(cubes).forEach(k => delete cubes[k]);
+        Object.assign(cubes, p.cubes);
+        Object.keys(dims).forEach(k => delete dims[k]);
+        Object.assign(dims, p.dims);
+        Object.assign(meta, p.meta);
+        close();
+        location.reload();
+        return;
+      }
+      const st = buildImport(pending.payload);
+      const rowsHtml = [
+        [t('impRows'), int(st.read)],
+        [t('impUsable'), int(st.ok)],
+        [t('impBadDate'), int(st.badDate)],
+        [t('impBadAmt'), int(st.badAmt)],
+        [t('inflow'), fmtM(st.usdIn/1e6, 2)],
+        [t('outflow'), fmtM(st.usdOut/1e6, 2)],
+        [t('impRange'), `${st.minD} → ${st.maxD}`],
+        [t('impNewDims'), [...new Set([...st.newBanks, ...st.newCountries,
+          ...st.newCurrencies, ...st.newPurposes])].join(', ') || '—'],
+      ].map(([k,v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('');
+      log.innerHTML = `<table><tbody>${rowsHtml}</tbody></table>`
+        + `<p class="note">${esc(t('impNote'))}</p>`;
+      say('ok', esc(t('impDone')));
+      apply.disabled = true; pending = null;
+      // Dimension arrays and cubes changed underneath every cached view.
+      Object.keys(state.hidden).forEach(k => delete state.hidden[k]);
+      rebuildYearOptions();
+      initMeta();
+      renderAll();
+    } catch (err){
+      say('err', esc(err.message || String(err)));
+    }
+  });
+  $('#impCancel').addEventListener('click', close);
+  $('#impClose').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+  $('#importBtn').addEventListener('click', open);
+  initImport.paint = paint;
+}
+/** Years may have grown during an import; refresh the period selectors. */
+function rebuildYearOptions(){
+  [['#yFrom', 'yFrom'], ['#yTo', 'yTo']].forEach(([sel, key]) => {
+    const el = $(sel), keep = Math.min(state[key], YEARS.length-1);
+    el.innerHTML = YEARS.map((y,i) => `<option value="${i}">${y}</option>`).join('');
+    state[key] = keep; el.value = String(keep);
+    if (el._sel) el._sel.refresh();
+  });
+  state.yTo = YEARS.length - 1;
+  $('#yTo').value = String(state.yTo);
+  if ($('#yTo')._sel) $('#yTo')._sel.refresh();
+}
+
 /* ===================== shell ===================== */
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
   weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality};
@@ -2452,6 +2888,7 @@ function applyI18n(){
   lb.title = isLo() ? 'Switch to English' : 'ປ່ຽນເປັນພາສາລາວ';
   lb.setAttribute('aria-label', lb.title);
   lb.classList.toggle('lao', !isLo());
+  if (initImport.paint) initImport.paint();
   // Option labels just changed language; repaint any enhanced dropdown.
   ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
     const el = $(s); if (el && el._sel) el._sel.refresh();
@@ -2533,6 +2970,8 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
+  initImport();
+
   // Must run after the options above are populated.
   enhanceSelect($('#yFrom'));
   enhanceSelect($('#yTo'));
@@ -2574,7 +3013,7 @@ renderAll();
    fails to authenticate and decryption throws. */
 (function(){
   const GT = {
-    title:["ITRS Live Report","ລາຍງານ ITRS ປັດຈຸບັນ"],
+    title:["ITRS Live Report","ລະບົບລາຍງານເງິນໂອນລະຫວ່າງປະເທດ (ITRS)"],
     org:["Lao PDR — International Transactions Reporting System","ສປປ ລາວ — ລະບົບລາຍງານທຸລະກຳລະຫວ່າງປະເທດ"],
     label:["Passphrase","ລະຫັດຜ່ານ"],
     go:["Unlock","ປົດລັອກ"],
