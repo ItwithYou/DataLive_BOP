@@ -302,6 +302,16 @@ def create_clean_view(con):
 # Dimensions
 # --------------------------------------------------------------------------
 
+def load_country_names_lo():
+    """Lao country names, taken from the existing BOL time-series workbook so the
+    dashboard reads the same way as the reports people already know."""
+    path = CONFIG / "country_names_lo.json"
+    if not path.exists():
+        print(f"  ! {path.name} not found; Lao view will fall back to English names")
+        return {}
+    return json.loads(path.read_text(encoding="utf-8")).get("names", {})
+
+
 def load_report_config():
     path = CONFIG / "report_lines.json"
     if not path.exists():
@@ -363,7 +373,11 @@ def build_dimensions(con, lines):
     countries = [r[0] for r in con.execute("""
         SELECT country FROM tx WHERE country IS NOT NULL
         GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
-    dims["countries"] = [{"code": c, "name": COUNTRY_NAMES.get(c, c)} for c in countries]
+    lo_names = load_country_names_lo()
+    dims["countries"] = [
+        {"code": c, "name": COUNTRY_NAMES.get(c, c), "lo": lo_names.get(c)}
+        for c in countries
+    ]
 
     dims["currencies"] = [r[0] for r in con.execute("""
         SELECT currency FROM tx WHERE currency IS NOT NULL

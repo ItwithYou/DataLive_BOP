@@ -213,6 +213,20 @@ headers stay opaque, otherwise rows scroll visibly through them; and browsers
 without `backdrop-filter` fall back to solid panels via `@supports`. Print styles
 drop the glass entirely.
 
+**Built for the phone first.** Charts measure their container and draw into a
+viewBox matching its real pixel width, so one SVG unit is one CSS pixel and 10px
+type renders at 10px. The earlier fixed 800-wide viewBox scaled to 45% on a
+375px screen, which rendered axis labels at roughly 4.5px — legible on a desktop
+mockup, useless in the hand. Axis label density, tick counts, margins, bar
+thickness and the label column in ranked bars all scale with the measured width.
+KPI tiles pair up from 340px so the first chart is not pushed below the fold.
+
+**Country names follow the Lao view.** `config/country_names_lo.json` carries all
+251 ISO codes, lifted from the `R by Country M` sheet of your time-series
+workbook so the dashboard uses the same wording as the reports people already
+read — ຈີນ, ສະຫະລັດ, ໄທ. It is a plain JSON file; edit any entry you disagree
+with. Codes with no Lao entry fall back to the English name.
+
 **Dropdowns** are custom, not native. A browser's `<select>` popup is drawn by
 the operating system and ignores page styling entirely — in dark mode it rendered
 pale grey on white and was effectively unreadable. Each one is replaced with a
