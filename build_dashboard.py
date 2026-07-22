@@ -839,29 +839,45 @@ def build_meta(con, files, ent_meta, cfg):
     }
 
 
-def encrypt_payload(blob, password):
-    """gzip, then AES-256-GCM under a PBKDF2-derived key.
+def encrypt_payload(blob, roles):
+    """gzip, encrypt once under a random data key, then wrap that key per role.
 
-    The browser reverses this with WebCrypto. GCM's auth tag doubles as the
-    password check: a wrong passphrase fails to authenticate and decrypt throws,
-    so there is no separate (and separately attackable) password hash to store.
+    ``roles`` maps a role name to its passphrase. The payload is encrypted a
+    single time with a random 256-bit data key; that key is then separately
+    wrapped under a PBKDF2 key derived from each passphrase. So:
+
+      * no passphrase, and no hash of one, is stored anywhere in the file;
+      * adding or changing a role re-wraps a 32-byte key, it does not
+        re-encrypt megabytes;
+      * GCM's auth tag is the check -- the browser tries each wrapped key and
+        the one that authenticates identifies the role. A wrong passphrase
+        simply fails to unwrap.
     """
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
     raw = gzip.compress(blob.encode("utf-8"), 9)
-    salt = secrets.token_bytes(16)
+    data_key = secrets.token_bytes(32)
     iv = secrets.token_bytes(12)
-    key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt,
-                     iterations=KDF_ITERATIONS).derive(password.encode("utf-8"))
-    ct = AESGCM(key).encrypt(iv, raw, None)
+    ct = AESGCM(data_key).encrypt(iv, raw, None)
     b64 = lambda b: base64.b64encode(b).decode("ascii")
+
+    wrapped = []
+    for role, pw in roles.items():
+        salt = secrets.token_bytes(16)
+        kek = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt,
+                         iterations=KDF_ITERATIONS).derive(pw.encode("utf-8"))
+        wiv = secrets.token_bytes(12)
+        wrapped.append({"role": role, "salt": b64(salt), "iv": b64(wiv),
+                        "key": b64(AESGCM(kek).encrypt(wiv, data_key, None))})
+
     print(f"  payload {len(blob)/1048576:.1f} MB → gzip {len(raw)/1048576:.1f} MB "
           f"→ encrypted {len(ct)/1048576:.1f} MB")
+    print(f"  roles: {', '.join(roles)}")
     return json.dumps({
         "enc": "AES-GCM-256", "kdf": "PBKDF2-SHA256", "iter": KDF_ITERATIONS,
-        "gz": True, "salt": b64(salt), "iv": b64(iv), "ct": b64(ct),
+        "gz": True, "iv": b64(iv), "ct": b64(ct), "keys": wrapped,
     }, separators=(",", ":"))
 
 
@@ -877,27 +893,50 @@ TOO_SHORT = (
 )
 
 
-def read_password(args):
-    """The length floor applies however the passphrase arrives.
+# Role -> (environment variable, prompt label, what it unlocks in the UI).
+ROLES = {
+    "admin":  ("ITRS_PASSWORD_ADMIN",  "Admin passphrase",
+               "full access, including data import"),
+    "viewer": ("ITRS_PASSWORD_VIEWER", "Team passphrase",
+               "read-only: every report, no import"),
+}
 
-    It used to be checked only on the interactive path, so --password and
-    ITRS_PASSWORD silently accepted anything -- the documented minimum was not
-    actually enforced.
+
+def _check(pw, label):
+    if len(pw) < MIN_PASSPHRASE:
+        sys.exit(f"{label}: " + TOO_SHORT)
+    return pw
+
+
+def read_roles(args):
+    """Collect one passphrase per role, from env vars, files, or a prompt.
+
+    Passphrases are never accepted on the command line: arguments are visible
+    in shell history and in the process list to any other user on the machine.
     """
-    supplied = args.password or os.environ.get("ITRS_PASSWORD")
-    if supplied:
-        if len(supplied) < MIN_PASSPHRASE:
-            sys.exit(TOO_SHORT)
-        return supplied
-    while True:
-        p1 = getpass.getpass("Passphrase for the published dashboard: ")
-        if len(p1) < MIN_PASSPHRASE:
-            print("  " + TOO_SHORT.replace("\n", "\n  "))
+    out = {}
+    for role, (env_var, label, _) in ROLES.items():
+        path = getattr(args, f"{role}_password_file", None)
+        if path:
+            out[role] = _check(Path(path).read_text(encoding="utf-8").strip(), label)
             continue
-        if p1 != getpass.getpass("Confirm passphrase: "):
-            print("  Passphrases did not match.")
+        val = os.environ.get(env_var)
+        if val:
+            out[role] = _check(val.strip(), label)
             continue
-        return p1
+        while True:
+            p1 = getpass.getpass(f"{label}: ")
+            if len(p1) < MIN_PASSPHRASE:
+                print("  " + TOO_SHORT.replace("\n", "\n  "))
+                continue
+            if p1 != getpass.getpass(f"Confirm {label.lower()}: "):
+                print("  Passphrases did not match.")
+                continue
+            out[role] = p1
+            break
+    if len(set(out.values())) != len(out):
+        sys.exit("Roles must not share a passphrase.")
+    return out
 
 
 def parse_args():
@@ -905,8 +944,10 @@ def parse_args():
     p.add_argument("--encrypt", action="store_true",
                    help="encrypt the data payload behind a passphrase (use this "
                         "for anything published to GitHub Pages or similar)")
-    p.add_argument("--password", help="passphrase (otherwise prompted, or read "
-                                      "from the ITRS_PASSWORD environment variable)")
+    p.add_argument("--admin-password-file",
+                   help="file holding the admin passphrase (full access)")
+    p.add_argument("--viewer-password-file",
+                   help="file holding the team passphrase (read-only)")
     p.add_argument("--out", help="output path (default: ITRS_Dashboard.html, "
                                  "or docs/index.html with --encrypt --publish)")
     p.add_argument("--publish", action="store_true",
@@ -930,7 +971,7 @@ def main():
     # Ask for the passphrase before the slow work, not after it. Aggregating and
     # indexing takes minutes; prompting at the end means an unattended build
     # stalls on an invisible prompt.
-    password = read_password(args) if args.encrypt else None
+    roles = read_roles(args) if args.encrypt else None
 
     cfg, lines = load_report_config()
     print(f"Report config: {len(lines)} lines from {CONFIG / 'report_lines.json'}")
@@ -979,7 +1020,7 @@ def main():
 
     if args.encrypt:
         print("Encrypting ...")
-        blob = encrypt_payload(blob, password)
+        blob = encrypt_payload(blob, roles)
 
     out = Path(args.out) if args.out else (
         HERE / "docs" / "index.html" if args.publish else OUTPUT)

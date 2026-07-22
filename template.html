@@ -587,6 +587,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <p data-t="appSub">Lao PDR — International Transactions Reporting System</p>
     </div>
     <div class="hdr-right">
+      <span class="pill" id="roleTag" style="margin-right:2px"></span>
       <button class="iconbtn" id="importBtn" type="button" title="Import data">
         <svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
       </button>
@@ -855,6 +856,10 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 "use strict";
 function bootApp(DATA){
 const {meta, dims, cubes, exceptions, entities} = DATA;
+/* Which wrapped key opened the payload. Unencrypted local builds have no
+   role and get full access, since there is nothing to gate. */
+const ROLE = DATA._role || 'admin';
+const isAdmin = () => ROLE === 'admin';
 
 /* ===================== i18n ===================== */
 const I18N = {
@@ -964,6 +969,7 @@ const I18N = {
  clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
  impBtn:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
+ roleAdmin:["Admin","ຜູ້ຄຸ້ມຄອງ"], roleViewer:["Team","ທີມງານ"],
  impTitle:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
  impLead:["Add new transactions to the report. The file is read in your browser and never uploaded anywhere. Changes last for this session only — to make them permanent, add the file to the Payment or Receive folder and rebuild.",
           "ເພີ່ມທຸລະກຳໃໝ່ເຂົ້າໃນລາຍງານ. ໄຟລ໌ຖືກອ່ານໃນບຣາວເຊີຂອງທ່ານ ແລະ ບໍ່ຖືກສົ່ງໄປໃສ. ການປ່ຽນແປງມີຜົນສະເພາະຮອບນີ້ — ເພື່ອໃຫ້ຖາວອນ ໃຫ້ເພີ່ມໄຟລ໌ໃສ່ໂຟນເດີ Payment ຫຼື Receive ແລ້ວສ້າງໃໝ່."],
@@ -3168,6 +3174,8 @@ function applyI18n(){
   lb.setAttribute('aria-label', lb.title);
   lb.classList.toggle('lao', !isLo());
   if (initImport.paint) initImport.paint();
+  const rt = $('#roleTag');
+  if (rt) rt.textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
   // Option labels just changed language; repaint any enhanced dropdown.
   ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
     const el = $(s); if (el && el._sel) el._sel.refresh();
@@ -3249,7 +3257,13 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
-  initImport();
+  // Import mutates the dataset, so it is admin-only. Removing the button is
+  // presentational; the real boundary is that a viewer's passphrase cannot
+  // unwrap the data key at all without also being handed the admin one.
+  if (isAdmin()) initImport();
+  else $('#importBtn').remove();
+  $('#roleTag').textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
+  $('#roleTag').className = 'pill ' + (isAdmin() ? '' : 'ok');
 
   // Must run after the options above are populated.
   enhanceSelect($('#yFrom'));
@@ -3348,19 +3362,36 @@ renderAll();
 
   const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
+  /* The payload is encrypted once under a random data key; that key is wrapped
+     separately for each role. Try every wrapper: the one that authenticates
+     both proves the passphrase and tells us which role was used. */
   async function unlock(pw){
     const enc = new TextEncoder();
     const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey(
-      {name:'PBKDF2', salt:b64(env.salt), iterations:env.iter, hash:'SHA-256'},
-      base, {name:'AES-GCM', length:256}, false, ['decrypt']);
-    let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, key, b64(env.ct));
+    const wrappers = env.keys || [{role:'admin', salt:env.salt, iv:env.iv, key:null}];
+    let dataKey = null, role = null;
+    for (const w of wrappers){
+      const kek = await crypto.subtle.deriveKey(
+        {name:'PBKDF2', salt:b64(w.salt), iterations:env.iter, hash:'SHA-256'},
+        base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+      try {
+        const rawKey = await crypto.subtle.decrypt(
+          {name:'AES-GCM', iv:b64(w.iv)}, kek, b64(w.key));
+        dataKey = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt']);
+        role = w.role;
+        break;
+      } catch (e) { /* wrong passphrase for this role; try the next */ }
+    }
+    if (!dataKey) throw new Error('no matching role');
+    let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, dataKey, b64(env.ct));
     if (env.gz){
       const ds = new DecompressionStream('gzip');
       const stream = new Blob([plain]).stream().pipeThrough(ds);
       plain = await new Response(stream).arrayBuffer();
     }
-    return JSON.parse(new TextDecoder().decode(plain));
+    const data = JSON.parse(new TextDecoder().decode(plain));
+    data._role = role;
+    return data;
   }
 
   g('gateForm').addEventListener('submit', async e => {

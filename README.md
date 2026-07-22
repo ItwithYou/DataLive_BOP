@@ -267,6 +267,32 @@ positioned with `position: fixed`, so they are never clipped by the horizontally
 scrolling control strip on narrow screens, and they flip above the trigger when
 there is no room below.
 
+### Two access levels
+
+The payload is encrypted once under a random 256-bit data key. That key is then
+wrapped separately under each role's passphrase, so the file carries two
+independent doors into the same data:
+
+| Role | Unlocks |
+|---|---|
+| **Admin** | Everything, including the Import button |
+| **Team** | Every report, read-only — no import |
+
+Neither passphrase, and no hash of either, is stored in the file. The browser
+tries each wrapped key; whichever one authenticates both proves the passphrase
+and identifies the role. A wrong passphrase simply fails to unwrap anything.
+
+Changing a passphrase re-wraps a 32-byte key rather than re-encrypting the
+payload, so rotating access is cheap. Passphrases are supplied by file or
+environment variable and never as command-line arguments, which would land in
+shell history and the process list:
+
+```bash
+python build_dashboard.py --publish --encrypt   --admin-password-file  C:\path	odmin.txt   --viewer-password-file C:\path	o	eam.txt
+```
+
+Omit the flags and it prompts for each.
+
 ### What the encryption does and does not do
 
 The payload is gzipped, then encrypted with **AES-256-GCM** under a key derived
