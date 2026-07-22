@@ -458,6 +458,17 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
   .card{padding:11px 10px}
 }
 
+/* Phone: lead with the numbers. The explanatory banner, footnotes, role badge
+   and install button are laptop furniture -- the basis is still visible in the
+   control itself, so nothing load-bearing is lost. */
+@media (max-width:639px){
+  .banner{display:none}
+  .note{display:none}
+  #roleTag,#installBtn{display:none}
+  .card>.sub{margin-bottom:9px}
+  footer{font-size:10px}
+  .modal-card .lead{font-size:11.5px}
+}
 @media print{header,nav,.controls,.btn,.theme{display:none}
   .tab{display:block!important;page-break-before:always}
   .card{background:#fff;backdrop-filter:none;box-shadow:none;border:1px solid #ddd}
@@ -489,7 +500,13 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 .gate-in button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;
   background:transparent;color:var(--ink-3);cursor:pointer;padding:8px;border-radius:6px;
   min-height:34px;font-size:11px;font-weight:600}
-.gate-go{width:100%;margin-top:14px;border:0;background:var(--accent);color:#fff;font-size:14.5px;
+.gate-remember{display:flex;align-items:center;gap:8px;margin-top:12px;
+  font-size:12.5px;color:var(--ink-3);cursor:pointer;user-select:none}
+.gate-remember input{width:16px;height:16px;accent-color:var(--accent);margin:0;flex:0 0 auto}
+.gate-forget{margin-top:10px;font-size:12px;color:var(--ink-3)}
+.gate-forget button{border:0;background:transparent;color:var(--accent);cursor:pointer;
+  font:inherit;text-decoration:underline;padding:0}
+.gate-go{width:100%;margin-top:12px;border:0;background:var(--accent);color:#fff;font-size:14.5px;
   font-weight:620;padding:12px;border-radius:9px;cursor:pointer;min-height:48px}
 .gate-go:disabled{opacity:.6;cursor:progress}
 .gate-msg{margin-top:13px;font-size:12.5px;min-height:18px;line-height:1.5}
@@ -584,9 +601,11 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
                autocapitalize="off" autocorrect="off" spellcheck="false" required>
         <button type="button" id="gateEye" tabindex="-1">SHOW</button>
       </div>
+      <label class="gate-remember"><input type="checkbox" id="gateRemember"><span id="gateRememberTxt">Remember on this device</span></label>
       <button type="submit" class="gate-go" id="gateGo">Unlock</button>
       <div class="gate-msg" id="gateMsg"></div>
     </form>
+    <div class="gate-forget" id="gateForget" hidden></div>
     <div class="gate-foot" id="gateFoot"></div>
   </div>
 </div>
@@ -902,7 +921,8 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <div id="setMsg"></div>
       <div class="row" style="margin-top:11px">
         <button class="btn" id="setValidate" data-t="setCheck">Check</button>
-        <button class="btn" id="setReset" data-t="setReset">Reset</button>
+        <button class="btn" id="setSaveLocal" data-t="setSaveLocal">Save</button>
+        <button class="btn" id="setReset" data-t="setReset">Discard</button>
         <button class="btn pri" id="setDownload" data-t="setSave">Download bop_rules.json</button>
       </div>
       <p class="note" data-t="setHow"></p>
@@ -971,6 +991,9 @@ const I18N = {
  setHow:["Download the file, replace dashboard/config/bop_rules.json with it, then rebuild. The rules take effect on the next build.","ດາວໂຫລດໄຟລ໌, ແທນທີ່ dashboard/config/bop_rules.json ແລ້ວສ້າງໃໝ່."],
  setNote:["These are the rules that produced the figures in this report. Editing here prepares a new rule file \\u2014 it does not recalculate what is on screen.","ນີ້ແມ່ນກົດທີ່ສ້າງຕົວເລກໃນລາຍງານນີ້."],
  setValid:["Valid JSON.","JSON ຖືກຕ້ອງ."], setInvalid:["Invalid JSON:","JSON ຜິດພາດ:"],
+ setSaved:["Saved on this device. Download the file and rebuild to apply it to everyone.","ບັນທຶກໄວ້ໃນເຄື່ອງນີ້. ດາວໂຫລດໄຟລ໌ ແລ້ວສ້າງໃໝ່ ເພື່ອນຳໃຊ້ກັບທຸກຄົນ."],
+ setLocalEdits:["You have unsaved local edits to these rules.","ທ່ານມີການແກ້ໄຂກົດໃນເຄື່ອງນີ້ທີ່ຍັງບໍ່ໄດ້ນຳໃຊ້."],
+ setSaveLocal:["Save","ບັນທຶກ"], setDiscard:["Discard","ຍົກເລີກ"],
  setNoRules:["No rule file was bundled with this build.","ບໍ່ມີໄຟລ໌ກົດໃນການສ້າງນີ້."],
  setCondition:["Condition","ເງື່ອນໄຂ"], setResult:["Result","ຜົນ"], setOrder:["#","#"],
  setFrom:["From code","ຈາກລະຫັດ"], setTo:["To code","ເປັນລະຫັດ"], setWhy:["Why","ເຫດຜົນ"],
@@ -1035,7 +1058,7 @@ const I18N = {
  wkNarrShort:["Summary","ຫຍໍ້"], wkNarrLong:["Detailed","ລະອຽດ"],
  wkTopSub2:["Named counterparties above $0.5m in the period","ຄູ່ຮ່ວມທີ່ມີຊື່ ເກີນ 0.5 ລ້ານໂດລາ ໃນໄລຍະນີ້"],
  wkCcy:["Currency composition","ອົງປະກອບສະກຸນເງິນ"], wkCcySub:["Share of flows in the selected range","ສັດສ່ວນກະແສໃນໄລຍະທີ່ເລືອກ"],
- wkTrend:["Trend, last 13 periods","ແນວໂນ້ມ 13 ໄລຍະຫຼ້າສຸດ"], wkTrendSub:["Same length as the selected range","ຍາວເທົ່າກັບໄລຍະທີ່ເລືອກ"],
+ wkTrend:["Trend","ແນວໂນ້ມ"], wkTrendSub:["Same length as the selected range","ຍາວເທົ່າກັບໄລຍະທີ່ເລືອກ"],
  wkPrior:["Prior period","ໄລຍະກ່ອນໜ້າ"], wkThis:["This period","ໄລຍະນີ້"],
  wkChange:["Change","ມູນຄ່າປ່ຽນແປງ"], wkPct:["% change","ເປີເຊັນປ່ຽນແປງ"],
  seTitle:["Company / counterparty search","ຄົ້ນຫາບໍລິສັດ / ຄູ່ຮ່ວມ"],
@@ -1132,8 +1155,25 @@ const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n)
 const SC = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8','--c9','--c10'];
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* Values are USD millions throughout. Lao reports quote the unit in words
+   (ລ້ານໂດລາ / ຕື້ໂດລາ); on a phone that is too long for a chart label, so the
+   unit shortens to ລ້ານ$ / ຕື້$. */
+// Uses the media query directly rather than isPhone(), which is declared
+// further down: a forward reference here is fragile for no benefit.
+const narrowScreen = () => matchMedia('(max-width:639px)').matches;
+const LAO_UNITS = () => narrowScreen()
+  ? {tn:' ລ້ານລ້ານ$', bn:' ຕື້$',        m:' ລ້ານ$',        k:' ພັນ$'}
+  : {tn:' ລ້ານລ້ານໂດລາ', bn:' ຕື້ໂດລາ', m:' ລ້ານໂດລາ', k:' ພັນໂດລາ'};
 function fmtM(v, dp){
   const a = Math.abs(v), s = v < 0 ? '-' : '';
+  if (isLo()){
+    const u = LAO_UNITS();
+    if (a >= 1e6)  return s+(a/1e6).toFixed(dp??2)+u.tn;
+    if (a >= 1000) return s+(a/1000).toFixed(dp??1)+u.bn;
+    if (a >= 1)    return s+a.toFixed(dp??0)+u.m;
+    if (a >= 0.001)return s+(a*1000).toFixed(0)+u.k;
+    return '0'+u.m;
+  }
   if (a >= 1e6) return s+'$'+(a/1e6).toFixed(dp??2)+'tn';
   if (a >= 1000) return s+'$'+(a/1000).toFixed(dp??1)+'bn';
   if (a >= 1)    return s+'$'+a.toFixed(dp??0)+'m';
@@ -1154,7 +1194,10 @@ const fmtV = v => state.meas === 'usd' ? fmtM(v) : fmtN(v);
 function axisFmt(v){
   if (state.meas === 'n') return fmtN(v);
   const a = Math.abs(v), s = v<0?'-':'';
-  if (a >= 1000) return s+(a/1000).toFixed(a>=10000?0:1)+'bn';
+  // Axis ticks stay bare on a phone; the unit belongs in the card subtitle,
+  // not repeated down the side of every chart.
+  const bn = isLo() ? (narrowScreen() ? 'ຕື້' : ' ຕື້') : 'bn';
+  if (a >= 1000) return s+(a/1000).toFixed(a>=10000?0:1)+bn;
   return s+a.toFixed(0);
 }
 function downloadCsv(name, rows){
@@ -3495,8 +3538,18 @@ function renderSettings(){
           + '<td style="text-align:left;white-space:normal" class="muted">' + esc(dup[k].why||'') + '</td></tr>';
       }).join('') + '</tbody></table>';
 
+  /* Edits persist in this browser so a half-finished change survives a reload.
+     They do NOT change the figures on screen: aggregation happens at build
+     time, so the file still has to be downloaded and the build re-run. Saying
+     otherwise would imply an effect the page cannot have. */
+  var SKEY = 'itrs-rules';
+  var stored = null;
+  try { stored = localStorage.getItem(SKEY); } catch (e) {}
   var ta = $('#setJson');
-  if (!ta.value) ta.value = JSON.stringify(R, null, 2);
+  if (!ta.value) ta.value = stored || JSON.stringify(R, null, 2);
+  if (stored && stored !== JSON.stringify(R, null, 2)){
+    $('#setNote').innerHTML = '<span>&#9998;</span><div>' + esc(t('setLocalEdits')) + '</div>';
+  }
   function say(cls, txt){
     $('#setMsg').innerHTML = '<div class="imp-msg ' + cls + '" style="margin-top:11px">' + esc(txt) + '</div>';
   }
@@ -3505,7 +3558,17 @@ function renderSettings(){
     catch (e){ say('err', t('setInvalid') + ' ' + e.message); return false; }
   }
   $('#setValidate').onclick = check;
-  $('#setReset').onclick = function(){ ta.value = JSON.stringify(R, null, 2); $('#setMsg').innerHTML = ''; };
+  $('#setSaveLocal').onclick = function(){
+    if (!check()) return;
+    try { localStorage.setItem(SKEY, ta.value); } catch (e) {}
+    say('ok', t('setSaved'));
+  };
+  $('#setReset').onclick = function(){
+    try { localStorage.removeItem(SKEY); } catch (e) {}
+    ta.value = JSON.stringify(R, null, 2);
+    $('#setMsg').innerHTML = '';
+    $('#setNote').innerHTML = '<span>&#9881;</span><div>' + esc(t('setNote')) + '</div>';
+  };
   $('#setDownload').onclick = function(){
     if (!check()) return;
     var blob = new Blob([ta.value], {type:'application/json'});
@@ -3744,8 +3807,10 @@ function initInstall(){
     working:["Deriving key and decrypting…","ກຳລັງຖອດລະຫັດ…"],
     wrong:["Incorrect passphrase.","ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ."],
     nocrypto:["This browser cannot decrypt the report. Use a current version of Chrome, Edge, Safari or Firefox over HTTPS.","ບຣາວເຊີນີ້ບໍ່ສາມາດຖອດລະຫັດໄດ້. ກະລຸນາໃຊ້ Chrome, Edge, Safari ຫຼື Firefox ລຸ້ນປັດຈຸບັນຜ່ານ HTTPS."],
-    foot:["Confidential supervisory data. The report is encrypted with AES-256-GCM; the passphrase is never transmitted and never stored. Do not share the passphrase or any extract outside authorised staff.",
-          "ຂໍ້ມູນຄວບຄຸມທີ່ເປັນຄວາມລັບ. ລາຍງານຖືກເຂົ້າລະຫັດດ້ວຍ AES-256-GCM; ລະຫັດຜ່ານບໍ່ຖືກສົ່ງ ແລະ ບໍ່ຖືກເກັບໄວ້. ຫ້າມແບ່ງປັນລະຫັດຜ່ານ ຫຼື ຂໍ້ມູນໃຫ້ຜູ້ບໍ່ມີສິດ."],
+    remember:["Remember on this device","ຈື່ໄວ້ໃນເຄື່ອງນີ້"],
+    forget:["Saved on this device.","ບັນທຶກໄວ້ໃນເຄື່ອງນີ້ແລ້ວ."],
+    forgetBtn:["Forget","ລືມ"],
+    foot:["For internal use only.","ຂໍ້ມູນໃຊ້ພາຍໃນສະເພາະ."],
   };
   let L = 0, shown = false;
   const g = id => document.getElementById(id);
@@ -3755,6 +3820,8 @@ function initInstall(){
     g('gateLabel').textContent = GT.label[L];
     g('gateGo').textContent = GT.go[L];
     g('gateFoot').textContent = GT.foot[L];
+    g('gateRememberTxt').textContent = GT.remember[L];
+    paintRemembered();
     // Drive the field from `shown` rather than reading the DOM back, so the
     // label and the masking can never disagree.
     g('gatePw').type = shown ? 'text' : 'password';
@@ -3779,6 +3846,13 @@ function initInstall(){
 
   g('gate').classList.remove('hide');
   paint();
+  // Try the stored passphrase straight away, so a remembered device opens
+  // without the user seeing the form at all.
+  const saved = recall();
+  if (saved){
+    g('gatePw').value = saved;
+    setTimeout(() => g('gateForm').dispatchEvent(new Event('submit', {cancelable:true})), 20);
+  }
   ITRSTheme.bind(g('gateTheme'));
   setTimeout(()=>g('gatePw').focus(), 60);
 
@@ -3792,6 +3866,25 @@ function initInstall(){
   });
 
   const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+  /* "Remember" keeps the passphrase in this browser's local storage so the
+     report opens without retyping - convenient on a phone, but it does mean the
+     passphrase sits on the device. Opt-in, and clearable from the same screen. */
+  const RKEY = 'itrs-pass';
+  const recall = () => { try { return localStorage.getItem(RKEY) || ''; } catch (e) { return ''; } };
+  const forget = () => { try { localStorage.removeItem(RKEY); } catch (e) {} };
+  function paintRemembered(){
+    const box = g('gateForget');
+    if (!box) return;
+    if (recall()){
+      box.innerHTML = GT.forget[L] + ' <button type="button" id="gateForgetBtn">' + GT.forgetBtn[L] + '</button>';
+      box.hidden = false;
+      g('gateForgetBtn').onclick = () => { forget(); g('gatePw').value = ''; paintRemembered(); };
+      g('gateRemember').checked = true;
+    } else {
+      box.hidden = true;
+    }
+  }
 
   /* The payload is encrypted once under a random data key; that key is wrapped
      separately for each role. Try every wrapper: the one that authenticates
@@ -3835,13 +3928,21 @@ function initInstall(){
     // Yield a frame so the spinner paints before PBKDF2 blocks the thread.
     await new Promise(r => setTimeout(r, 30));
     try {
-      const data = await unlock(g('gatePw').value);
+      const pw = g('gatePw').value;
+      const data = await unlock(pw);
       msg.textContent = '';
+      try {
+        if (g('gateRemember').checked) localStorage.setItem(RKEY, pw);
+        else forget();
+      } catch (e) {}
       reveal(data);
     } catch (err) {
       go.disabled = false;
       msg.className = 'gate-msg err';
       msg.textContent = GT.wrong[L];
+      // A stored passphrase that no longer works (rebuilt with a new one)
+      // must not lock the user in a failing loop.
+      forget(); paintRemembered();
       g('gatePw').select();
     }
   });
