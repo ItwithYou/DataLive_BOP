@@ -910,6 +910,11 @@ def main():
     if not TEMPLATE.exists():
         sys.exit(f"Template not found: {TEMPLATE}")
 
+    # Ask for the passphrase before the slow work, not after it. Aggregating and
+    # indexing takes minutes; prompting at the end means an unattended build
+    # stalls on an invisible prompt.
+    password = read_password(args) if args.encrypt else None
+
     cfg, lines = load_report_config()
     print(f"Report config: {len(lines)} lines from {CONFIG / 'report_lines.json'}")
 
@@ -957,7 +962,7 @@ def main():
 
     if args.encrypt:
         print("Encrypting ...")
-        blob = encrypt_payload(blob, read_password(args))
+        blob = encrypt_payload(blob, password)
 
     out = Path(args.out) if args.out else (
         HERE / "docs" / "index.html" if args.publish else OUTPUT)
