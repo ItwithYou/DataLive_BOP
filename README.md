@@ -93,19 +93,44 @@ same panel.
 
 ## Publishing to GitHub Pages
 
+The source is already on GitHub. **The data file is not, and cannot be published
+by anyone but you** — it has to be encrypted with a passphrase only you know.
+
+Three commands from this directory:
+
 ```bash
 python build_dashboard.py --publish --encrypt
 ```
 
-Prompts for a passphrase and writes `docs/index.html`, encrypted. Then:
+```bash
+git add docs/index.html && git commit -m "Publish encrypted dashboard"
+```
 
-1. `git init` (if needed), commit, push. **Check `.gitignore` is in place first.**
-2. Repo → Settings → Pages → Source: `main` / `docs`
-3. Share the URL and the passphrase **separately** — never in the same message,
-   never in the repo, never in a commit message.
+```bash
+git push
+```
+
+Then: repo → **Settings → Pages → Source: `main` / `docs`**. The site appears at
+`https://itwithyou.github.io/DataLive_BOP/` within a minute or two.
+
+Share the URL and the passphrase **separately** — never in the same message,
+never in the repo, never in a commit message or issue.
 
 The build **refuses** to write a publishable file unencrypted. `--publish` without
 `--encrypt` is an error, not a warning.
+
+## Appearance
+
+**Theme** — light, dark, or match-system, from the sun / A / moon control in the
+header (and on the lock screen). The choice persists in `localStorage` and is
+applied before first paint, so there is no flash of the wrong scheme on load.
+Charts redraw on switch because their colours are read from CSS at draw time.
+
+**Glass** — panels use `backdrop-filter` over a fixed three-point colour field,
+with a raking highlight on each card. Two deliberate exceptions: sticky table
+headers stay opaque, otherwise rows scroll visibly through them; and browsers
+without `backdrop-filter` fall back to solid panels via `@supports`. Print styles
+drop the glass entirely.
 
 ### What the encryption does and does not do
 
