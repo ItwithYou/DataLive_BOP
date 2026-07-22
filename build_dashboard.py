@@ -865,17 +865,34 @@ def encrypt_payload(blob, password):
     }, separators=(",", ":"))
 
 
+MIN_PASSPHRASE = 12
+
+TOO_SHORT = (
+    f"Passphrase must be at least {MIN_PASSPHRASE} characters.\n"
+    "Once published, the file can be downloaded and attacked offline without\n"
+    "limit, so the passphrase is the only thing protecting the dataset.\n"
+    "Generate one with:\n"
+    "  python -c \"import secrets,string; a=string.ascii_letters+string.digits; "
+    "print(''.join(secrets.choice(a) for _ in range(24)))\""
+)
+
+
 def read_password(args):
-    if args.password:
-        return args.password
-    env = os.environ.get("ITRS_PASSWORD")
-    if env:
-        return env
+    """The length floor applies however the passphrase arrives.
+
+    It used to be checked only on the interactive path, so --password and
+    ITRS_PASSWORD silently accepted anything -- the documented minimum was not
+    actually enforced.
+    """
+    supplied = args.password or os.environ.get("ITRS_PASSWORD")
+    if supplied:
+        if len(supplied) < MIN_PASSPHRASE:
+            sys.exit(TOO_SHORT)
+        return supplied
     while True:
         p1 = getpass.getpass("Passphrase for the published dashboard: ")
-        if len(p1) < 12:
-            print("  Too short. Use at least 12 characters — this is the only thing")
-            print("  standing between the internet and the full dataset.")
+        if len(p1) < MIN_PASSPHRASE:
+            print("  " + TOO_SHORT.replace("\n", "\n  "))
             continue
         if p1 != getpass.getpass("Confirm passphrase: "):
             print("  Passphrases did not match.")
