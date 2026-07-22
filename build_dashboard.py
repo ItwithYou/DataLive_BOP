@@ -596,26 +596,32 @@ def build_cubes(con, dims):
         {mjoin} JOIN bank_lk b ON b.code = t.bank
         GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
     cubes["tsCountry"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, c.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        SELECT mo.ix, t.flow_ix, c.ix, t.use_ix, bk.ix, COUNT(*), SUM(t.usd)/1e6
         {mjoin} JOIN country_lk c ON c.code = t.country
-        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+                JOIN bank_lk bk ON bk.code = t.bank
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["tsCurrency"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        SELECT mo.ix, t.flow_ix, cu.ix, t.use_ix, bk.ix, COUNT(*), SUM(t.usd)/1e6
         {mjoin} JOIN curr_lk cu ON cu.code = t.currency
-        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+                JOIN bank_lk bk ON bk.code = t.bank
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["tsPurpose"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {mjoin} WHERE t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4
-        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+        SELECT mo.ix, t.flow_ix, t.purpose_ix, t.use_ix, bk.ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} JOIN bank_lk bk ON bk.code = t.bank
+        WHERE t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     # ---- daily cubes powering the Weekly Report --------------------------
-    # [date, flow, reportLine, useFlag, count, usdMillions]
+    # [date, flow, reportLine, useFlag, bank, count, usdMillions]
+    # The bank axis is what lets the Period Report answer "show me BCEL only".
+    # -1 is not used here: every transaction has a reporting bank.
     cubes["dayLine"] = [
-        [d, int(f), int(l), int(uix), int(n), r2(u)]
-        for d, f, l, uix, n, u in con.execute("""
-            SELECT t.ymd, t.flow_ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-            FROM txf t WHERE t.line_ix >= 0
-            GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
+        [d, int(f), int(l), int(uix), int(b), int(n), r2(u)]
+        for d, f, l, uix, b, n, u in con.execute("""
+            SELECT t.ymd, t.flow_ix, t.line_ix, t.use_ix, bk.ix, COUNT(*), SUM(t.usd)/1e6
+            FROM txf t JOIN bank_lk bk ON bk.code = t.bank
+            WHERE t.line_ix >= 0
+            GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""").fetchall()
     ]
     # [date, flow, bank, useFlag, count, usdMillions] -- bank shares for any range.
     # Built by hand rather than via fetch_cube: the leading dimension is a date

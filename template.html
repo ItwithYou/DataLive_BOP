@@ -1984,16 +1984,17 @@ function tsMatrix(){
   const {keys, of} = tsBuckets();
   const kIx = Object.fromEntries(keys.map((k,i)=>[k,i]));
   const acc = new Map();                       // dimIx -> array over buckets
-  const vi = 4 + vIdx();                       // ts cubes: [m, flow, dim, use, n, usd]
+  // tsBank is [m, flow, bank, use, n, usd] - the bank IS the dimension, so the
+  // filter matches on r[2]. The others are [m, flow, dim, use, bank, n, usd].
+  const isBankDim = state.tsDim === 'tsBank';
+  const vi = (isBankDim ? 4 : 5) + vIdx();
   for (const r of rows){
     const y = yOfMonth[r[0]];
     if (y < state.yFrom || y > state.yTo) continue;
     if (!useOK(r[3])) continue;
     const b = kIx[of(r[0])]; if (b == null) continue;
     if (state.tsFlow !== 2 && r[1] !== state.tsFlow) continue;
-    // The bank selector can only bite on the bank dimension; the other cubes
-    // carry no bank axis. renderTimeSeries() says so on screen.
-    if (state.bank >= 0 && state.tsDim === 'tsBank' && r[2] !== state.bank) continue;
+    if (state.bank >= 0 && r[isBankDim ? 2 : 4] !== state.bank) continue;
     let a = acc.get(r[2]); if (!a) acc.set(r[2], a = new Array(keys.length).fill(0));
     a[b] += (state.tsFlow === 2 ? (r[1]===REC ? r[vi] : -r[vi]) : r[vi]);
   }
@@ -2138,14 +2139,16 @@ function weekTotals(fromISO, toISO_){
   const nonbank = state.wkScope === 'nonbank';
   const lines = LINES.map(()=>({in:0,out:0,nIn:0,nOut:0}));
   let tin=0, tout=0;
+  // dayLine is [date, flow, line, use, bank, count, usd]
   for (const r of cubes.dayLine){
     if (r[0] < fromISO || r[0] > toISO_) continue;
     if (!useOK(r[3])) continue;
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
     const li = r[2];
     if (nonbank && LINES[li] && LINES[li].bankOwn) continue;
     const e = lines[li]; if (!e) continue;
-    if (r[1] === REC){ e.in += r[5]; e.nIn += r[4]; tin += r[5]; }
-    else { e.out += r[5]; e.nOut += r[4]; tout += r[5]; }
+    if (r[1] === REC){ e.in += r[6]; e.nIn += r[5]; tin += r[6]; }
+    else { e.out += r[6]; e.nOut += r[5]; tout += r[6]; }
   }
   return {lines, tin, tout, net:tin-tout};
 }
@@ -3087,18 +3090,21 @@ function buildImport(rows){
     if (dims.countries.length > nc) stat.newCountries.push(s.ctry);
     if (dims.currencies.length > nu) stat.newCurrencies.push(s.curr);
 
-    bump(D.month, [m, s.flow, p2, s.use].join(SEP), one);
-    if (cIx >= 0){ bump(D.country, [y, s.flow, cIx, s.use].join(SEP), one);
-                   bump(D.tsCountry, [m, s.flow, cIx, s.use].join(SEP), one); }
-    if (uIx >= 0){ bump(D.currency, [y, s.flow, uIx, s.use].join(SEP), one);
-                   bump(D.tsCurrency, [m, s.flow, uIx, s.use].join(SEP), one);
+    // These eight cubes carry the reporting bank as their last key dimension,
+    // so the header filter can reach them. A row with no recognisable bank
+    // keeps -1: it still counts under "All banks" but belongs to none.
+    bump(D.month, [m, s.flow, p2, s.use, bIx].join(SEP), one);
+    if (cIx >= 0){ bump(D.country, [y, s.flow, cIx, s.use, bIx].join(SEP), one);
+                   bump(D.tsCountry, [m, s.flow, cIx, s.use, bIx].join(SEP), one); }
+    if (uIx >= 0){ bump(D.currency, [y, s.flow, uIx, s.use, bIx].join(SEP), one);
+                   bump(D.tsCurrency, [m, s.flow, uIx, s.use, bIx].join(SEP), one);
                    if (uIx < 10) bump(D.dayCurrency, [s.ymd, s.flow, uIx, s.use].join(SEP), [v]); }
     if (bIx >= 0){ bump(D.bank, [y, s.flow, bIx, s.use].join(SEP), one);
                    bump(D.tsBank, [m, s.flow, bIx, s.use].join(SEP), one); }
-    if (pIx >= 0){ bump(D.purpose, [y, s.flow, pIx, s.use].join(SEP), one);
-                   if (s.pur5.length <= 4) bump(D.tsPurpose, [m, s.flow, pIx, s.use].join(SEP), one); }
+    if (pIx >= 0){ bump(D.purpose, [y, s.flow, pIx, s.use, bIx].join(SEP), one);
+                   if (s.pur5.length <= 4) bump(D.tsPurpose, [m, s.flow, pIx, s.use, bIx].join(SEP), one); }
     const li = lineOf(s.pur5);
-    if (li >= 0) bump(D.dayLine, [s.ymd, s.flow, li, s.use].join(SEP), one);
+    if (li >= 0) bump(D.dayLine, [s.ymd, s.flow, li, s.use, bIx].join(SEP), one);
     const a = Math.abs(s.usd);
     const bIdx = a < 1e3 ? 0 : a < 1e4 ? 1 : a < 1e5 ? 2 : a < 1e6 ? 3 : a < 1e7 ? 4 : 5;
     if (s.usd > 0) bump(D.size, [y, s.flow, bIdx, s.use].join(SEP), one);
@@ -3112,17 +3118,19 @@ function buildImport(rows){
     bump(D.completeness, String(y), [1, ...s.nulls]);
   }
 
-  mergeCube('month', 4, D.month);
-  mergeCube('country', 4, D.country);
-  mergeCube('currency', 4, D.currency);
+  // The arity is the number of KEY dimensions, and must match the cube built
+  // by build_dashboard.py exactly. Five for anything carrying a bank axis.
+  mergeCube('month', 5, D.month);
+  mergeCube('country', 5, D.country);
+  mergeCube('currency', 5, D.currency);
   mergeCube('bank', 4, D.bank);
-  mergeCube('purpose', 4, D.purpose);
+  mergeCube('purpose', 5, D.purpose);
   mergeCube('size', 4, D.size);
   mergeCube('tsBank', 4, D.tsBank);
-  mergeCube('tsCountry', 4, D.tsCountry);
-  mergeCube('tsCurrency', 4, D.tsCurrency);
-  mergeCube('tsPurpose', 4, D.tsPurpose);
-  mergeCube('dayLine', 4, D.dayLine);
+  mergeCube('tsCountry', 5, D.tsCountry);
+  mergeCube('tsCurrency', 5, D.tsCurrency);
+  mergeCube('tsPurpose', 5, D.tsPurpose);
+  mergeCube('dayLine', 5, D.dayLine);
   mergeCube('dayCurrency', 4, D.dayCurrency, 1);
   mergeCube('flags', 5, D.flags);
   mergeCube('quality', 2, D.quality, 10);
@@ -3667,12 +3675,9 @@ function renderBanner(){
   // bank axis. Say so rather than letting a filtered header imply filtered
   // charts.
   if (state.bank >= 0){
-    // Only the Period Report and Search still aggregate from cubes with no
-    // bank axis; everything else now filters properly.
-    const scope = (state.tab === 'weekly' || state.tab === 'search') ? 'bankScopeNone'
-      : (state.tab === 'timeseries' && state.tsDim !== 'tsBank') ? 'bankScopeTs'
-      : 'bankScopeFull';
-    const ok = scope === 'bankScopeFull';
+    // Every cube now carries a bank axis, so the filter applies everywhere.
+    const scope = 'bankScopeFull';
+    const ok = true;
     html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
       <span class="pill ${ok?'ok':'warn'}">${esc(BANKS[state.bank])}</span>
       <span style="margin-left:6px">${esc(t(scope))}</span></div>`;
