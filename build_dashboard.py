@@ -545,18 +545,21 @@ def build_cubes(con, dims):
     """
 
     cubes["month"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, p2.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {base} WHERE p2.ix IS NOT NULL GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+        SELECT mo.ix, t.flow_ix, p2.ix, t.use_ix, COALESCE(bk.ix,-1), COUNT(*), SUM(t.usd)/1e6
+        {base} LEFT JOIN bank_lk bk ON bk.code = t.bank
+        WHERE p2.ix IS NOT NULL GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     cubes["country"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, c.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        SELECT y.ix, t.flow_ix, c.ix, t.use_ix, COALESCE(bk.ix,-1), COUNT(*), SUM(t.usd)/1e6
         {base} JOIN country_lk c ON c.code = t.country
-        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+        LEFT JOIN bank_lk bk ON bk.code = t.bank
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     cubes["currency"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        SELECT y.ix, t.flow_ix, cu.ix, t.use_ix, COALESCE(bk.ix,-1), COUNT(*), SUM(t.usd)/1e6
         {base} JOIN curr_lk cu ON cu.code = t.currency
-        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+        LEFT JOIN bank_lk bk ON bk.code = t.bank
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     cubes["bank"] = fetch_cube(con, f"""
         SELECT y.ix, t.flow_ix, b.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
@@ -564,8 +567,9 @@ def build_cubes(con, dims):
         GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
 
     cubes["purpose"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {base} WHERE t.purpose_ix >= 0 GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+        SELECT y.ix, t.flow_ix, t.purpose_ix, t.use_ix, COALESCE(bk.ix,-1), COUNT(*), SUM(t.usd)/1e6
+        {base} LEFT JOIN bank_lk bk ON bk.code = t.bank
+        WHERE t.purpose_ix >= 0 GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     cubes["method"] = fetch_cube(con, f"""
         SELECT y.ix, t.flow_ix, t.method_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
