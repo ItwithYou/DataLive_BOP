@@ -497,24 +497,26 @@ def build_cubes(con, dims):
         ) WHERE c >= 0 ORDER BY a,b,c,d""")
 
     # ---- monthly cubes powering the Time Series tab ----------------------
-    mbase = "FROM txf t JOIN month_lk mo ON mo.ym = t.ym WHERE t.use_ix = 1"
+    # [month, flow, dimension, useFlag, count, usdMillions]. The use flag has to
+    # be a dimension here, not a filter, or the "Use in BOP" control cannot
+    # reach this tab.
+    mjoin = "FROM txf t JOIN month_lk mo ON mo.ym = t.ym"
     cubes["tsBank"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, b.ix, COUNT(*), SUM(t.usd)/1e6
-        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN bank_lk b ON b.code = t.bank
-        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+        SELECT mo.ix, t.flow_ix, b.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} JOIN bank_lk b ON b.code = t.bank
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
     cubes["tsCountry"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, c.ix, COUNT(*), SUM(t.usd)/1e6
-        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN country_lk c ON c.code = t.country
-        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+        SELECT mo.ix, t.flow_ix, c.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} JOIN country_lk c ON c.code = t.country
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
     cubes["tsCurrency"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, cu.ix, COUNT(*), SUM(t.usd)/1e6
-        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN curr_lk cu ON cu.code = t.currency
-        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+        SELECT mo.ix, t.flow_ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} JOIN curr_lk cu ON cu.code = t.currency
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
     cubes["tsPurpose"] = fetch_cube(con, f"""
-        SELECT mo.ix, t.flow_ix, t.purpose_ix, COUNT(*), SUM(t.usd)/1e6
-        FROM txf t JOIN month_lk mo ON mo.ym = t.ym
-        WHERE t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4
-        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+        SELECT mo.ix, t.flow_ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {mjoin} WHERE t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
 
     # ---- daily cubes powering the Weekly Report --------------------------
     # [date, flow, reportLine, useFlag, count, usdMillions]

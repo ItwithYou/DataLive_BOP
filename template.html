@@ -137,6 +137,22 @@ select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
    dropdown below ever fails to initialise. */
 select option{background:var(--panel-solid);color:var(--ink)}
 
+/* ---------- per-card export toolbar ---------- */
+.cardtools{position:absolute;top:9px;right:9px;display:flex;gap:3px;z-index:5;
+  opacity:0;transition:opacity .16s}
+.card:hover .cardtools,.cardtools:focus-within{opacity:1}
+@media(hover:none){.cardtools{opacity:.6}}
+.cardtools button{display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;padding:0;border-radius:8px;cursor:pointer;
+  border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink-3);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:color .14s,border-color .14s,background .14s}
+.cardtools button:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.cardtools button.ok{color:var(--in);border-color:var(--in)}
+.cardtools svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+@media print{.cardtools{display:none}}
+
 /* ---------- enhanced dropdown ---------- */
 .sel{position:relative;display:inline-flex}
 .sel-native{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;margin:0}
@@ -798,6 +814,13 @@ const I18N = {
  exceptions:["exceptions per 10,000 records","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ"],
  clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
+ copyChart:["Copy chart image — paste into Excel or Word","ສຳເນົາຮູບກຣາຟ — ວາງໃສ່ Excel ຫຼື Word"],
+ savePng:["Download chart as PNG","ດາວໂຫລດກຣາຟເປັນ PNG"],
+ saveData:["Download the data behind this chart","ດາວໂຫລດຂໍ້ມູນຂອງກຣາຟນີ້"],
+ bankScopeFull:["Bank filter applies to everything on this tab.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນກັບທຸກຢ່າງໃນແຖບນີ້."],
+ bankScopeKpi:["Bank filter applies to the four totals above only — the charts below cover all banks, because the underlying cubes carry no bank dimension.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນສະເພາະ 4 ຕົວເລກຂ້າງເທິງ — ກຣາຟລຸ່ມນີ້ລວມທຸກທະນາຄານ."],
+ bankScopeNone:["Bank filter does not apply to this tab.","ຕົວກັ່ນຕອງທະນາຄານບໍ່ມີຜົນກັບແຖບນີ້."],
+ bankScopeTs:["Bank filter applies only when Dimension is set to Bank.","ຕົວກັ່ນຕອງທະນາຄານມີຜົນສະເພາະເມື່ອເລືອກມິຕິເປັນ ທະນາຄານ."],
 };
 let LANG = 0;                              // 0 = en, 1 = lo
 const t = k => (I18N[k] ? I18N[k][LANG] : k);
@@ -954,6 +977,8 @@ function lineChart(host, labels, series, opt){
   s += `</svg>`;
   host.innerHTML = s + legendHtml(series, key);
   bindLegend(host, key, () => lineChart(host, labels, series, opt));
+  setExport(host, opt.name, ['Period', ...series.map(x => x.name)],
+    labels.map((L,i) => [L, ...series.map(x => x.values[i] ?? '')]));
   host.querySelectorAll('.hover-band').forEach(b => {
     b.addEventListener('mousemove', ev => {
       const i = +b.dataset.i;
@@ -996,6 +1021,8 @@ function barChart(host, groups, opt){
   s += `</svg>`;
   host.innerHTML = s + (opt.legend===false ? '' :
     legendHtml((groups[0]?groups[0].values:[]).map(v=>({name:v.name,color:v.color})), opt.key||''));
+  setExport(host, opt.name, ['Category', ...(groups[0]?groups[0].values.map(v=>v.name):[])],
+    groups.map(g => [g.label, ...g.values.map(v => v.value)]));
   host.querySelectorAll('rect[data-g]').forEach(r => {
     r.addEventListener('mousemove', ev => {
       const g = groups[+r.dataset.g];
@@ -1033,6 +1060,11 @@ function rankBars(host, items, opt){
   });
   s += `</svg>`;
   host.innerHTML = s;
+  setExport(host, opt.name,
+    diverge ? ['Item','Inflow','Outflow','Net','Gross'] : ['Item','Value'],
+    items.map(d => diverge
+      ? [d.full||d.label, d.a, d.b, d.a-d.b, d.a+d.b]
+      : [d.full||d.label, d.value]));
   host.querySelectorAll('rect[data-i]').forEach(r => {
     r.addEventListener('mousemove', ev => {
       const d = items[+r.dataset.i];
@@ -1085,6 +1117,8 @@ function stackArea(host, labels, series, opt){
   s += `</svg>`;
   host.innerHTML = s + legendHtml(series, opt.key||'');
   bindLegend(host, opt.key||'', ()=>stackArea(host,labels,series,opt));
+  setExport(host, opt.name, ['Period', ...series.map(x => x.name)],
+    labels.map((L,i) => [L, ...series.map(x => x.values[i] ?? 0)]));
   host.querySelectorAll('.hover-band').forEach(b => {
     b.addEventListener('mousemove', ev => {
       const i = +b.dataset.i;
@@ -1116,6 +1150,8 @@ function donut(host, items, opt){
   s += '<div class="legend">' + items.slice(0,8).map(d =>
     `<span><i style="background:${d.color}"></i>${esc(d.label)} <span class="muted">${(100*d.value/total).toFixed(1)}%</span></span>`).join('') + '</div>';
   host.innerHTML = s;
+  setExport(host, opt.name, ['Item','Value','Share %'],
+    items.map(d => [d.label, d.value, (100*d.value/total).toFixed(3)]));
   host.querySelectorAll('path[data-i]').forEach(p => {
     p.addEventListener('mousemove', ev => {
       const d = items[+p.dataset.i];
@@ -1539,14 +1575,17 @@ function tsMatrix(){
   const rows = cubes[state.tsDim] || [];
   const {keys, of} = tsBuckets();
   const kIx = Object.fromEntries(keys.map((k,i)=>[k,i]));
-  const inR = state.tsFrom;
   const acc = new Map();                       // dimIx -> array over buckets
-  const vi = 3 + vIdx();                       // ts cubes: [m, flow, dim, n, usd]
+  const vi = 4 + vIdx();                       // ts cubes: [m, flow, dim, use, n, usd]
   for (const r of rows){
     const y = yOfMonth[r[0]];
     if (y < state.yFrom || y > state.yTo) continue;
+    if (!useOK(r[3])) continue;
     const b = kIx[of(r[0])]; if (b == null) continue;
     if (state.tsFlow !== 2 && r[1] !== state.tsFlow) continue;
+    // The bank selector can only bite on the bank dimension; the other cubes
+    // carry no bank axis. renderTimeSeries() says so on screen.
+    if (state.bank >= 0 && state.tsDim === 'tsBank' && r[2] !== state.bank) continue;
     let a = acc.get(r[2]); if (!a) acc.set(r[2], a = new Array(keys.length).fill(0));
     a[b] += (state.tsFlow === 2 ? (r[1]===REC ? r[vi] : -r[vi]) : r[vi]);
   }
@@ -2110,6 +2149,132 @@ function renderQuality(){
   ], {h:250, key:'qconc', w:460, fmt:v=>v.toFixed(1)+'%', axisFmt:v=>v.toFixed(0)+'%'});
 }
 
+/* ===================== chart export ===================== */
+/* Charts are inline SVG whose colours come from CSS variables and classes.
+   Serialising the node alone loses all of that, so the clone gets every
+   var() resolved and the class-driven rules written in literally. The result
+   rasterises to a PNG that matches what is on screen exactly. */
+function setExport(host, name, columns, rows){
+  host._csv = {name, columns, rows};
+}
+function resolveVars(str, el){
+  return String(str).replace(/var\((--[a-z0-9-]+)\)/gi, (m, v) => cssv(v) || m);
+}
+function cloneChartSvg(svg, opaque){
+  const box = svg.getBoundingClientRect();
+  const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+  const w = vb.length === 4 ? vb[2] : box.width;
+  const h = vb.length === 4 ? vb[3] : box.height;
+  const c = svg.cloneNode(true);
+  c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  c.setAttribute('width', w);
+  c.setAttribute('height', h);
+  c.querySelectorAll('.hover-band').forEach(n => n.remove());
+  c.querySelectorAll('[style]').forEach(n =>
+    n.setAttribute('style', resolveVars(n.getAttribute('style'), n)));
+  const st = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+  st.textContent = `
+    text{font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans Lao","Phetsarath OT",sans-serif;
+         font-size:10px;fill:${cssv('--ink-3')}}
+    .grid-line{stroke:${cssv('--line-2')};stroke-width:1}
+    .zero-line{stroke:${cssv('--ink-3')};stroke-width:1;opacity:.5}`;
+  c.insertBefore(st, c.firstChild);
+  if (opaque){
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+    bg.setAttribute('width', w); bg.setAttribute('height', h);
+    bg.setAttribute('fill', cssv('--panel-solid') || '#fff');
+    c.insertBefore(bg, st.nextSibling);
+  }
+  return {node:c, w, h};
+}
+function svgToBlob(svg, scale){
+  return new Promise((resolve, reject) => {
+    const {node, w, h} = cloneChartSvg(svg, true);
+    const s = new XMLSerializer().serializeToString(node);
+    const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+    const img = new Image();
+    img.onload = () => {
+      const k = scale || 2;
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = cssv('--panel-solid') || '#fff';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      cv.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+    };
+    img.onerror = () => reject(new Error('svg load failed'));
+    img.src = url;
+  });
+}
+const ICONS = {
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  png:'<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+  csv:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/></svg>',
+  ok:'<svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg>',
+};
+function flash(btn, html){
+  const old = btn.innerHTML;
+  btn.innerHTML = ICONS.ok; btn.classList.add('ok');
+  setTimeout(() => { btn.innerHTML = old; btn.classList.remove('ok'); }, 1300);
+}
+function cardTitle(card){
+  const h = card.querySelector('h3');
+  return (h ? h.textContent : 'chart').replace(/\s+/g, ' ').trim().slice(0, 60);
+}
+/** Add copy / PNG / CSV controls to every card that holds a chart. */
+function mountExports(root){
+  (root || document).querySelectorAll('.card').forEach(card => {
+    const svg = card.querySelector('svg.chart');
+    const host = [...card.querySelectorAll('*')].find(n => n._csv);
+    if (!svg && !host) return;
+    card.querySelectorAll('.cardtools').forEach(n => n.remove());
+    const bar = document.createElement('div');
+    bar.className = 'cardtools';
+    const mk = (icon, title, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.innerHTML = icon; b.title = title;
+      b.setAttribute('aria-label', title);
+      b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
+      bar.appendChild(b);
+    };
+    if (svg){
+      mk(ICONS.copy, t('copyChart'), async b => {
+        try {
+          const blob = await svgToBlob(svg, 2);
+          await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+          flash(b);
+        } catch (err) {
+          // Clipboard image write is blocked on file:// in some browsers.
+          const blob = await svgToBlob(svg, 2);
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = cardTitle(card) + '.png';
+          a.click(); URL.revokeObjectURL(a.href); flash(b);
+        }
+      });
+      mk(ICONS.png, t('savePng'), async b => {
+        const blob = await svgToBlob(svg, 2);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = cardTitle(card) + '.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(a.href); flash(b);
+      });
+    }
+    if (host) mk(ICONS.csv, t('saveData'), b => {
+      const d = host._csv;
+      downloadCsv((d.name || cardTitle(card)) + '.csv', [d.columns, ...d.rows]);
+      flash(b);
+    });
+    if (bar.children.length){
+      card.style.position = 'relative';
+      card.appendChild(bar);
+    }
+  });
+}
+
 /* ===================== enhanced dropdown ===================== */
 /* The native <select> popup is drawn by the OS: it ignores our theme and renders
    pale grey on white in dark mode. This replaces the popup with a styled panel
@@ -2261,7 +2426,20 @@ function renderBanner(){
     all:[`Showing <b>all ITRS records</b>, both <code>Use = Yes</code> and <code>Use = No</code>. This is gross reporting turnover and is <b>not</b> a balance-of-payments measure — a handful of very large interbank placements dominates it.`,
          `ສະແດງ <b>ທຸກລາຍການ ITRS</b> ທັງ <code>Use = Yes</code> ແລະ <code>Use = No</code>. ນີ້ແມ່ນມູນຄ່າລວມການລາຍງານ <b>ບໍ່ແມ່ນ</b> ຕົວຊີ້ວັດດຸນຊຳລະ.`],
   }[state.basis];
-  $('#bannerTxt').innerHTML = msg[LANG];
+  let html = msg[LANG];
+  // The bank selector cannot reach every view: only the bank cube carries a
+  // bank axis. Say so rather than letting a filtered header imply filtered
+  // charts.
+  if (state.bank >= 0){
+    const scope = {overview:'bankScopeKpi', bop:'bankScopeNone', timeseries:'bankScopeTs',
+      weekly:'bankScopeNone', search:'bankScopeNone', checks:'bankScopeFull',
+      banks:'bankScopeFull', quality:'bankScopeFull'}[state.tab] || 'bankScopeNone';
+    const ok = scope === 'bankScopeFull';
+    html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
+      <span class="pill ${ok?'ok':'warn'}">${esc(BANKS[state.bank])}</span>
+      <span style="margin-left:6px">${esc(t(scope))}</span></div>`;
+  }
+  $('#bannerTxt').innerHTML = html;
 }
 function applyI18n(){
   document.body.classList.toggle('lo', isLo());
@@ -2279,9 +2457,13 @@ function applyI18n(){
     const el = $(s); if (el && el._sel) el._sel.refresh();
   });
 }
-function renderAll(){ rendered = {}; renderBanner(); renderTab(); }
+function renderAll(){ rendered = {}; renderTab(); }
 function renderTab(){
+  // Banner lives here, not in renderAll: the bank-scope wording is per-tab, so
+  // it has to refresh on tab switches too.
+  renderBanner();
   if (!rendered[state.tab]){ RENDERERS[state.tab](); rendered[state.tab] = true; }
+  mountExports($('#tab-' + state.tab));
 }
 function segBind(sel, fn){
   $(sel).addEventListener('click', e => {

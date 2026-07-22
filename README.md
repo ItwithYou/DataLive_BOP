@@ -57,6 +57,48 @@ python -m pip install duckdb pyarrow
 Language toggle (EN / ລາວ) is top-right. Purpose names always stay in Lao exactly
 as the reporting banks recorded them — they are never translated.
 
+## Getting charts out
+
+Hover any chart card and three buttons appear top-right:
+
+- **Copy** — puts the chart on the clipboard as a PNG. Paste straight into
+  Excel, Word or PowerPoint and it arrives pixel-identical to the screen,
+  including the current theme. (On `file://` some browsers block clipboard
+  images; it falls back to downloading the PNG.)
+- **PNG** — saves the same image at 2× for print.
+- **CSV** — the numbers behind that specific chart, already shaped for a pivot.
+
+The image is produced by cloning the SVG, resolving every CSS variable and
+class-driven rule into literal values, then rasterising. That step matters:
+serialising the live node alone would lose all colour and type, because the
+chart's styling lives in the stylesheet rather than on the element.
+
+The CSV is the data actually plotted, after the period, `Use`, and flow filters
+— so what you export always matches what you were looking at.
+
+There is no native-Excel chart object export. That would need an `.xlsx` writer
+producing chart XML, and a malformed one makes Excel refuse the file outright.
+Pasting the PNG gives an exact picture; the CSV gives editable numbers you can
+chart in Excel in two clicks.
+
+## What the Bank selector actually filters
+
+Only the bank cube carries a bank axis — adding one to the country, currency and
+purpose cubes would multiply the file size several times over for a filter that
+is rarely used that way. So the selector reaches some views and not others, and
+the banner now says which, per tab:
+
+| Tab | Bank filter |
+|---|---|
+| Banks, FX & Duplicates, Data Quality | applies to everything |
+| Overview | the four totals only — charts below are all-banks |
+| Time Series | only when Dimension is set to Bank |
+| BOP, Weekly, Search | does not apply |
+
+This is stated on screen rather than left implicit, because a filtered header
+above unfiltered charts is exactly the kind of thing that quietly produces a
+wrong number in a published report.
+
 ## The `Use` flag — the BOP definition switch
 
 `Use` is what decides whether a transaction enters the balance of payments. It is
