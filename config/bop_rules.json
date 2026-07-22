@@ -1,0 +1,154 @@
+{
+  "_README": [
+    "BOP classification rules, decoded from ITRS_DataBaseV.11.1.xlsm.",
+    "",
+    "Sources:",
+    "  - VBA module  calculate.bas    -> Purpose (X), P.2 (Y), M2 (AA), USE (AB)",
+    "  - VBA module  RateCheck.bas    -> exchange-rate validation",
+    "  - Sheet       Calculate_Tools  -> the editable tables the VBA reads",
+    "",
+    "Edit this file rather than the VBA. Column letters below refer to the",
+    "Recieve / Payment sheets in the workbook.",
+    "",
+    "  A = Bank          F = sector code (Payment)   G = counterparty name",
+    "  H = sector code (Recieve)                     M = raw purpose code",
+    "  N = country       U = raw amount              W = remark / details",
+    "  X = final purpose Y = 2-digit  Z = corrected amount  AA = M2  AB = USE"
+  ],
+
+  "purposeTransform": {
+    "_note": [
+      "Applied in order; first match wins. Mirrors Calculate_Tools rows 3-9 plus",
+      "the extra conditions hard-coded in calculate.bas.",
+      "'keep' means leave the raw purpose unchanged.",
+      "A manual override in sheet Purpose_Ask always wins over everything here."
+    ],
+    "rules": [
+      { "id": "icbc_deposit_keep", "bank": ["ICBCV", "ICBC"], "flow": "both",
+        "purposePrefix": ["050104", "050204"], "action": "keep",
+        "why": "Interbank deposit placement; keep the financial-account code" },
+
+      { "id": "nonbcel_05020401_keep", "bank": "!BCEL", "flow": "Receive",
+        "purposePrefix": ["05020401"], "action": "keep" },
+
+      { "id": "boc_icbc_050105_keep", "bank": ["BOC", "ICBC"], "flow": "Receive",
+        "purposePrefix": ["050105"], "action": "keep" },
+
+      { "id": "boc_icbc_050105_to_02020", "bank": ["BOC", "ICBC"], "flow": "Payment",
+        "purposeEquals": ["050105"], "action": "set", "to": "02020" },
+
+      { "id": "050203_to_050103", "bank": "All", "flow": "both",
+        "purposePrefix": ["050203"], "action": "set", "to": "050103" },
+
+      { "id": "bcel_kr_to_0301", "bank": "BCEL", "country": "KR", "flow": "both",
+        "purposePrefix": ["050104", "050204"], "action": "set", "to": "0301",
+        "why": "Korea remittances booked as deposits are compensation of employees" },
+
+      { "id": "move_fund_keep", "bank": "All", "flow": "both",
+        "remarkContains": ["MOVE FUND"], "action": "keep" },
+
+      { "id": "deposit_to_0404", "bank": "All", "flow": "both",
+        "purposePrefix": ["050104", "050204"], "action": "set", "to": "0404" }
+    ]
+  },
+
+  "m2Flag": {
+    "_note": [
+      "M2 = does the transaction affect broad money. 'Yes' unless a rule below",
+      "fires. Payment has one extra rule that forces Yes first."
+    ],
+    "forceYes": [
+      { "flow": "Payment", "remarkContains": ["CLEARING", "EXCHANGE"] }
+    ],
+    "setNo": [
+      { "purposePrefix": ["050105", "050205", "050204"], "sectorPrefix": ["02", "03"] },
+      { "purposePrefix": ["050103", "050104"] },
+      { "purposeEquals": ["07"] },
+      { "bank": "OPD" },
+      { "bank": "BCEL", "nameContains": ["MONEYGRAM"] },
+      { "flow": "Receive", "purposePrefix": ["05020301"] }
+    ]
+  },
+
+  "useFlag": {
+    "_note": [
+      "USE is NOT a plain Yes/No in this workbook: it also carries labels that",
+      "record WHY a record is excluded. Anything other than 'Yes' is out of the",
+      "BOP aggregates. Checked in order; first match wins."
+    ],
+    "rules": [
+      { "value": "Deposit",    "flow": "Receive", "bank": ["ICBCV", "ICBC"],
+        "purposePrefix": ["050104", "050204"] },
+      { "value": "Re_Deposit", "flow": "Payment", "bank": ["ICBCV", "ICBC"],
+        "purposePrefix": ["050104", "050204"] },
+      { "value": "FX",              "purposeEquals": ["050103", "05010302"] },
+      { "value": "Repayment_ICBCV", "remarkContains": ["FORFEITING"] },
+      { "value": "Repayment_{bank}", "bank": ["ICBCV", "BOC"], "sectorPrefix": ["02", "03"],
+        "remarkContains": ["REPAY", "PRINCIPAL"] },
+      { "value": "Loan_{bank}",      "bank": ["ICBCV", "BOC"], "sectorPrefix": ["02", "03"],
+        "remarkContains": ["LOAN"] },
+      { "value": "Yes",              "remarkContains": ["CLEARING", "EXCHANGE"] },
+      { "value": "No", "anyOf": [
+          { "purposePrefix": ["050105", "050205"], "sectorPrefix": ["02", "03"] },
+          { "purposePrefix": ["050103", "050104", "050204"] },
+          { "purposeEquals": ["07"] },
+          { "bank": "BCEL", "nameContains": ["MONEYGRAM"] },
+          { "bank": ["ICBCV", "BOC"],
+            "purposePrefix": ["05010504", "05010502", "05020503"] },
+          { "purposePrefix": ["05020401"] },
+          { "bank": "OPD", "purposePrefix": ["0302010301"] },
+          { "bank": "OPD", "purposePrefix": ["010302"] }
+      ]},
+      { "value": "Yes", "default": true }
+    ]
+  },
+
+  "exchangeRate": {
+    "_note": [
+      "Per-currency KIP rate bands. A rate of zero, or outside the band, is an",
+      "exception. RateCheck.bas also validates the USD rate against the USD row.",
+      "",
+      "WARNING: the VBA reads Calculate_Tools!A19:C29, but the table starts at",
+      "row 14 -- so USD, EUR, CNY, THB and AUD are skipped by the running macro.",
+      "CNY and THB are the second and third largest currencies in the data.",
+      "The bands below are the full table as written on the sheet."
+    ],
+    "bands": {
+      "USD": { "min": 19000, "max": 23000, "note": "row 25 value; row 14 says 18000-26000" },
+      "EUR": { "min": 20000, "max": 30000 },
+      "CNY": { "min": 2000,  "max": 4000 },
+      "THB": { "min": 500,   "max": 900 },
+      "AUD": { "min": 12000, "max": 20000 },
+      "CAD": { "min": 13000, "max": 20000 },
+      "GBP": { "min": 25000, "max": 35000 },
+      "JPY": { "min": 100,   "max": 300 },
+      "SGD": { "min": 14000, "max": 20000 },
+      "VND": { "min": 0.5,   "max": 2.0 },
+      "LAK": { "min": 0.9,   "max": 1.1 }
+    },
+    "usdPerUsdBand": { "min": 7000, "max": 25000,
+      "note": "Exchange_Rates_USD is LAK per USD; used by the dashboard's own check." },
+    "manualOverrideSheet": "Rate_Errors",
+    "manualOverrideNote": "Column K holds the corrected amount, keyed by column L = flow & row."
+  },
+
+  "duplicates": {
+    "_note": "Tiers used by the dashboard. Tier A is the one to action first.",
+    "tierA": { "keys": ["bank", "flow", "reference", "date", "amount", "currency"],
+               "minReferenceLength": 4,
+               "why": "A reference number should be unique per bank; a collision is a re-send." },
+    "tierB": { "keys": ["bank", "flow", "date", "amount", "currency", "country",
+                        "purpose", "transferorName", "recipientName"],
+               "requireNames": true },
+    "tierC": { "keys": ["bank", "flow", "date", "amount", "currency", "country", "purpose"],
+               "requireNames": false,
+               "why": "Names absent, so genuine repeats cannot be distinguished. A lead only." }
+  },
+
+  "manualOverrides": {
+    "purposeSheet": "Purpose_Ask",
+    "purposeNote": "Column K = flow & row index, column J = the corrected purpose. Wins over every rule.",
+    "purposeManualSheet": "Purpose_manual",
+    "rateSheet": "Rate_Errors"
+  }
+}
