@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# NEVER COMMIT RAW DATA OR PLAINTEXT BUILDS
+#
+# Anything committed stays in git history forever, even if deleted in a later
+# commit. Removing it means rewriting history and force-pushing. Keep it out
+# in the first place.
+# ---------------------------------------------------------------------------
+
+# Source data
+*.parquet
+*.xlsm
+*.xlsx
+*.csv
+Payment/
+Receive/
+
+# The unencrypted build. Only docs/index.html (encrypted) is publishable.
+ITRS_Dashboard.html
+*.plain.html
+
+# Never commit the passphrase
+.env
+*.secret
+password.txt
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+.vscode/
+.idea/

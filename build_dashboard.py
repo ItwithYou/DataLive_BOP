@@ -1,0 +1,951 @@
+# -*- coding: utf-8 -*-
+"""
+ITRS Live Report - dashboard build script (v2)
+==============================================
+
+Reads every ITRS source file it can find, applies one cleaning layer,
+pre-aggregates into compact JSON cubes, and bakes the result into a single
+self-contained HTML file.
+
+    python build_dashboard.py
+
+Output: ITRS_Dashboard.html  (open in any browser - no server, no internet)
+
+ADDING NEW DATA
+---------------
+Drop new files into the folders below and re-run. Nothing else to change:
+
+    <root>/Payment/*.parquet      outflows
+    <root>/Receive/*.parquet      inflows
+    <root>/Payment/*.csv|.xlsx    also picked up
+    <root>/Receive/*.csv|.xlsx
+
+Flow direction comes from the folder name, so a 2026 file needs no new config.
+Columns are matched by name and unioned, so extra or missing columns are fine.
+
+CONFIG
+------
+    config/report_lines.json   weekly report line definitions - edit freely
+"""
+
+import argparse
+import base64
+import getpass
+import gzip
+import json
+import os
+import re
+import secrets
+import sys
+import unicodedata
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+
+try:
+    import duckdb
+except ImportError:
+    sys.exit("duckdb is required:  python -m pip install duckdb")
+
+# PBKDF2 work factor. Raise it if you want more brute-force headroom; the cost
+# is paid once per unlock, on the viewer's device.
+KDF_ITERATIONS = 310_000
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+CONFIG = HERE / "config"
+TEMPLATE = HERE / "template.html"
+OUTPUT = HERE / "ITRS_Dashboard.html"
+
+DATA_EXT = (".parquet", ".csv", ".xlsx", ".xlsm")
+
+# --------------------------------------------------------------------------
+# Reference data
+# --------------------------------------------------------------------------
+
+PUR2_META = {
+    "01": ("Goods", "ສິນຄ້າ", "current"),
+    "02": ("Services", "ບໍລິການ", "current"),
+    "03": ("Primary income", "ລາຍໄດ້ຂັ້ນໜຶ່ງ", "current"),
+    "04": ("Secondary income", "ລາຍໄດ້ຂັ້ນສອງ", "current"),
+    "05": ("Financial account", "ບັນຊີການເງິນ", "financial"),
+    "06": ("Unclassifiable", "ບໍ່ສາມາດຈັດປະເພດ", "other"),
+    "07": ("Goods, no cross-border movement", "ສິນຄ້າບໍ່ມີການສົ່ງອອກ", "current"),
+    "99": ("Unclassified", "ບໍ່ໄດ້ຈັດປະເພດ", "other"),
+}
+
+# Plausible LAK-per-USD band. Medians run 8,258 (2017) to 21,483 (2025).
+FX_MIN, FX_MAX = 7000.0, 25000.0
+
+SIZE_BUCKETS = [
+    (0, 1_000, "< $1k"), (1_000, 10_000, "$1k-$10k"),
+    (10_000, 100_000, "$10k-$100k"), (100_000, 1_000_000, "$100k-$1m"),
+    (1_000_000, 10_000_000, "$1m-$10m"), (10_000_000, float("inf"), "> $10m"),
+]
+
+# (column in the cleaned `tx` view, English label, Lao label)
+QUALITY_FIELDS = [
+    ("sub_date", "Submission date", "ວັນທີສົ່ງ"),
+    ("country", "Counterpart country", "ປະເທດຄູ່ຮ່ວມ"),
+    ("currency", "Currency", "ສະກຸນເງິນ"),
+    ("usd", "Amount (USD)", "ມູນຄ່າ (USD)"),
+    ("method_raw", "Transfer method", "ວິທີໂອນ"),
+    ("lsic", "LSIC industry code", "ລະຫັດ LSIC"),
+    ("tr_name", "Transferor name", "ຊື່ຜູ້ໂອນ"),
+    ("rc_name", "Recipient name", "ຊື່ຜູ້ຮັບ"),
+    ("tr_tin", "Transferor TIN", "ເລກ TIN ຜູ້ໂອນ"),
+    ("rc_tin", "Recipient TIN", "ເລກ TIN ຜູ້ຮັບ"),
+    ("docs", "Supporting documents", "ເອກະສານປະກອບ"),
+]
+
+COUNTRY_NAMES = {
+    "CN": "China", "US": "United States", "HK": "Hong Kong SAR", "TH": "Thailand",
+    "SG": "Singapore", "MO": "Macao SAR", "VN": "Viet Nam", "RU": "Russia",
+    "GB": "United Kingdom", "AU": "Australia", "KR": "Korea, Rep.", "JP": "Japan",
+    "AE": "United Arab Emirates", "MY": "Malaysia", "DE": "Germany", "FR": "France",
+    "IN": "India", "ID": "Indonesia", "TW": "Taiwan", "CH": "Switzerland",
+    "NL": "Netherlands", "IT": "Italy", "CA": "Canada", "BE": "Belgium",
+    "KH": "Cambodia", "MM": "Myanmar", "PH": "Philippines", "NZ": "New Zealand",
+    "SE": "Sweden", "NO": "Norway", "DK": "Denmark", "FI": "Finland",
+    "ES": "Spain", "AT": "Austria", "PL": "Poland", "TR": "Turkiye",
+    "SA": "Saudi Arabia", "QA": "Qatar", "KW": "Kuwait", "IL": "Israel",
+    "ZA": "South Africa", "BR": "Brazil", "MX": "Mexico", "AR": "Argentina",
+    "CL": "Chile", "LU": "Luxembourg", "IE": "Ireland", "PT": "Portugal",
+    "GR": "Greece", "CZ": "Czechia", "HU": "Hungary", "RO": "Romania",
+    "UA": "Ukraine", "KZ": "Kazakhstan", "BD": "Bangladesh", "PK": "Pakistan",
+    "LK": "Sri Lanka", "NP": "Nepal", "MN": "Mongolia", "BN": "Brunei",
+    "LA": "Lao PDR", "VG": "British Virgin Islands", "KY": "Cayman Islands",
+    "BM": "Bermuda", "PA": "Panama", "CY": "Cyprus", "MT": "Malta",
+    "MU": "Mauritius", "SC": "Seychelles", "WS": "Samoa", "LI": "Liechtenstein",
+    "MC": "Monaco", "AD": "Andorra", "IM": "Isle of Man", "JE": "Jersey",
+    "GG": "Guernsey", "BS": "Bahamas", "BB": "Barbados", "CR": "Costa Rica",
+    "EG": "Egypt", "NG": "Nigeria", "KE": "Kenya", "MA": "Morocco",
+    "BH": "Bahrain", "OM": "Oman", "JO": "Jordan", "LB": "Lebanon",
+    "IQ": "Iraq", "IR": "Iran", "AF": "Afghanistan", "UZ": "Uzbekistan",
+    "BY": "Belarus", "RS": "Serbia", "HR": "Croatia", "SI": "Slovenia",
+    "SK": "Slovakia", "BG": "Bulgaria", "EE": "Estonia", "LV": "Latvia",
+    "LT": "Lithuania", "IS": "Iceland", "MV": "Maldives", "FJ": "Fiji",
+    "PG": "Papua New Guinea", "TL": "Timor-Leste", "MG": "Madagascar",
+}
+
+# How many entities to embed in the searchable index, and how many of each
+# entity's largest transactions to carry with it.
+ENTITY_LIMIT = 4000
+ENTITY_TX_LIMIT = 12
+EXCEPTION_LIMIT = 300
+# Currencies carried at daily grain for the weekly report's currency paragraph.
+DAILY_CURRENCIES = 10
+
+
+# --------------------------------------------------------------------------
+# Text cleaning
+# --------------------------------------------------------------------------
+
+def _mojibake_bytes(s):
+    """Recover the original byte sequence from CP1252-mangled text.
+
+    A plain ``s.encode('cp1252')`` is not enough: bytes 0x81, 0x8D, 0x8F, 0x90
+    and 0x9D are undefined in CP1252, so a decoder that hit them passed them
+    through unchanged as control characters. The encode therefore has to fall
+    back to the raw code point for anything CP1252 cannot represent.
+    """
+    out = bytearray()
+    for ch in s:
+        try:
+            out += ch.encode("cp1252")
+        except UnicodeEncodeError:
+            cp = ord(ch)
+            if cp > 0xFF:
+                return None
+            out.append(cp)
+    return bytes(out)
+
+
+def fix_mojibake(s):
+    """Repair UTF-8 text that was decoded as CP1252 and re-encoded."""
+    if not s or not re.search(r"[ÃÂàáâãäåæçèéêëìíîï]", s):
+        return s
+    raw = _mojibake_bytes(s)
+    if raw is None:
+        return s
+    try:
+        repaired = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return s
+    return repaired if not re.search(r"[Ãàº»]", repaired) else s
+
+
+def norm_text(s):
+    if s is None:
+        return None
+    s = unicodedata.normalize("NFC", str(s))
+    s = re.sub(r"\s+", " ", s).strip()
+    return s or None
+
+
+def clean_name(s):
+    """Normalise an entity name for grouping: repair, collapse, strip noise."""
+    s = norm_text(fix_mojibake(s) if s else s)
+    if not s:
+        return None
+    s = s.strip(" .,-_/\\\"'")
+    return s or None
+
+
+# --------------------------------------------------------------------------
+# Source discovery
+# --------------------------------------------------------------------------
+
+def discover(folder):
+    """Every readable data file in a flow folder, newest extension wins."""
+    d = ROOT / folder
+    if not d.is_dir():
+        return []
+    return sorted(p for p in d.iterdir()
+                  if p.is_file() and p.suffix.lower() in DATA_EXT
+                  and not p.name.startswith("~$"))
+
+
+def reader_sql(path):
+    ext = path.suffix.lower()
+    p = str(path).replace("'", "''")
+    if ext == ".parquet":
+        return f"SELECT * FROM read_parquet('{p}', union_by_name = true)"
+    if ext == ".csv":
+        return f"SELECT * FROM read_csv('{p}', header = true, sample_size = -1, all_varchar = false)"
+    return f"SELECT * FROM st_read('{p}')"      # xlsx/xlsm via spatial ext
+
+
+def build_connection():
+    con = duckdb.connect()
+    con.execute("PRAGMA threads=4")
+
+    sources = {"Payment": discover("Payment"), "Receive": discover("Receive")}
+    if not any(sources.values()):
+        sys.exit(f"No data files found under {ROOT / 'Payment'} or {ROOT / 'Receive'}")
+
+    needs_excel = any(p.suffix.lower() in (".xlsx", ".xlsm")
+                      for v in sources.values() for p in v)
+    if needs_excel:
+        try:
+            con.execute("INSTALL spatial; LOAD spatial;")
+        except Exception as e:                                    # noqa: BLE001
+            print(f"  ! Excel support unavailable ({e}); skipping .xlsx/.xlsm")
+            for k in sources:
+                sources[k] = [p for p in sources[k]
+                              if p.suffix.lower() not in (".xlsx", ".xlsm")]
+
+    parts = []
+    for flow, files in sources.items():
+        for p in files:
+            # Flow comes from the folder, so a file with no Flow column still works.
+            parts.append(f"SELECT *, '{flow}' AS _flow FROM ({reader_sql(p)})")
+    con.execute("CREATE VIEW raw AS " + "\nUNION ALL BY NAME\n".join(parts))
+
+    files_used = [p.name for v in sources.values() for p in v]
+    print(f"  {len(files_used)} source files "
+          f"({len(sources['Payment'])} payment, {len(sources['Receive'])} receive)")
+    return con, files_used
+
+
+def create_clean_view(con):
+    """The single cleaning layer every cube reads from."""
+    con.execute(f"""
+        CREATE VIEW tx AS
+        SELECT
+            Hash_ID,
+            NULLIF(TRIM(Banks), '')                                   AS bank,
+            COALESCE(NULLIF(TRIM(Flow), ''), _flow)                   AS flow,
+            COALESCE(Source_Year, YEAR(Date_of_Transaction))          AS yr,
+            Date_of_Transaction                                       AS tx_date,
+            strftime(Date_of_Transaction, '%Y-%m')                    AS ym,
+            strftime(Date_of_Transaction, '%Y-%m-%d')                 AS ymd,
+            Date_of_Submission                                        AS sub_date,
+            date_diff('day', Date_of_Transaction, Date_of_Submission) AS lag_days,
+            NULLIF(TRIM(Reference_Number), '')                        AS ref,
+
+            COALESCE(NULLIF(TRIM(Pur_5), ''), '')                     AS pur5,
+            NULLIF(TRIM(Purpose_Name), '')                            AS purpose_name,
+            UPPER(NULLIF(TRIM(Country_Code), ''))                     AS country,
+            UPPER(NULLIF(TRIM(Currency_Code), ''))                    AS currency,
+            NULLIF(TRIM(Transfer_Method), '')                         AS method_raw,
+            NULLIF(TRIM(LSIC_Code), '')                               AS lsic,
+            NULLIF(TRIM(Transferor_Name), '')                         AS tr_name,
+            NULLIF(TRIM(Recipient_Name), '')                          AS rc_name,
+            NULLIF(TRIM(Transferor_TIN), '')                          AS tr_tin,
+            NULLIF(TRIM(Recipient_TIN), '')                           AS rc_tin,
+            NULLIF(TRIM(Supporting_Documents), '')                    AS docs,
+
+            Amount_Transferred                                        AS amt_orig,
+            Amount_USD                                                AS usd,
+            Amount_Kip                                                AS kip,
+            Exchange_Rates_USD                                        AS fx,
+
+            ("Use"     = 'Yes')                                       AS use_flag,
+            (M2        = 'Yes')                                       AS m2_flag,
+            (Move_Fund = 'Yes')                                       AS move_flag,
+
+            (Exchange_Rates_USD IS NULL
+                OR Exchange_Rates_USD < {FX_MIN}
+                OR Exchange_Rates_USD > {FX_MAX})                     AS bad_fx,
+            (Amount_USD IS NULL)                                      AS null_amt,
+            (Amount_USD = 0)                                          AS zero_amt,
+            (Amount_USD < 0)                                          AS neg_amt,
+            (Date_of_Submission < Date_of_Transaction)                AS future_dated,
+            (date_diff('day', Date_of_Transaction, Date_of_Submission) > 30) AS late_sub
+        FROM raw
+        WHERE Date_of_Transaction IS NOT NULL
+    """)
+
+
+# --------------------------------------------------------------------------
+# Dimensions
+# --------------------------------------------------------------------------
+
+def load_report_config():
+    path = CONFIG / "report_lines.json"
+    if not path.exists():
+        sys.exit(f"Missing config file: {path}")
+    cfg = json.loads(path.read_text(encoding="utf-8"))
+    lines = sorted(cfg["lines"], key=lambda l: l["order"])
+    return cfg, lines
+
+
+def report_line_for(pur5, lines):
+    """Longest-prefix match of a Pur_5 code to a report line."""
+    best, best_len = None, -1
+    catch = None
+    for i, ln in enumerate(lines):
+        if ln.get("catchAll"):
+            catch = i
+        for code in ln["codes"]:
+            if pur5.startswith(code) and len(code) > best_len:
+                best, best_len = i, len(code)
+    return best if best is not None else (catch if catch is not None else len(lines) - 1)
+
+
+def build_dimensions(con, lines):
+    dims = {}
+
+    dims["months"] = [r[0] for r in con.execute(
+        "SELECT DISTINCT ym FROM tx WHERE ym IS NOT NULL ORDER BY 1").fetchall()]
+    dims["years"] = [int(r[0]) for r in con.execute(
+        "SELECT DISTINCT yr FROM tx WHERE yr IS NOT NULL ORDER BY 1").fetchall()]
+
+    # --- purposes ---------------------------------------------------------
+    votes = defaultdict(Counter)
+    for code, name, c in con.execute("""
+            SELECT pur5, purpose_name, COUNT(*) FROM tx
+            WHERE pur5 <> '' AND purpose_name IS NOT NULL GROUP BY 1, 2""").fetchall():
+        votes[code][norm_text(fix_mojibake(name))] += c
+
+    codes = [r[0] for r in con.execute(
+        "SELECT pur5 FROM tx WHERE pur5 <> '' GROUP BY 1 ORDER BY 1").fetchall()]
+    seen, purposes = set(), []
+    for code in codes:
+        code = str(code).strip()
+        if len(code) not in (2, 4, 6):
+            code = code[:6] if len(code) > 6 else code[:4] if len(code) > 4 else code[:2]
+        if code in seen:
+            continue
+        seen.add(code)
+        best = votes.get(code)
+        purposes.append({
+            "code": code,
+            "name": (best.most_common(1)[0][0] if best else None) or code,
+            "parent": code[:-2] if len(code) > 2 else None,
+            "pur2": code[:2] if code[:2] in PUR2_META else "99",
+            "line": report_line_for(code, lines),
+        })
+    dims["purposes"] = sorted(purposes, key=lambda p: p["code"])
+
+    # --- other dimensions -------------------------------------------------
+    countries = [r[0] for r in con.execute("""
+        SELECT country FROM tx WHERE country IS NOT NULL
+        GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
+    dims["countries"] = [{"code": c, "name": COUNTRY_NAMES.get(c, c)} for c in countries]
+
+    dims["currencies"] = [r[0] for r in con.execute("""
+        SELECT currency FROM tx WHERE currency IS NOT NULL
+        GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
+
+    dims["banks"] = [r[0] for r in con.execute("""
+        SELECT bank FROM tx WHERE bank IS NOT NULL
+        GROUP BY 1 ORDER BY SUM(usd) DESC NULLS LAST""").fetchall()]
+
+    raw_methods = [r[0] for r in con.execute(
+        "SELECT DISTINCT method_raw FROM tx WHERE method_raw IS NOT NULL").fetchall()]
+    method_map = {m: (norm_text(fix_mojibake(m)) or m) for m in raw_methods}
+    dims["methods"] = sorted(set(method_map.values()))
+
+    dims["pur2"] = [{"code": k, "en": v[0], "lo": v[1], "account": v[2]}
+                    for k, v in sorted(PUR2_META.items())]
+    dims["sizeBuckets"] = [b[2] for b in SIZE_BUCKETS]
+    dims["qualityFields"] = [{"en": e, "lo": l} for _, e, l in QUALITY_FIELDS]
+    dims["reportLines"] = [
+        {"id": l["id"], "lo": l["lo"], "en": l["en"],
+         "group": l.get("group", "financial"), "bankOwn": bool(l.get("bankOwn"))}
+        for l in lines
+    ]
+    return dims, method_map
+
+
+def register_lookups(con, dims, method_map):
+    def tbl(name, cols, rows):
+        con.execute(f"CREATE TABLE {name} ({cols})")
+        con.executemany(
+            f"INSERT INTO {name} VALUES ({','.join('?' * (cols.count(',') + 1))})", rows)
+
+    tbl("purpose_lk", "pur5 VARCHAR, pur2 VARCHAR, ix INTEGER, line INTEGER",
+        [(p["code"], p["pur2"], i, p["line"]) for i, p in enumerate(dims["purposes"])])
+    mix = {m: i for i, m in enumerate(dims["methods"])}
+    tbl("method_lk", "raw VARCHAR, ix INTEGER",
+        [(r, mix[c]) for r, c in method_map.items()])
+    tbl("month_lk", "ym VARCHAR, ix INTEGER",
+        [(m, i) for i, m in enumerate(dims["months"])])
+    tbl("year_lk", "yr BIGINT, ix INTEGER",
+        [(y, i) for i, y in enumerate(dims["years"])])
+    tbl("country_lk", "code VARCHAR, ix INTEGER",
+        [(c["code"], i) for i, c in enumerate(dims["countries"])])
+    tbl("curr_lk", "code VARCHAR, ix INTEGER",
+        [(c, i) for i, c in enumerate(dims["currencies"])])
+    tbl("bank_lk", "code VARCHAR, ix INTEGER",
+        [(b, i) for i, b in enumerate(dims["banks"])])
+    tbl("pur2_lk", "code VARCHAR, ix INTEGER",
+        [(p["code"], i) for i, p in enumerate(dims["pur2"])])
+
+    con.execute("""
+        CREATE VIEW txf AS
+        SELECT t.*,
+               COALESCE(p.ix, -1)                             AS purpose_ix,
+               COALESCE(p.pur2, '99')                         AS pur2,
+               COALESCE(p.line, -1)                           AS line_ix,
+               COALESCE(m.ix, -1)                             AS method_ix,
+               CASE WHEN t.flow = 'Payment' THEN 0 ELSE 1 END AS flow_ix,
+               CASE WHEN t.use_flag THEN 1 ELSE 0 END         AS use_ix
+        FROM tx t
+        LEFT JOIN purpose_lk p ON p.pur5 = t.pur5
+        LEFT JOIN method_lk  m ON m.raw  = t.method_raw
+    """)
+
+
+# --------------------------------------------------------------------------
+# Cube helpers
+# --------------------------------------------------------------------------
+
+def r2(x, nd=3):
+    if x is None:
+        return 0
+    v = round(float(x), nd)
+    return 0 if v == 0 else v
+
+
+def fetch_cube(con, sql):
+    """Cube rows come back as [...int dims, count, usdMillions]."""
+    out = []
+    for row in con.execute(sql).fetchall():
+        out.append([int(v) if v is not None else -1 for v in row[:-2]]
+                   + [int(row[-2] or 0), r2(row[-1])])
+    return out
+
+
+def build_cubes(con, dims):
+    cubes = {}
+    base = """
+        FROM txf t
+        JOIN month_lk mo ON mo.ym = t.ym
+        JOIN year_lk  y  ON y.yr  = t.yr
+        LEFT JOIN pur2_lk p2 ON p2.code = t.pur2
+    """
+
+    cubes["month"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, p2.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} WHERE p2.ix IS NOT NULL GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    cubes["country"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, c.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} JOIN country_lk c ON c.code = t.country
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    cubes["currency"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} JOIN curr_lk cu ON cu.code = t.currency
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    cubes["bank"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, b.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} JOIN bank_lk b ON b.code = t.bank
+        GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    cubes["purpose"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} WHERE t.purpose_ix >= 0 GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    cubes["method"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, t.method_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {base} WHERE t.method_ix >= 0 GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""")
+
+    case_sql = " ".join(f"WHEN t.usd >= {lo} AND t.usd < {hi} THEN {i}"
+                        for i, (lo, hi, _) in enumerate(SIZE_BUCKETS) if hi != float("inf"))
+    last = len(SIZE_BUCKETS) - 1
+    cubes["size"] = fetch_cube(con, f"""
+        SELECT * FROM (
+          SELECT y.ix AS a, t.flow_ix AS b,
+                 CASE {case_sql} WHEN t.usd >= {SIZE_BUCKETS[last][0]} THEN {last} ELSE -1 END AS c,
+                 t.use_ix AS d, COUNT(*) AS n, SUM(t.usd)/1e6 AS v
+          {base} WHERE t.usd IS NOT NULL AND t.usd > 0 GROUP BY 1,2,3,4
+        ) WHERE c >= 0 ORDER BY a,b,c,d""")
+
+    # ---- monthly cubes powering the Time Series tab ----------------------
+    mbase = "FROM txf t JOIN month_lk mo ON mo.ym = t.ym WHERE t.use_ix = 1"
+    cubes["tsBank"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, b.ix, COUNT(*), SUM(t.usd)/1e6
+        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN bank_lk b ON b.code = t.bank
+        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+    cubes["tsCountry"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, c.ix, COUNT(*), SUM(t.usd)/1e6
+        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN country_lk c ON c.code = t.country
+        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+    cubes["tsCurrency"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, cu.ix, COUNT(*), SUM(t.usd)/1e6
+        FROM txf t JOIN month_lk mo ON mo.ym = t.ym JOIN curr_lk cu ON cu.code = t.currency
+        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+    cubes["tsPurpose"] = fetch_cube(con, f"""
+        SELECT mo.ix, t.flow_ix, t.purpose_ix, COUNT(*), SUM(t.usd)/1e6
+        FROM txf t JOIN month_lk mo ON mo.ym = t.ym
+        WHERE t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4
+        GROUP BY 1,2,3 ORDER BY 1,2,3""")
+
+    # ---- daily cubes powering the Weekly Report --------------------------
+    # [date, flow, reportLine, useFlag, count, usdMillions]
+    cubes["dayLine"] = [
+        [d, int(f), int(l), int(uix), int(n), r2(u)]
+        for d, f, l, uix, n, u in con.execute("""
+            SELECT t.ymd, t.flow_ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+            FROM txf t WHERE t.line_ix >= 0
+            GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
+    ]
+    # [date, flow, currency, useFlag, usdMillions]
+    cubes["dayCurrency"] = [
+        [d, int(f), int(c), int(uix), r2(u)]
+        for d, f, c, uix, u in con.execute(f"""
+            SELECT t.ymd, t.flow_ix, cu.ix, t.use_ix, SUM(t.usd)/1e6
+            FROM txf t JOIN curr_lk cu ON cu.code = t.currency
+            WHERE cu.ix < {DAILY_CURRENCIES}
+            GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
+    ]
+
+    # ---- reporting quality ----------------------------------------------
+    cubes["lag"] = [
+        [int(a), int(b), r2(c, 1), r2(d, 1), int(e), int(f), int(g)]
+        for a, b, c, d, e, f, g in con.execute("""
+            SELECT y.ix, bk.ix, MEDIAN(t.lag_days), QUANTILE_CONT(t.lag_days, 0.9),
+                   COUNT(*) FILTER (WHERE t.late_sub), COUNT(*) FILTER (WHERE t.future_dated), COUNT(*)
+            FROM txf t JOIN year_lk y ON y.yr = t.yr JOIN bank_lk bk ON bk.code = t.bank
+            WHERE t.lag_days IS NOT NULL GROUP BY 1,2 ORDER BY 1,2""").fetchall()
+    ]
+    cubes["quality"] = [
+        [int(x or 0) for x in row]
+        for row in con.execute("""
+            SELECT y.ix, bk.ix, COUNT(*),
+                   COUNT(*) FILTER (WHERE t.bad_fx),
+                   COUNT(*) FILTER (WHERE t.null_amt),
+                   COUNT(*) FILTER (WHERE t.zero_amt),
+                   COUNT(*) FILTER (WHERE t.neg_amt),
+                   COUNT(*) FILTER (WHERE t.future_dated),
+                   COUNT(*) FILTER (WHERE t.pur2 = '99'),
+                   COUNT(*) FILTER (WHERE t.country IS NULL),
+                   COUNT(*) FILTER (WHERE t.method_raw IS NULL),
+                   COUNT(*) FILTER (WHERE t.lsic IS NULL)
+            FROM txf t JOIN year_lk y ON y.yr = t.yr JOIN bank_lk bk ON bk.code = t.bank
+            GROUP BY 1,2 ORDER BY 1,2""").fetchall()
+    ]
+    field_sql = ", ".join(
+        f"COUNT(*) FILTER (WHERE \"{c}\" IS NULL OR TRIM(CAST(\"{c}\" AS VARCHAR)) = '')"
+        for c, _, _ in QUALITY_FIELDS)
+    cubes["completeness"] = [
+        [int(v) for v in row]
+        for row in con.execute(f"""
+            SELECT y.ix, COUNT(*), {field_sql}
+            FROM tx r JOIN year_lk y ON y.yr = r.yr GROUP BY 1 ORDER BY 1""").fetchall()
+    ]
+    cubes["concentration"] = [
+        [int(a), int(b), r2(c, 2), r2(d, 2), r2(e, 2)]
+        for a, b, c, d, e in con.execute("""
+            WITH ranked AS (
+                SELECT y.ix AS yix, t.flow_ix, t.usd,
+                       ROW_NUMBER() OVER (PARTITION BY y.ix, t.flow_ix ORDER BY t.usd DESC) AS rn,
+                       SUM(t.usd) OVER (PARTITION BY y.ix, t.flow_ix) AS tot
+                FROM txf t JOIN year_lk y ON y.yr = t.yr WHERE t.usd > 0 AND t.use_ix = 1)
+            SELECT yix, flow_ix,
+                   100*SUM(usd) FILTER (WHERE rn<=10)/ANY_VALUE(tot),
+                   100*SUM(usd) FILTER (WHERE rn<=100)/ANY_VALUE(tot),
+                   100*SUM(usd) FILTER (WHERE rn<=1000)/ANY_VALUE(tot)
+            FROM ranked GROUP BY 1,2 ORDER BY 1,2""").fetchall()
+    ]
+    cubes["flags"] = [
+        [int(a), int(b), int(c), int(d), int(e), int(f), r2(g)]
+        for a, b, c, d, e, f, g in con.execute("""
+            SELECT y.ix, t.flow_ix,
+                   CASE WHEN t.use_flag THEN 1 ELSE 0 END,
+                   CASE WHEN t.m2_flag THEN 1 ELSE 0 END,
+                   CASE WHEN t.move_flag THEN 1 ELSE 0 END,
+                   COUNT(*), SUM(t.usd)/1e6
+            FROM txf t JOIN year_lk y ON y.yr = t.yr
+            GROUP BY 1,2,3,4,5 ORDER BY 1,2""").fetchall()
+    ]
+    return cubes
+
+
+# --------------------------------------------------------------------------
+# Exceptions: FX errors and duplicates
+# --------------------------------------------------------------------------
+
+def build_exceptions(con, dims):
+    """Row-level exception lists, capped so the HTML stays small."""
+    exc = {}
+    bank_ix = {b: i for i, b in enumerate(dims["banks"])}
+    curr_ix = {c: i for i, c in enumerate(dims["currencies"])}
+
+    # ---- FX rate errors --------------------------------------------------
+    exc["fxByYearBank"] = [
+        [int(a), int(b), int(c), int(d), int(e)]
+        for a, b, c, d, e in con.execute("""
+            SELECT y.ix, bk.ix,
+                   COUNT(*) FILTER (WHERE t.fx IS NULL),
+                   COUNT(*) FILTER (WHERE t.fx IS NOT NULL AND t.fx < {lo}),
+                   COUNT(*) FILTER (WHERE t.fx > {hi})
+            FROM txf t JOIN year_lk y ON y.yr = t.yr JOIN bank_lk bk ON bk.code = t.bank
+            WHERE t.bad_fx GROUP BY 1,2 ORDER BY 1,2""".format(lo=FX_MIN, hi=FX_MAX)).fetchall()
+    ]
+    exc["fxRows"] = [
+        {"d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
+         "c": curr_ix.get(c, -1), "amt": r2(amt, 2), "fx": None if fx is None else r2(fx, 2),
+         "usd": r2(usd, 2), "exp": r2(exp, 0), "ref": ref}
+        for d, b, fl, c, amt, fx, usd, exp, ref in con.execute(f"""
+            WITH med AS (
+                SELECT yr, MEDIAN(fx) AS m FROM tx
+                WHERE fx BETWEEN {FX_MIN} AND {FX_MAX} GROUP BY 1)
+            SELECT t.ymd, t.bank, t.flow, t.currency, t.amt_orig, t.fx, t.usd, med.m, t.ref
+            FROM tx t LEFT JOIN med ON med.yr = t.yr
+            WHERE t.bad_fx
+            ORDER BY COALESCE(t.usd, 0) DESC, t.ymd
+            LIMIT {EXCEPTION_LIMIT}""").fetchall()
+    ]
+
+    # ---- Duplicates, three confidence tiers ------------------------------
+    # A: same bank+flow+reference+date+amount+currency. A reference number is
+    #    meant to be unique per bank, so a collision is a near-certain re-send.
+    con.execute(f"""
+        CREATE VIEW dupA AS
+        SELECT bank, flow, ref, ymd, amt_orig, currency, yr,
+               COUNT(*) AS c, SUM(usd) AS usd, ANY_VALUE(country) AS country,
+               ANY_VALUE(COALESCE(tr_name, rc_name)) AS nm
+        FROM tx
+        WHERE ref IS NOT NULL AND LENGTH(ref) >= 4
+        GROUP BY 1,2,3,4,5,6,7 HAVING COUNT(*) > 1""")
+    # B: no usable reference, but every business key matches AND both entity
+    #    names are present - strong evidence of a genuine double entry.
+    con.execute("""
+        CREATE VIEW dupB AS
+        SELECT bank, flow, ymd, amt_orig, currency, country, pur5, tr_name, rc_name, yr,
+               COUNT(*) AS c, SUM(usd) AS usd
+        FROM tx
+        WHERE tr_name IS NOT NULL AND rc_name IS NOT NULL
+        GROUP BY 1,2,3,4,5,6,7,8,9,10 HAVING COUNT(*) > 1""")
+    # C: same business key but entity names missing, so it cannot be told
+    #    apart from genuinely repeated small transfers. Reported, not counted.
+    con.execute("""
+        CREATE VIEW dupC AS
+        SELECT bank, flow, ymd, amt_orig, currency, country, pur5, yr,
+               COUNT(*) AS c, SUM(usd) AS usd
+        FROM tx
+        WHERE tr_name IS NULL AND rc_name IS NULL
+        GROUP BY 1,2,3,4,5,6,7,8 HAVING COUNT(*) > 1""")
+
+    exc["dupSummary"] = {}
+    for tier in ("A", "B", "C"):
+        row = con.execute(f"""
+            SELECT COUNT(*), SUM(c - 1), SUM(usd * (c - 1) / c) / 1e6 FROM dup{tier}""").fetchone()
+        exc["dupSummary"][tier] = {
+            "groups": int(row[0] or 0), "extra": int(row[1] or 0), "usdM": r2(row[2])}
+
+    exc["dupByYearBank"] = {}
+    for tier in ("A", "B", "C"):
+        exc["dupByYearBank"][tier] = [
+            [int(a), int(b), int(c), r2(d)]
+            for a, b, c, d in con.execute(f"""
+                SELECT y.ix, bk.ix, SUM(d.c - 1), SUM(d.usd * (d.c - 1) / d.c) / 1e6
+                FROM dup{tier} d JOIN year_lk y ON y.yr = d.yr
+                JOIN bank_lk bk ON bk.code = d.bank
+                GROUP BY 1,2 ORDER BY 1,2""").fetchall()
+        ]
+
+    exc["dupRows"] = {
+        "A": [{"d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
+               "c": curr_ix.get(c, -1), "amt": r2(a, 2), "n": int(n),
+               "usd": r2(u, 2), "ref": rf, "nm": clean_name(nm), "ctry": ct}
+              for d, b, fl, c, a, n, u, rf, nm, ct in con.execute(f"""
+                  SELECT ymd, bank, flow, currency, amt_orig, c, usd, ref, nm, country
+                  FROM dupA ORDER BY usd * (c - 1) / c DESC LIMIT {EXCEPTION_LIMIT}""").fetchall()],
+        "B": [{"d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
+               "c": curr_ix.get(c, -1), "amt": r2(a, 2), "n": int(n),
+               "usd": r2(u, 2), "ref": None, "nm": clean_name(tn), "nm2": clean_name(rn),
+               "ctry": ct, "pur": p}
+              for d, b, fl, c, a, n, u, tn, rn, ct, p in con.execute(f"""
+                  SELECT ymd, bank, flow, currency, amt_orig, c, usd, tr_name, rc_name, country, pur5
+                  FROM dupB ORDER BY usd * (c - 1) / c DESC LIMIT {EXCEPTION_LIMIT}""").fetchall()],
+        "C": [{"d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
+               "c": curr_ix.get(c, -1), "amt": r2(a, 2), "n": int(n),
+               "usd": r2(u, 2), "ctry": ct, "pur": p}
+              for d, b, fl, c, a, n, u, ct, p in con.execute(f"""
+                  SELECT ymd, bank, flow, currency, amt_orig, c, usd, country, pur5
+                  FROM dupC ORDER BY usd * (c - 1) / c DESC LIMIT {EXCEPTION_LIMIT}""").fetchall()],
+    }
+    return exc
+
+
+# --------------------------------------------------------------------------
+# Entity search index
+# --------------------------------------------------------------------------
+
+def build_entities(con, dims):
+    """Searchable index of the largest counterparties, with their top transactions."""
+    con.execute("""
+        CREATE VIEW ent AS
+        SELECT tr_name AS nm, 0 AS side, * EXCLUDE (tr_name, rc_name), rc_name AS other
+        FROM txf WHERE tr_name IS NOT NULL
+        UNION ALL BY NAME
+        SELECT rc_name AS nm, 1 AS side, * EXCLUDE (tr_name, rc_name), tr_name AS other
+        FROM txf WHERE rc_name IS NOT NULL
+    """)
+    # Normalise names in SQL so the index groups spelling-identical entries.
+    con.execute("""
+        CREATE TABLE ent_tot AS
+        SELECT TRIM(nm) AS nm, COUNT(*) AS n, SUM(usd) AS usd,
+               SUM(CASE WHEN flow_ix = 1 THEN usd ELSE 0 END) AS usd_in,
+               SUM(CASE WHEN flow_ix = 0 THEN usd ELSE 0 END) AS usd_out,
+               MIN(yr) AS y0, MAX(yr) AS y1
+        FROM ent GROUP BY 1
+    """)
+    top = con.execute(f"""
+        SELECT nm FROM ent_tot ORDER BY usd DESC NULLS LAST LIMIT {ENTITY_LIMIT}""").fetchall()
+    keep = [r[0] for r in top]
+    con.execute("CREATE TABLE ent_keep (nm VARCHAR, ix INTEGER)")
+    con.executemany("INSERT INTO ent_keep VALUES (?, ?)",
+                    [(n, i) for i, n in enumerate(keep)])
+
+    bank_ix = {b: i for i, b in enumerate(dims["banks"])}
+    curr_ix = {c: i for i, c in enumerate(dims["currencies"])}
+    ctry_ix = {c["code"]: i for i, c in enumerate(dims["countries"])}
+    pur_ix = {p["code"]: i for i, p in enumerate(dims["purposes"])}
+
+    totals = {r[0]: r[1:] for r in con.execute("""
+        SELECT k.ix, t.n, t.usd/1e6, t.usd_in/1e6, t.usd_out/1e6, t.y0, t.y1
+        FROM ent_tot t JOIN ent_keep k ON k.nm = t.nm""").fetchall()}
+
+    per_year = defaultdict(list)
+    for ix, y, f, n, u in con.execute("""
+            SELECT k.ix, e.yr, e.flow_ix, COUNT(*), SUM(e.usd)/1e6
+            FROM ent e JOIN ent_keep k ON k.nm = TRIM(e.nm)
+            GROUP BY 1,2,3 ORDER BY 1,2,3""").fetchall():
+        per_year[int(ix)].append([int(y), int(f), int(n), r2(u)])
+
+    tops = {"ctry": defaultdict(list), "pur": defaultdict(list),
+            "bank": defaultdict(list), "curr": defaultdict(list)}
+    specs = [("ctry", "e.country", ctry_ix), ("pur", "e.pur5", pur_ix),
+             ("bank", "e.bank", bank_ix), ("curr", "e.currency", curr_ix)]
+    for key, col, lut in specs:
+        for ix, val, u in con.execute(f"""
+                SELECT ix, val, u FROM (
+                  SELECT k.ix AS ix, {col} AS val, SUM(e.usd)/1e6 AS u,
+                         ROW_NUMBER() OVER (PARTITION BY k.ix ORDER BY SUM(e.usd) DESC) AS rn
+                  FROM ent e JOIN ent_keep k ON k.nm = TRIM(e.nm)
+                  WHERE {col} IS NOT NULL GROUP BY 1,2)
+                WHERE rn <= 5 ORDER BY ix, u DESC""").fetchall():
+            if val in lut:
+                tops[key][int(ix)].append([lut[val], r2(u)])
+
+    txs = defaultdict(list)
+    for ix, d, f, b, c, amt, usd, ctry, pur, other in con.execute(f"""
+            SELECT ix, ymd, flow_ix, bank, currency, amt_orig, usd, country, pur5, other FROM (
+              SELECT k.ix AS ix, e.ymd, e.flow_ix, e.bank, e.currency, e.amt_orig, e.usd,
+                     e.country, e.pur5, e.other,
+                     ROW_NUMBER() OVER (PARTITION BY k.ix ORDER BY e.usd DESC) AS rn
+              FROM ent e JOIN ent_keep k ON k.nm = TRIM(e.nm))
+            WHERE rn <= {ENTITY_TX_LIMIT} ORDER BY ix, usd DESC""").fetchall():
+        txs[int(ix)].append([d, int(f), bank_ix.get(b, -1), curr_ix.get(c, -1),
+                             r2(amt, 2), r2(usd, 2), ctry_ix.get(ctry, -1),
+                             pur_ix.get(pur, -1), clean_name(other)])
+
+    entities = []
+    for i, nm in enumerate(keep):
+        t = totals.get(i)
+        if not t:
+            continue
+        entities.append({
+            "nm": clean_name(nm) or nm,
+            "n": int(t[0]), "usd": r2(t[1]), "in": r2(t[2]), "out": r2(t[3]),
+            "y0": int(t[4]), "y1": int(t[5]),
+            "yr": per_year.get(i, []),
+            "ctry": tops["ctry"].get(i, []), "pur": tops["pur"].get(i, []),
+            "bank": tops["bank"].get(i, []), "curr": tops["curr"].get(i, []),
+            "tx": txs.get(i, []),
+        })
+
+    total_named = con.execute("SELECT COUNT(*), SUM(usd)/1e6 FROM ent_tot").fetchone()
+    kept_usd = sum(e["usd"] for e in entities)
+    print(f"  entity index: {len(entities):,} of {int(total_named[0]):,} named entities "
+          f"({100 * kept_usd / (total_named[1] or 1):.1f}% of named value)")
+    return entities, {"total": int(total_named[0]), "kept": len(entities),
+                      "coverPct": r2(100 * kept_usd / (total_named[1] or 1), 1)}
+
+
+# --------------------------------------------------------------------------
+# Main
+# --------------------------------------------------------------------------
+
+def build_meta(con, files, ent_meta, cfg):
+    row = con.execute("""
+        SELECT COUNT(*), COUNT(DISTINCT Hash_ID), MIN(tx_date)::DATE, MAX(tx_date)::DATE,
+               SUM(usd)/1e6 FROM tx""").fetchone()
+    return {
+        "generated": datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M"),
+        "rows": int(row[0]), "uniqueIds": int(row[1]),
+        "dateMin": str(row[2]), "dateMax": str(row[3]), "grossUsdM": r2(row[4]),
+        "sourceFiles": files, "fxBand": [FX_MIN, FX_MAX],
+        "entityMeta": ent_meta,
+        "entityTxLimit": ENTITY_TX_LIMIT, "exceptionLimit": EXCEPTION_LIMIT,
+        "bankOwnPatterns": cfg.get("bankOwnRule", {}).get("namePatterns", []),
+    }
+
+
+def encrypt_payload(blob, password):
+    """gzip, then AES-256-GCM under a PBKDF2-derived key.
+
+    The browser reverses this with WebCrypto. GCM's auth tag doubles as the
+    password check: a wrong passphrase fails to authenticate and decrypt throws,
+    so there is no separate (and separately attackable) password hash to store.
+    """
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    raw = gzip.compress(blob.encode("utf-8"), 9)
+    salt = secrets.token_bytes(16)
+    iv = secrets.token_bytes(12)
+    key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt,
+                     iterations=KDF_ITERATIONS).derive(password.encode("utf-8"))
+    ct = AESGCM(key).encrypt(iv, raw, None)
+    b64 = lambda b: base64.b64encode(b).decode("ascii")
+    print(f"  payload {len(blob)/1048576:.1f} MB → gzip {len(raw)/1048576:.1f} MB "
+          f"→ encrypted {len(ct)/1048576:.1f} MB")
+    return json.dumps({
+        "enc": "AES-GCM-256", "kdf": "PBKDF2-SHA256", "iter": KDF_ITERATIONS,
+        "gz": True, "salt": b64(salt), "iv": b64(iv), "ct": b64(ct),
+    }, separators=(",", ":"))
+
+
+def read_password(args):
+    if args.password:
+        return args.password
+    env = os.environ.get("ITRS_PASSWORD")
+    if env:
+        return env
+    while True:
+        p1 = getpass.getpass("Passphrase for the published dashboard: ")
+        if len(p1) < 12:
+            print("  Too short. Use at least 12 characters — this is the only thing")
+            print("  standing between the internet and the full dataset.")
+            continue
+        if p1 != getpass.getpass("Confirm passphrase: "):
+            print("  Passphrases did not match.")
+            continue
+        return p1
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Build the ITRS dashboard.")
+    p.add_argument("--encrypt", action="store_true",
+                   help="encrypt the data payload behind a passphrase (use this "
+                        "for anything published to GitHub Pages or similar)")
+    p.add_argument("--password", help="passphrase (otherwise prompted, or read "
+                                      "from the ITRS_PASSWORD environment variable)")
+    p.add_argument("--out", help="output path (default: ITRS_Dashboard.html, "
+                                 "or docs/index.html with --encrypt --publish)")
+    p.add_argument("--publish", action="store_true",
+                   help="write to docs/index.html, ready for GitHub Pages")
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
+    if args.publish and not args.encrypt:
+        sys.exit("Refusing to build an unencrypted file for publishing.\n"
+                 "This dataset contains company names, TINs and transaction detail.\n"
+                 "Use:  python build_dashboard.py --publish --encrypt")
+
+    if not TEMPLATE.exists():
+        sys.exit(f"Template not found: {TEMPLATE}")
+
+    cfg, lines = load_report_config()
+    print(f"Report config: {len(lines)} lines from {CONFIG / 'report_lines.json'}")
+
+    print("Reading source data ...")
+    con, files = build_connection()
+    create_clean_view(con)
+
+    print("Building dimensions ...")
+    dims, method_map = build_dimensions(con, lines)
+    register_lookups(con, dims, method_map)
+    print(f"  {len(dims['months'])} months, {len(dims['purposes'])} purpose codes, "
+          f"{len(dims['countries'])} countries, {len(dims['banks'])} banks, "
+          f"{len(dims['methods'])} methods (from {len(method_map)} raw variants)")
+
+    print("Aggregating cubes ...")
+    cubes = build_cubes(con, dims)
+    for name, rows in cubes.items():
+        print(f"  {name:<14} {len(rows):>8,} rows")
+
+    print("Scanning for exceptions ...")
+    exceptions = build_exceptions(con, dims)
+    ds = exceptions["dupSummary"]
+    print(f"  FX errors: {len(exceptions['fxRows']):,} shown")
+    for t in ("A", "B", "C"):
+        print(f"  duplicates tier {t}: {ds[t]['groups']:,} groups, "
+              f"{ds[t]['extra']:,} extra rows, ${ds[t]['usdM']:,.1f}m")
+
+    print("Building entity index ...")
+    entities, ent_meta = build_entities(con, dims)
+
+    meta = build_meta(con, files, ent_meta, cfg)
+    payload = {"meta": meta, "dims": dims, "cubes": cubes,
+               "exceptions": exceptions, "entities": entities}
+
+    blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    html = TEMPLATE.read_text(encoding="utf-8")
+    if "__ITRS_DATA__" not in html:
+        sys.exit("Template is missing the __ITRS_DATA__ placeholder")
+
+    if args.encrypt:
+        print("Encrypting ...")
+        blob = encrypt_payload(blob, read_password(args))
+
+    out = Path(args.out) if args.out else (
+        HERE / "docs" / "index.html" if args.publish else OUTPUT)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    # The payload lands inside a <script> block, so a literal </script> in the
+    # data would end it early. JSON escaping of '<' prevents that.
+    out.write_text(html.replace("__ITRS_DATA__", blob.replace("<", "\\u003c")),
+                   encoding="utf-8")
+
+    print(f"\nWrote {out}  ({out.stat().st_size / 1024 / 1024:.1f} MB)"
+          f"{'  [encrypted]' if args.encrypt else '  [PLAINTEXT — do not publish]'}")
+    print(f"  {meta['rows']:,} transactions | {meta['dateMin']} to {meta['dateMax']}"
+          f" | ${meta['grossUsdM'] / 1000:,.1f}bn gross")
+    if args.publish:
+        print("\n  Ready for GitHub Pages. Settings → Pages → Source: main / docs")
+
+
+if __name__ == "__main__":
+    main()

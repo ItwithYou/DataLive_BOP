@@ -1,0 +1,2294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ITRS Live Report</title>
+<style>
+/* ---------------------------------------------------------------------------
+   Theme. Light is the base; dark arrives either from the OS (when the user has
+   not chosen) or from an explicit data-theme="dark". Keeping the explicit
+   choice as its own selector lets it override the OS in both directions.
+--------------------------------------------------------------------------- */
+:root{
+  --bg:#eef1f6;
+  --bg-1:#dbe6f5; --bg-2:#e6dff3; --bg-3:#d8ecec;
+  --panel:rgba(255,255,255,.66); --panel-solid:#fff; --panel-2:rgba(255,255,255,.45);
+  --ink:#101620; --ink-2:#48546a; --ink-3:#78849a;
+  --line:rgba(16,24,40,.10); --line-2:rgba(16,24,40,.06);
+  --glass-blur:18px; --glass-sat:170%;
+  --glass-edge:rgba(255,255,255,.75);
+  --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,0) 42%);
+  --in:#0c8a68; --in-soft:rgba(12,138,104,.14); --out:#c0433a; --out-soft:rgba(192,67,58,.14);
+  --accent:#2563a8; --accent-soft:rgba(37,99,168,.13);
+  --warn:#a8760a; --warn-soft:rgba(168,118,10,.14); --bad:#c0433a;
+  --c1:#2563a8; --c2:#0c8a68; --c3:#a8760a; --c4:#8250b8; --c5:#c0433a;
+  --c6:#2f8397; --c7:#b96f28; --c8:#65748a; --c9:#965172; --c10:#43764f;
+  --r:14px; --tap:44px;
+  --sh:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -10px rgba(16,24,40,.18);
+  --sh-lg:0 2px 6px rgba(16,24,40,.05), 0 22px 48px -18px rgba(16,24,40,.32);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#080b11;
+    --bg-1:#132038; --bg-2:#1d1733; --bg-3:#0e2630;
+    --panel:rgba(24,31,43,.60); --panel-solid:#161d28; --panel-2:rgba(255,255,255,.045);
+    --ink:#e8eef6; --ink-2:#9dabbd; --ink-3:#6d7d93;
+    --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.055);
+    --glass-edge:rgba(255,255,255,.13);
+    --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
+    --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15);
+    --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
+    --warn:#e0aa4c; --warn-soft:rgba(224,170,76,.15); --bad:#e8695f;
+    --c1:#63a4de; --c2:#3ec295; --c3:#e0aa4c; --c4:#b088dd; --c5:#e8695f;
+    --c6:#57b2ca; --c7:#dd9a54; --c8:#8e9bad; --c9:#c8859f; --c10:#6fa87d;
+    --sh:0 1px 2px rgba(0,0,0,.34), 0 10px 28px -12px rgba(0,0,0,.6);
+    --sh-lg:0 2px 8px rgba(0,0,0,.4), 0 26px 54px -20px rgba(0,0,0,.75);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080b11;
+  --bg-1:#132038; --bg-2:#1d1733; --bg-3:#0e2630;
+  --panel:rgba(24,31,43,.60); --panel-solid:#161d28; --panel-2:rgba(255,255,255,.045);
+  --ink:#e8eef6; --ink-2:#9dabbd; --ink-3:#6d7d93;
+  --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.055);
+  --glass-edge:rgba(255,255,255,.13);
+  --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
+  --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15);
+  --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
+  --warn:#e0aa4c; --warn-soft:rgba(224,170,76,.15); --bad:#e8695f;
+  --c1:#63a4de; --c2:#3ec295; --c3:#e0aa4c; --c4:#b088dd; --c5:#e8695f;
+  --c6:#57b2ca; --c7:#dd9a54; --c8:#8e9bad; --c9:#c8859f; --c10:#6fa87d;
+  --sh:0 1px 2px rgba(0,0,0,.34), 0 10px 28px -12px rgba(0,0,0,.6);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4), 0 26px 54px -20px rgba(0,0,0,.75);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Lao","Phetsarath OT","Saysettha OT","Leelawadee UI",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+/* The colour field the glass refracts. Fixed, so it does not scroll under the
+   panels and cause repaint churn on long tables. */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(58vw 46vh at 12% -6%, var(--bg-1), transparent 62%),
+    radial-gradient(50vw 42vh at 92% 4%, var(--bg-2), transparent 60%),
+    radial-gradient(60vw 50vh at 68% 96%, var(--bg-3), transparent 62%),
+    var(--bg);}
+body.lo{font-family:"Noto Sans Lao","Phetsarath OT","Saysettha OT","Leelawadee UI","Segoe UI",sans-serif;line-height:1.75}
+.lao{font-family:"Noto Sans Lao","Phetsarath OT","Saysettha OT","Leelawadee UI",sans-serif;line-height:1.7}
+button,select,input{font:inherit;color:inherit}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.wrap{max-width:1500px;margin:0 auto;padding:0 12px 40px}
+@media(min-width:760px){.wrap{padding:0 20px 60px}}
+
+header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1px solid var(--glass-edge);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%)}
+.hdr{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;align-items:center;gap:10px}
+@media(min-width:760px){.hdr{padding:12px 20px 0}}
+.brand h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.2px;white-space:nowrap}
+.brand p{margin:1px 0 0;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hdr-meta{display:none;text-align:right;font-size:11px;color:var(--ink-3);line-height:1.5}
+@media(min-width:1000px){.hdr-meta{display:block}}
+.lang{display:flex;border:1px solid var(--glass-edge);border-radius:9px;overflow:hidden;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.lang button{border:0;background:var(--panel-2);padding:6px 10px;font-size:12px;font-weight:600;
+  color:var(--ink-3);cursor:pointer;min-height:34px;transition:background .16s,color .16s}
+.lang button:hover{color:var(--ink)}
+.lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
+/* Theme switch: sun / auto / moon */
+.theme{display:flex;border:1px solid var(--glass-edge);border-radius:9px;overflow:hidden;
+  background:var(--panel-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.theme button{border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+  min-height:34px;width:34px;display:flex;align-items:center;justify-content:center;
+  transition:background .16s,color .16s}
+.theme button:hover{color:var(--ink)}
+.theme button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.theme svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+.theme .dot{font-size:10px;font-weight:700;letter-spacing:.3px}
+
+.controls{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;gap:14px;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.controls::-webkit-scrollbar{display:none}
+@media(min-width:760px){.controls{padding:11px 20px 0;flex-wrap:wrap;overflow:visible;gap:18px;align-items:flex-end}}
+.ctl{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+.ctl>label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);font-weight:700}
+.seg{display:flex;background:var(--panel-2);border:1px solid var(--glass-edge);border-radius:9px;
+  padding:2px;gap:2px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.seg button{border:0;background:transparent;color:var(--ink-2);font-size:12px;padding:6px 10px;
+  border-radius:7px;cursor:pointer;white-space:nowrap;min-height:32px;transition:background .16s,color .16s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600;
+  box-shadow:0 2px 8px -2px color-mix(in srgb,var(--accent) 60%,transparent)}
+select,input[type=text],input[type=date],input[type=search]{font-size:13px;padding:6px 8px;
+  border:1px solid var(--glass-edge);border-radius:8px;background:var(--panel-2);min-height:34px;max-width:62vw;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.yr{display:flex;align-items:center;gap:5px}
+.yr span{color:var(--ink-3);font-size:11px}
+
+nav{max-width:1500px;margin:0 auto;padding:8px 12px 0;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+@media(min-width:760px){nav{padding:11px 20px 0;flex-wrap:wrap;overflow:visible}}
+nav button{border:0;border-bottom:2px solid transparent;background:transparent;color:var(--ink-2);
+  font-size:13px;padding:9px 12px;cursor:pointer;border-radius:6px 6px 0 0;white-space:nowrap;min-height:var(--tap)}
+nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:650}
+
+.banner{max-width:1500px;margin:0 auto;padding:0 12px}
+@media(min-width:760px){.banner{padding:0 20px}}
+.banner .in{margin-top:11px;display:flex;gap:9px;background:var(--warn-soft);
+  border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:8px;
+  padding:8px 11px;font-size:12px;color:var(--ink-2)}
+.banner b{color:var(--ink)}
+
+.grid{display:grid;gap:11px;margin-top:11px;grid-template-columns:1fr}
+@media(min-width:640px){.grid{gap:13px;margin-top:13px}.g-4,.g-2{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1100px){
+  .g-4{grid-template-columns:repeat(4,1fr)} .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-23{grid-template-columns:2fr 1fr} .g-32{grid-template-columns:1fr 2fr}
+  .span3{grid-column:span 3}
+}
+/* Glass panel. The ::after sheen is what sells it — a single soft highlight
+   raking across the top-left, the way light catches a real pane. */
+.card{position:relative;background:var(--panel);border:1px solid var(--glass-edge);
+  border-radius:var(--r);box-shadow:var(--sh);padding:13px;min-width:0;isolation:isolate;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  transition:box-shadow .22s ease, transform .22s ease, border-color .22s ease}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:var(--glass-sheen);z-index:-1}
+.card:hover{box-shadow:var(--sh-lg)}
+@media(min-width:760px){.card{padding:15px 16px}}
+@supports not (backdrop-filter:blur(1px)){
+  .card,header,.gate-card{background:var(--panel-solid)}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.card>h3{margin:0 0 2px;font-size:13px;font-weight:650;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.card>h3 .hint{font-weight:400;color:var(--ink-3);font-size:11px}
+.card>.sub{margin:0 0 11px;font-size:11px;color:var(--ink-3)}
+
+.kpi .label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);font-weight:700}
+.kpi .val{font-size:24px;font-weight:670;letter-spacing:-.7px;margin-top:4px;font-variant-numeric:tabular-nums}
+@media(min-width:760px){.kpi .val{font-size:27px}}
+.kpi .val.pos{color:var(--in)} .kpi .val.neg{color:var(--out)}
+.kpi .foot{margin-top:5px;display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+.delta{font-weight:650;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--in)} .delta.down{color:var(--out)}
+.kpi .spark{margin-top:8px;height:30px}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -13px;padding:0 13px}
+@media(min-width:760px){.tw{margin:0 -16px;padding:0 16px}}
+.scroll{max-height:430px;overflow:auto;margin:0 -13px -13px;padding:0 13px}
+@media(min-width:760px){.scroll{margin:0 -16px -15px;padding:0 16px}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+/* Sticky headers must be opaque, otherwise rows scroll visibly through them. */
+th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-3);font-weight:700;
+  border-bottom:1px solid var(--line);position:sticky;top:0;cursor:pointer;user-select:none;
+  background:var(--panel-solid);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+th.sorted::after{content:" ▾";color:var(--accent)} th.sorted.asc::after{content:" ▴"}
+th:first-child,td:first-child{text-align:left}
+td.name{white-space:normal;min-width:150px;max-width:320px;line-height:1.35}
+tbody tr:hover{background:var(--panel-2)}
+.num{font-variant-numeric:tabular-nums} .pos{color:var(--in)} .neg{color:var(--out)} .muted{color:var(--ink-3)}
+.bar-cell{position:relative;min-width:76px}
+.bar-cell .fill{position:absolute;left:0;top:3px;bottom:3px;border-radius:2px;opacity:.2}
+.bar-cell span{position:relative}
+tr.total td{font-weight:680;background:var(--panel-2);border-top:1.5px solid var(--line)}
+tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
+
+.chart{width:100%;display:block;overflow:visible}
+.chart text{font-size:10px;fill:var(--ink-3)}
+.chart .grid-line{stroke:var(--line-2);stroke-width:1}
+.chart .zero-line{stroke:var(--ink-3);stroke-width:1;opacity:.5}
+.chart .hover-band{fill:var(--accent);opacity:0}
+.chart .hover-band:hover{opacity:.07}
+.legend{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:8px;font-size:11px;color:var(--ink-2)}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:-1px}
+.legend button{border:0;background:transparent;cursor:pointer;padding:2px 0;min-height:26px}
+.legend button.off{opacity:.35;text-decoration:line-through}
+#tip{position:fixed;z-index:200;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;box-shadow:0 4px 16px rgba(16,24,40,.16);
+  padding:8px 11px;font-size:12px;max-width:min(300px,80vw)}
+#tip .t-h{font-weight:650;margin-bottom:4px}
+#tip .t-r{display:flex;justify-content:space-between;gap:14px;line-height:1.6}
+#tip .t-r span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+#tip i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:5px}
+
+.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:650;
+  background:var(--accent-soft);color:var(--accent)}
+.pill.ok{background:var(--in-soft);color:var(--in)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--out-soft);color:var(--out)}
+.crumb{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:12px;margin-bottom:9px}
+.crumb button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);font-size:12px;
+  padding:5px 9px;border-radius:6px;cursor:pointer;min-height:32px}
+.crumb .cur{padding:5px 9px;font-weight:650}
+.drill-row{cursor:pointer}
+.drill-row td:first-child::before{content:"\25B8  ";color:var(--accent);font-weight:700}
+.drill-row.leaf td:first-child::before{content:"\00B7  ";color:var(--ink-3)}
+.hm{display:grid;gap:2px;font-size:10.5px;min-width:max-content}
+.hm .lbl{color:var(--ink-2);padding-right:7px;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end}
+.hm .cell{height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font-variant-numeric:tabular-nums;min-width:44px}
+.hm .hd{color:var(--ink-3);font-size:10px;text-align:center;font-weight:700}
+.issues{list-style:none;margin:9px 0 0;padding:0;font-size:12px}
+.issues li{display:flex;justify-content:space-between;gap:11px;padding:6px 0;border-bottom:1px solid var(--line-2)}
+.issues li:last-child{border:0}
+.issues .n{font-variant-numeric:tabular-nums;font-weight:650;text-align:right;white-space:nowrap}
+.score{display:flex;align-items:baseline;gap:10px}
+.score .g{font-size:36px;font-weight:700;letter-spacing:-1.4px;line-height:1}
+.score .g.a{color:var(--in)} .score .g.b{color:var(--accent)}
+.score .g.c{color:var(--warn)} .score .g.d{color:var(--bad)}
+.note{font-size:11px;color:var(--ink-3);margin-top:9px;line-height:1.55}
+.tab{display:none}.tab.on{display:block}
+.btn{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);font-size:12px;
+  padding:6px 11px;border-radius:6px;cursor:pointer;min-height:34px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.narr{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);
+  border-radius:8px;padding:13px 15px;line-height:1.95;font-size:13.5px;white-space:pre-wrap;word-break:break-word}
+.searchbar{display:flex;gap:8px;align-items:center;margin-bottom:11px}
+.searchbar input{flex:1;max-width:none;font-size:15px;padding:10px 12px;min-height:var(--tap)}
+.ent{border:1px solid var(--line);border-radius:8px;padding:11px;margin-bottom:8px;cursor:pointer;background:var(--panel-2)}
+.ent:hover{border-color:var(--accent)}
+.ent .n{font-weight:640;font-size:13px;word-break:break-word}
+.ent .m{font-size:11.5px;color:var(--ink-3);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.empty{text-align:center;padding:34px 14px;color:var(--ink-3);font-size:13px}
+footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px solid var(--line);
+  font-size:11px;color:var(--ink-3);line-height:1.7}
+@media(min-width:760px){footer{padding:16px 20px}}
+@media print{header,nav,.controls,.btn,.theme{display:none}
+  .tab{display:block!important;page-break-before:always}
+  .card{background:#fff;backdrop-filter:none;box-shadow:none;border:1px solid #ddd}
+  body::before{display:none}}
+
+/* ---------- lock screen ---------- */
+#gate{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto}
+#gate.hide{display:none}
+.gate-card{position:relative;width:100%;max-width:400px;background:var(--panel);
+  border:1px solid var(--glass-edge);border-radius:20px;padding:30px 26px;box-shadow:var(--sh-lg);
+  isolation:isolate;-webkit-backdrop-filter:blur(26px) saturate(180%);
+  backdrop-filter:blur(26px) saturate(180%)}
+.gate-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:var(--glass-sheen);z-index:-1}
+.gate-mark{width:46px;height:46px;border-radius:12px;background:var(--accent-soft);
+  display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.gate-mark svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+.gate-card h1{margin:0;font-size:19px;font-weight:660;letter-spacing:-.3px}
+.gate-card .org{margin:3px 0 0;font-size:12.5px;color:var(--ink-3)}
+.gate-card form{margin-top:22px}
+.gate-card label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;
+  color:var(--ink-3);font-weight:700;margin-bottom:6px}
+.gate-in{position:relative;display:flex}
+.gate-in input{width:100%;max-width:none;font-size:15px;padding:11px 42px 11px 13px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel-2);min-height:46px}
+.gate-in input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.gate-in button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;
+  background:transparent;color:var(--ink-3);cursor:pointer;padding:8px;border-radius:6px;
+  min-height:34px;font-size:11px;font-weight:600}
+.gate-go{width:100%;margin-top:14px;border:0;background:var(--accent);color:#fff;font-size:14.5px;
+  font-weight:620;padding:12px;border-radius:9px;cursor:pointer;min-height:48px}
+.gate-go:disabled{opacity:.6;cursor:progress}
+.gate-msg{margin-top:13px;font-size:12.5px;min-height:18px;line-height:1.5}
+.gate-msg.err{color:var(--bad)} .gate-msg.busy{color:var(--ink-3)}
+.gate-foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line-2);
+  font-size:11px;color:var(--ink-3);line-height:1.65}
+.gate-lang{position:absolute;top:14px;right:14px;display:flex;border:1px solid var(--line);
+  border-radius:7px;overflow:hidden}
+.gate-lang button{border:0;background:var(--panel-2);padding:5px 9px;font-size:11px;font-weight:600;
+  color:var(--ink-3);cursor:pointer;min-height:30px}
+.gate-lang button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--ink-3);
+  border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;
+  vertical-align:-2px;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#app.locked{display:none}
+</style>
+<script>
+/* Runs before any markup renders, so the stored theme is already on <html> at
+   first paint and there is no flash of the wrong colour scheme. */
+(function(){
+  var KEY = 'itrs-theme', saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  var mode = (saved === 'light' || saved === 'dark') ? saved : 'auto';
+  var root = document.documentElement;
+  var listeners = [];
+  function paint(){
+    if (mode === 'auto') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+  }
+  paint();
+  var mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  window.ITRSTheme = {
+    get mode(){ return mode; },
+    /** True when the page is currently rendering dark, whatever the source. */
+    isDark: function(){ return mode === 'dark' || (mode === 'auto' && !!(mq && mq.matches)); },
+    set: function(v){
+      mode = (v === 'light' || v === 'dark') ? v : 'auto';
+      try { localStorage.setItem(KEY, mode); } catch (e) {}
+      paint();
+      listeners.forEach(function(f){ try { f(); } catch (e) {} });
+    },
+    onChange: function(f){ listeners.push(f); },
+    /** Wire a .theme button group and keep its pressed state in sync. */
+    bind: function(el){
+      if (!el) return;
+      function sync(){
+        [].forEach.call(el.children, function(b){
+          b.setAttribute('aria-pressed', String(b.dataset.v === mode));
+        });
+      }
+      el.addEventListener('click', function(e){
+        var b = e.target.closest('button');
+        if (b) window.ITRSTheme.set(b.dataset.v);
+      });
+      listeners.push(sync);
+      sync();
+    }
+  };
+  // An OS-level switch only matters while we are following the OS.
+  if (mq && mq.addEventListener) mq.addEventListener('change', function(){
+    if (mode === 'auto') listeners.forEach(function(f){ try { f(); } catch (e) {} });
+  });
+})();
+</script>
+</head>
+<body>
+<div id="gate" class="hide">
+  <div class="gate-card">
+    <div class="gate-lang" id="gateLang">
+      <button data-v="en" aria-pressed="true">EN</button>
+      <button data-v="lo" aria-pressed="false">ລາວ</button>
+    </div>
+    <div class="theme" id="gateTheme" style="position:absolute;top:14px;left:14px">
+      <button data-v="light" title="Light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6M7 17l-1.6 1.6M18.6 18.6L17 17M7 7 5.4 5.4"/></svg></button>
+      <button data-v="auto" title="Match system" aria-pressed="true"><span class="dot">A</span></button>
+      <button data-v="dark" title="Dark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5a8.5 8.5 0 1 0 10.8 10.8Z"/></svg></button>
+    </div>
+    <div class="gate-mark"><svg viewBox="0 0 24 24">
+      <rect x="4" y="10.5" width="16" height="10" rx="2.2"/>
+      <path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3"/><circle cx="12" cy="15.5" r="1.15" fill="currentColor" stroke="none"/>
+    </svg></div>
+    <h1 id="gateTitle">ITRS Live Report</h1>
+    <p class="org" id="gateOrg">Lao PDR — International Transactions Reporting System</p>
+    <form id="gateForm" autocomplete="off">
+      <label for="gatePw" id="gateLabel">Passphrase</label>
+      <div class="gate-in">
+        <input type="password" id="gatePw" autocomplete="current-password"
+               autocapitalize="off" autocorrect="off" spellcheck="false" required>
+        <button type="button" id="gateEye" tabindex="-1">SHOW</button>
+      </div>
+      <button type="submit" class="gate-go" id="gateGo">Unlock</button>
+      <div class="gate-msg" id="gateMsg"></div>
+    </form>
+    <div class="gate-foot" id="gateFoot"></div>
+  </div>
+</div>
+
+<div id="app" class="locked">
+<header>
+  <div class="hdr">
+    <div class="brand">
+      <h1 data-t="appTitle">ITRS Live Report</h1>
+      <p data-t="appSub">Lao PDR — International Transactions Reporting System</p>
+    </div>
+    <div class="hdr-right">
+      <div class="hdr-meta" id="hdrMeta"></div>
+      <div class="theme" id="themeSeg" role="group">
+        <button data-v="light" title="Light" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4l-1.6 1.6M7 17l-1.6 1.6M18.6 18.6L17 17M7 7 5.4 5.4"/></svg></button>
+        <button data-v="auto" title="Match system" aria-pressed="true"><span class="dot">A</span></button>
+        <button data-v="dark" title="Dark" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5a8.5 8.5 0 1 0 10.8 10.8Z"/></svg></button>
+      </div>
+      <div class="lang" id="langSeg">
+        <button data-v="en" aria-pressed="true">EN</button>
+        <button data-v="lo" aria-pressed="false">ລາວ</button>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="ctl"><label data-t="cPeriod">Period</label>
+      <div class="yr"><select id="yFrom"></select><span>–</span><select id="yTo"></select></div></div>
+    <div class="ctl"><label data-t="cBasis">Use in BOP</label>
+      <div class="seg" id="basisSeg">
+        <button data-v="bop" aria-pressed="true" data-t="basisBop">Use = Yes</button>
+        <button data-v="excl" aria-pressed="false" data-t="basisExcl">Use = No</button>
+        <button data-v="all" aria-pressed="false" data-t="basisAll">All</button>
+      </div></div>
+    <div class="ctl"><label data-t="cMeasure">Measure</label>
+      <div class="seg" id="measSeg">
+        <button data-v="usd" aria-pressed="true" data-t="mUsd">Value</button>
+        <button data-v="n" aria-pressed="false" data-t="mCount">Count</button>
+      </div></div>
+    <div class="ctl"><label data-t="cBank">Bank</label>
+      <select id="bankSel"><option value="-1" data-t="allBanks">All banks</option></select></div>
+  </div>
+  <nav id="nav">
+    <button data-tab="overview" aria-selected="true" data-t="tabOverview">Overview</button>
+    <button data-tab="bop" aria-selected="false" data-t="tabBop">Balance of Payments</button>
+    <button data-tab="timeseries" aria-selected="false" data-t="tabTs">Time Series</button>
+    <button data-tab="weekly" aria-selected="false" data-t="tabWeekly">Weekly Report</button>
+    <button data-tab="search" aria-selected="false" data-t="tabSearch">Search</button>
+    <button data-tab="checks" aria-selected="false" data-t="tabChecks">FX &amp; Duplicates</button>
+    <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
+    <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
+  </nav>
+</header>
+
+<div class="banner" id="banner"><div class="in"><span>⚑</span><div id="bannerTxt"></div></div></div>
+
+<div class="wrap">
+
+  <section class="tab on" id="tab-overview">
+    <div class="grid g-4" id="kpis"></div>
+    <div class="grid g-23">
+      <div class="card"><h3 data-t="ovMonthly">Monthly gross flows</h3>
+        <p class="sub" data-t="ovMonthlySub">Receipts and payments, USD millions</p><div id="ovMonthly"></div></div>
+      <div class="card"><h3 data-t="ovNet">Annual net position</h3>
+        <p class="sub" data-t="ovNetSub">Receipts less payments</p><div id="ovNetYear"></div></div>
+    </div>
+    <div class="grid g-3">
+      <div class="card"><h3 data-t="ovCountries">Top counterpart countries</h3>
+        <p class="sub" data-t="ovCountriesSub">Gross two-way flows</p><div id="ovCountries"></div></div>
+      <div class="card"><h3 data-t="ovCategory">Flows by BOP category</h3>
+        <p class="sub" data-t="ovCategorySub">Inflow / outflow split</p><div id="ovCategory"></div></div>
+      <div class="card"><h3 data-t="ovCurrency">Settlement currency</h3>
+        <p class="sub" data-t="ovCurrencySub">Share of gross value</p><div id="ovCurrency"></div></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="ovPurpIn">Largest inflow purposes</h3>
+        <p class="sub" data-t="ovPurpSub">Leaf-level purpose codes</p><div id="ovPurposeIn"></div></div>
+      <div class="card"><h3 data-t="ovPurpOut">Largest outflow purposes</h3>
+        <p class="sub" data-t="ovPurpSub2">Leaf-level purpose codes</p><div id="ovPurposeOut"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-bop">
+    <div class="grid g-4" id="bopKpis"></div>
+    <div class="card" style="margin-top:13px">
+      <h3 data-t="bopBridge">From gross ITRS turnover to BOP-relevant flows</h3>
+      <p class="sub" data-t="bopBridgeSub">How the compilation flags reduce reported turnover</p>
+      <div class="tw" id="bopBridge"></div>
+      <p class="note" id="bopBridgeNote"></p>
+    </div>
+    <div class="grid g-23">
+      <div class="card"><h3 data-t="bopCA">Current account components</h3>
+        <p class="sub" data-t="bopCASub">Monthly net, USD millions</p><div id="bopCurrentSeries"></div></div>
+      <div class="card"><h3 data-t="bopBal">Account balances</h3>
+        <p class="sub" data-t="bopBalSub">Net by category</p><div id="bopBalances"></div></div>
+    </div>
+    <div class="card">
+      <h3 data-t="bopPurp">Purpose code hierarchy <span class="hint" data-t="bopPurpHint">tap a row to drill down</span></h3>
+      <p class="sub" data-t="bopPurpSub">ITRS codes, 2 → 4 → 6 digit</p>
+      <div class="crumb" id="purpCrumb"></div>
+      <div class="scroll" id="purpTable"></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="bopHm">Net position by year and category</h3>
+        <p class="sub" data-t="bopHmSub">Green = surplus, red = deficit</p>
+        <div class="tw" id="bopHeatmap"></div></div>
+      <div class="card"><h3 data-t="bopUse">The Use flag — what enters the BOP</h3>
+        <p class="sub" data-t="bopUseSub">Use = Yes is the compilation basis. Use = No is excluded.</p>
+        <div id="bopUse"></div>
+        <div id="bopFlags" style="margin-top:14px"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-timeseries">
+    <div class="card">
+      <h3 data-t="tsTitle">Time series explorer</h3>
+      <p class="sub" data-t="tsSub">Pick a dimension and a frequency. Matches the layout of the ITRS time-series workbook.</p>
+      <div class="row" style="margin-bottom:11px">
+        <div class="ctl"><label data-t="tsDim">Dimension</label>
+          <select id="tsDim">
+            <option value="tsBank" data-t="dimBank">Bank</option>
+            <option value="tsCountry" data-t="dimCountry">Country</option>
+            <option value="tsCurrency" data-t="dimCurrency">Currency</option>
+            <option value="tsPurpose" data-t="dimPurpose">Purpose</option>
+          </select></div>
+        <div class="ctl"><label data-t="tsFreq">Frequency</label>
+          <div class="seg" id="tsFreqSeg">
+            <button data-v="M" aria-pressed="true" data-t="freqM">Monthly</button>
+            <button data-v="Q" aria-pressed="false" data-t="freqQ">Quarterly</button>
+            <button data-v="Y" aria-pressed="false" data-t="freqY">Yearly</button>
+          </div></div>
+        <div class="ctl"><label data-t="tsFlow">Flow</label>
+          <div class="seg" id="tsFlowSeg">
+            <button data-v="1" aria-pressed="true" data-t="flowIn">Receive</button>
+            <button data-v="0" aria-pressed="false" data-t="flowOut">Payment</button>
+            <button data-v="2" aria-pressed="false" data-t="flowNet">Net</button>
+          </div></div>
+        <div class="ctl"><label>&nbsp;</label><button class="btn" id="tsCsv" data-t="csv">Download CSV</button></div>
+      </div>
+      <div id="tsChart"></div>
+    </div>
+    <div class="card"><h3 data-t="tsTable">Series table</h3>
+      <p class="sub" data-t="tsTableSub">USD millions. Tap a row to isolate it in the chart.</p>
+      <div class="scroll" id="tsTable"></div></div>
+  </section>
+
+  <section class="tab" id="tab-weekly">
+    <div class="card">
+      <h3 data-t="wkTitle">Weekly report</h3>
+      <p class="sub" data-t="wkSub">Week-on-week comparison in the official report layout, with generated narrative.</p>
+      <div class="row" style="margin-bottom:11px">
+        <div class="ctl"><label data-t="wkWeekEnd">Week (start date)</label><input type="date" id="wkDate"></div>
+        <div class="ctl"><label data-t="wkScope">Scope</label>
+          <div class="seg" id="wkScopeSeg">
+            <button data-v="all" aria-pressed="true" data-t="wkAll">All transactions</button>
+            <button data-v="nonbank" aria-pressed="false" data-t="wkNonbank">Excl. commercial banks</button>
+          </div></div>
+        <div class="ctl"><label>&nbsp;</label><div class="row">
+          <button class="btn" id="wkPrev">‹</button><button class="btn" id="wkNext">›</button>
+          <button class="btn" id="wkCsv" data-t="csv">CSV</button>
+          <button class="btn pri" id="wkCopy" data-t="copyText">Copy text</button></div></div>
+      </div>
+      <div class="tw" id="wkTable"></div>
+    </div>
+    <div class="card"><h3 data-t="wkNarr">Generated narrative</h3>
+      <p class="sub" data-t="wkNarrSub">Draft text in the style of the weekly BOL note — review before publishing</p>
+      <div class="narr lao" id="wkNarrative"></div></div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="wkCcy">Currency composition this week</h3>
+        <p class="sub" data-t="wkCcySub">Share of weekly inflow and outflow</p><div id="wkCurrency"></div></div>
+      <div class="card"><h3 data-t="wkTrend">13-week trend</h3>
+        <p class="sub" data-t="wkTrendSub">Weekly gross inflow and outflow</p><div id="wkTrend"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-search">
+    <div class="card">
+      <h3 data-t="seTitle">Company / counterparty search</h3>
+      <p class="sub" id="seSub"></p>
+      <div class="searchbar">
+        <input type="search" id="seInput" placeholder="Type a company name…" autocomplete="off" spellcheck="false">
+        <button class="btn" id="seClear" data-t="clear">Clear</button>
+      </div>
+      <div id="seResults"></div>
+    </div>
+    <div id="seDetail"></div>
+  </section>
+
+  <section class="tab" id="tab-checks">
+    <div class="grid g-4" id="chkKpis"></div>
+    <div class="card" style="margin-top:13px">
+      <h3 data-t="fxTitle">Exchange rate validation</h3>
+      <p class="sub" id="fxSub"></p>
+      <div class="scroll" id="fxTable"></div>
+      <p class="note" id="fxNote"></p>
+    </div>
+    <div class="card">
+      <h3 data-t="dupTitle">Duplicate transaction detection</h3>
+      <p class="sub" data-t="dupSub">Three confidence tiers. Review tier A first — a repeated reference number is almost always a re-send.</p>
+      <div class="row" style="margin-bottom:11px">
+        <div class="seg" id="dupTierSeg">
+          <button data-v="A" aria-pressed="true">A — <span data-t="tierA">Reference collision</span></button>
+          <button data-v="B" aria-pressed="false">B — <span data-t="tierB">Full match, named</span></button>
+          <button data-v="C" aria-pressed="false">C — <span data-t="tierC">Weak, unnamed</span></button>
+        </div>
+        <button class="btn" id="dupCsv" data-t="csv">Download CSV</button>
+      </div>
+      <div id="dupExplain" class="note" style="margin-top:0;margin-bottom:9px"></div>
+      <div class="scroll" id="dupTable"></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="dupByBank">Duplicates by bank</h3>
+        <p class="sub" data-t="dupByBankSub">Extra records in the selected tier</p><div id="dupBank"></div></div>
+      <div class="card"><h3 data-t="fxByYear">FX errors by year</h3>
+        <p class="sub" data-t="fxByYearSub">Null, too low, and too high rates</p><div id="fxYear"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-banks">
+    <div class="grid g-4" id="bankKpis"></div>
+    <div class="grid g-23">
+      <div class="card"><h3 data-t="bkTable">Reporting bank league table <span class="hint" data-t="bkHint">tap to filter</span></h3>
+        <p class="sub" data-t="bkTableSub">Selected period</p><div class="scroll" id="bankTable"></div></div>
+      <div class="card"><h3 data-t="bkShare">Market share over time</h3>
+        <p class="sub" data-t="bkShareSub">Top 8 banks, share of annual total</p><div id="bankShare"></div></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="bkLag">Submission timeliness</h3>
+        <p class="sub" data-t="bkLagSub">Days from transaction to submission</p><div id="bankLag"></div></div>
+      <div class="card"><h3 data-t="bkVol">Reporting volume by month</h3>
+        <p class="sub" data-t="bkVolSub">Gaps indicate missed reporting</p><div id="bankVolume"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-quality">
+    <div class="grid g-4">
+      <div class="card"><h3 data-t="qScore">Overall data quality</h3><p class="sub" data-t="qScoreSub">Selected period</p>
+        <div class="score"><span class="g" id="qGrade">—</span><span id="qGradeTxt" class="muted"></span></div>
+        <div id="qScoreBar"></div></div>
+      <div class="card span3"><h3 data-t="qIssues">Validation exceptions</h3>
+        <p class="sub" data-t="qIssuesSub">Records failing each check</p><ul class="issues" id="qIssues"></ul></div>
+    </div>
+    <div class="card"><h3 data-t="qComp">Field completeness by year</h3>
+      <p class="sub" data-t="qCompSub">Percentage of records with a value</p>
+      <div class="tw" id="qCompleteness"></div></div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="qBank">Bank reporting scorecard</h3>
+        <p class="sub" data-t="qBankSub">Exceptions per 10,000 records</p><div class="scroll" id="qBankTable"></div></div>
+      <div class="card"><h3 data-t="qConc">Value concentration</h3>
+        <p class="sub" data-t="qConcSub">Share carried by the largest transactions</p>
+        <div id="qConcentration"></div><p class="note" data-t="qConcNote"></p></div>
+    </div>
+  </section>
+</div>
+
+<footer><div id="footMeta"></div></footer>
+</div>
+<div id="tip"></div>
+<script id="itrs-data" type="application/json">__ITRS_DATA__</script>
+<script>
+"use strict";
+function bootApp(DATA){
+const {meta, dims, cubes, exceptions, entities} = DATA;
+
+/* ===================== i18n ===================== */
+const I18N = {
+ appTitle:["ITRS Live Report","ລາຍງານ ITRS ປັດຈຸບັນ"],
+ appSub:["Lao PDR — International Transactions Reporting System","ສປປ ລາວ — ລະບົບລາຍງານທຸລະກຳລະຫວ່າງປະເທດ"],
+ cPeriod:["Period","ໄລຍະເວລາ"], cBasis:["Use in BOP","ການນຳໃຊ້ໃນ BOP"],
+ cMeasure:["Measure","ຫົວໜ່ວຍວັດ"], cBank:["Bank","ທະນາຄານ"],
+ basisBop:["Use = Yes","Use = ແມ່ນ"], basisExcl:["Use = No","Use = ບໍ່"], basisAll:["All","ທັງໝົດ"],
+ mUsd:["Value","ມູນຄ່າ"], mCount:["Count","ຈຳນວນ"], allBanks:["All banks","ທຸກທະນາຄານ"],
+ tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
+ tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Weekly Report","ລາຍງານປະຈຳອາທິດ"],
+ tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
+ tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"],
+ inflow:["Inflow","ເງິນໂອນເຂົ້າ"], outflow:["Outflow","ເງິນໂອນອອກ"], net:["Net","ສຸດທິ"],
+ inflows:["Inflows (receipts)","ກະແສເງິນໂອນເຂົ້າ"], outflows:["Outflows (payments)","ກະແສເງິນໂອນອອກ"],
+ netPos:["Net position","ຖານະສຸດທິ"], coverage:["Coverage","ຂອບເຂດຂໍ້ມູນ"],
+ transactions:["transactions","ທຸລະກຳ"], countries:["countries","ປະເທດ"], banks:["banks","ທະນາຄານ"],
+ records:["Records","ຈຳນວນລາຍການ"], share:["Share","ສັດສ່ວນ"], value:["Value","ມູນຄ່າ"],
+ country:["Country","ປະເທດ"], currency:["Currency","ສະກຸນເງິນ"], purpose:["Purpose","ຈຸດປະສົງ"],
+ code:["Code","ລະຫັດ"], bank:["Bank","ທະນາຄານ"], date:["Date","ວັນທີ"], amount:["Amount","ມູນຄ່າ"],
+ total:["Total","ລວມ"], other:["Other","ອື່ນໆ"], gross:["gross","ລວມ"], vsPrior:["vs","ທຽບກັບ"],
+ ovMonthly:["Monthly gross flows","ກະແສເງິນໂອນລາຍເດືອນ"],
+ ovMonthlySub:["Receipts and payments, USD millions","ເງິນເຂົ້າ ແລະ ອອກ, ລ້ານໂດລາ"],
+ ovNet:["Annual net position","ຖານະສຸດທິລາຍປີ"], ovNetSub:["Receipts less payments","ເງິນເຂົ້າລົບເງິນອອກ"],
+ ovCountries:["Top counterpart countries","ປະເທດຄູ່ຮ່ວມຫຼັກ"], ovCountriesSub:["Gross two-way flows","ກະແສສອງທາງ"],
+ ovCategory:["Flows by BOP category","ກະແສຕາມໝວດ BOP"], ovCategorySub:["Inflow / outflow split","ແຍກເຂົ້າ / ອອກ"],
+ ovCurrency:["Settlement currency","ສະກຸນເງິນຊຳລະ"], ovCurrencySub:["Share of gross value","ສັດສ່ວນມູນຄ່າລວມ"],
+ ovPurpIn:["Largest inflow purposes","ຈຸດປະສົງເງິນເຂົ້າສູງສຸດ"],
+ ovPurpOut:["Largest outflow purposes","ຈຸດປະສົງເງິນອອກສູງສຸດ"],
+ ovPurpSub:["Leaf-level purpose codes","ລະຫັດຈຸດປະສົງລະດັບຍ່ອຍ"], ovPurpSub2:["Leaf-level purpose codes","ລະຫັດຈຸດປະສົງລະດັບຍ່ອຍ"],
+ bopBridge:["From gross ITRS turnover to BOP-relevant flows","ຈາກມູນຄ່າລວມ ITRS ສູ່ກະແສທີ່ກ່ຽວຂ້ອງ BOP"],
+ bopBridgeSub:["How the compilation flags reduce reported turnover","ວິທີທີ່ທຸງການລວບລວມຫຼຸດມູນຄ່າລາຍງານ"],
+ bopCA:["Current account components","ອົງປະກອບບັນຊີປັດຈຸບັນ"], bopCASub:["Monthly net, USD millions","ສຸດທິລາຍເດືອນ, ລ້ານໂດລາ"],
+ bopBal:["Account balances","ດຸນບັນຊີ"], bopBalSub:["Net by category","ສຸດທິຕາມໝວດ"],
+ bopPurp:["Purpose code hierarchy","ໂຄງສ້າງລະຫັດຈຸດປະສົງ"], bopPurpHint:["tap a row to drill down","ແຕະແຖວເພື່ອເບິ່ງລາຍລະອຽດ"],
+ bopPurpSub:["ITRS codes, 2 → 4 → 6 digit","ລະຫັດ ITRS 2 → 4 → 6 ຫຼັກ"],
+ bopHm:["Net position by year and category","ຖານະສຸດທິຕາມປີ ແລະ ໝວດ"], bopHmSub:["Green = surplus, red = deficit","ຂຽວ = ເກີນດຸນ, ແດງ = ຂາດດຸນ"],
+ bopUse:["The Use flag — what enters the BOP","ທຸງ Use — ສິ່ງທີ່ເຂົ້າໃນ BOP"],
+ bopUseSub:["Use = Yes is the compilation basis; Use = No is excluded","Use = Yes ແມ່ນຖານການລວບລວມ; Use = No ຖືກຍົກເວັ້ນ"],
+ curAcct:["Current account balance","ດຸນບັນຊີປັດຈຸບັນ"], goodsBal:["Goods balance","ດຸນສິນຄ້າ"],
+ svcBal:["Services balance","ດຸນບໍລິການ"], finAcct:["Financial account (net)","ບັນຊີການເງິນ (ສຸດທິ)"],
+ step:["Step","ຂັ້ນຕອນ"], basis:["Basis","ຖານ"], shareGross:["Share of gross","ສັດສ່ວນຂອງລວມ"],
+ grossTurnover:["Gross ITRS turnover","ມູນຄ່າລວມ ITRS"],
+ lessNoMove:["less: no funds moved","ລົບ: ບໍ່ມີການເຄື່ອນຍ້າຍເງິນ"],
+ lessExcl:["less: excluded from compilation","ລົບ: ບໍ່ນຳໃຊ້ໃນການລວບລວມ"],
+ bopFlows:["BOP-relevant flows","ກະແສທີ່ກ່ຽວຂ້ອງ BOP"],
+ tsTitle:["Time series explorer","ສຳຫຼວດຂໍ້ມູນຕາມເວລາ"],
+ tsSub:["Pick a dimension and a frequency","ເລືອກມິຕິ ແລະ ຄວາມຖີ່"],
+ tsDim:["Dimension","ມິຕິ"], tsFreq:["Frequency","ຄວາມຖີ່"], tsFlow:["Flow","ທິດທາງ"],
+ dimBank:["Bank","ທະນາຄານ"], dimCountry:["Country","ປະເທດ"], dimCurrency:["Currency","ສະກຸນເງິນ"], dimPurpose:["Purpose","ຈຸດປະສົງ"],
+ freqM:["Monthly","ລາຍເດືອນ"], freqQ:["Quarterly","ລາຍໄຕມາດ"], freqY:["Yearly","ລາຍປີ"],
+ flowIn:["Receive","ເງິນເຂົ້າ"], flowOut:["Payment","ເງິນອອກ"], flowNet:["Net","ສຸດທິ"],
+ csv:["Download CSV","ດາວໂຫລດ CSV"], tsTable:["Series table","ຕາຕະລາງຂໍ້ມູນ"],
+ tsTableSub:["USD millions. Tap a row to isolate it.","ລ້ານໂດລາ. ແຕະແຖວເພື່ອສະແດງດ່ຽວ."],
+ wkTitle:["Weekly report","ລາຍງານປະຈຳອາທິດ"],
+ wkSub:["Week-on-week comparison in the official report layout","ປຽບທຽບອາທິດຕໍ່ອາທິດຕາມຮູບແບບລາຍງານ"],
+ wkWeekEnd:["Week (start date)","ອາທິດ (ວັນເລີ່ມ)"], wkScope:["Scope","ຂອບເຂດ"],
+ wkAll:["All transactions","ທຸລະກຳທັງໝົດ"], wkNonbank:["Excl. commercial banks","ບໍ່ລວມທະນາຄານທຸລະກິດ"],
+ copyText:["Copy text","ສຳເນົາຂໍ້ຄວາມ"], copied:["Copied","ສຳເນົາແລ້ວ"],
+ wkNarr:["Generated narrative","ຂໍ້ຄວາມທີ່ສ້າງຂຶ້ນ"],
+ wkNarrSub:["Draft text — review before publishing","ຂໍ້ຄວາມຮ່າງ — ກວດກ່ອນເຜີຍແຜ່"],
+ wkCcy:["Currency composition this week","ອົງປະກອບສະກຸນເງິນອາທິດນີ້"], wkCcySub:["Share of weekly flows","ສັດສ່ວນກະແສອາທິດ"],
+ wkTrend:["13-week trend","ແນວໂນ້ມ 13 ອາທິດ"], wkTrendSub:["Weekly gross inflow and outflow","ເງິນເຂົ້າ-ອອກລາຍອາທິດ"],
+ wkPrior:["Prior week","ອາທິດຜ່ານມາ"], wkThis:["This week","ອາທິດນີ້"],
+ wkChange:["Change","ມູນຄ່າປ່ຽນແປງ"], wkPct:["% change","ເປີເຊັນປ່ຽນແປງ"],
+ seTitle:["Company / counterparty search","ຄົ້ນຫາບໍລິສັດ / ຄູ່ຮ່ວມ"],
+ clear:["Clear","ລຶບ"], seePlaceholder:["Type a company name…","ພິມຊື່ບໍລິສັດ…"],
+ seNoResult:["No counterparty matches that name.","ບໍ່ພົບຄູ່ຮ່ວມທີ່ກົງກັບຊື່ນີ້."],
+ seStart:["Start typing to search the counterparty index.","ເລີ່ມພິມເພື່ອຄົ້ນຫາ."],
+ seResults:["results","ຜົນລັບ"], seTop:["Largest transactions","ທຸລະກຳໃຫຍ່ສຸດ"],
+ seYearly:["Activity by year","ກິດຈະກຳຕາມປີ"], seTopCtry:["Top countries","ປະເທດຫຼັກ"],
+ seTopPur:["Top purposes","ຈຸດປະສົງຫຼັກ"], seTopBank:["Banks used","ທະນາຄານທີ່ໃຊ້"],
+ seCounterparty:["Counterparty","ຄູ່ຮ່ວມ"], seActive:["Active","ເຄື່ອນໄຫວ"],
+ fxTitle:["Exchange rate validation","ການກວດສອບອັດຕາແລກປ່ຽນ"],
+ fxRate:["Rate (LAK/USD)","ອັດຕາ (ກີບ/ໂດລາ)"], fxExpected:["Year median","ຄ່າກາງຂອງປີ"],
+ fxIssue:["Issue","ບັນຫາ"], fxNull:["Missing","ບໍ່ມີຄ່າ"], fxLow:["Too low","ຕ່ຳເກີນໄປ"], fxHigh:["Too high","ສູງເກີນໄປ"],
+ fxByYear:["FX errors by year","ຄວາມຜິດພາດອັດຕາຕາມປີ"], fxByYearSub:["Null, too low, too high","ບໍ່ມີຄ່າ, ຕ່ຳ, ສູງ"],
+ dupTitle:["Duplicate transaction detection","ການກວດຫາທຸລະກຳຊ້ຳ"],
+ dupSub:["Three confidence tiers","ສາມລະດັບຄວາມໜ້າເຊື່ອຖື"],
+ tierA:["Reference collision","ເລກອ້າງອີງຊ້ຳ"], tierB:["Full match, named","ກົງທັງໝົດ, ມີຊື່"],
+ tierC:["Weak, unnamed","ອ່ອນ, ບໍ່ມີຊື່"],
+ dupByBank:["Duplicates by bank","ທຸລະກຳຊ້ຳຕາມທະນາຄານ"], dupByBankSub:["Extra records in tier","ລາຍການເກີນໃນລະດັບນີ້"],
+ dupCopies:["Copies","ສຳເນົາ"], dupExtra:["Extra records","ລາຍການເກີນ"], dupGroups:["Groups","ກຸ່ມ"],
+ chkFx:["FX rate errors","ອັດຕາຜິດພາດ"], chkDupA:["Tier A duplicates","ຊ້ຳລະດັບ A"],
+ chkDupB:["Tier B duplicates","ຊ້ຳລະດັບ B"], chkDupVal:["Duplicate value at risk","ມູນຄ່າສ່ຽງຈາກການຊ້ຳ"],
+ bkTable:["Reporting bank league table","ຕາຕະລາງທະນາຄານລາຍງານ"], bkHint:["tap to filter","ແຕະເພື່ອກັ່ນຕອງ"],
+ bkTableSub:["Selected period","ໄລຍະທີ່ເລືອກ"], bkShare:["Market share over time","ສ່ວນແບ່ງຕະຫຼາດຕາມເວລາ"],
+ bkShareSub:["Top 8 banks","8 ທະນາຄານສູງສຸດ"], bkLag:["Submission timeliness","ຄວາມທັນເວລາການສົ່ງ"],
+ bkLagSub:["Days from transaction to submission","ວັນຈາກທຸລະກຳຫາການສົ່ງ"],
+ bkVol:["Reporting volume by month","ປະລິມານລາຍງານລາຍເດືອນ"], bkVolSub:["Gaps indicate missed reporting","ຊ່ອງຫວ່າງສະແດງການຂາດລາຍງານ"],
+ bkCount:["Reporting banks","ທະນາຄານທີ່ລາຍງານ"], bkTop5:["Top 5 concentration","ການກະຈຸກຕົວ 5 ອັນດັບ"],
+ bkMedLag:["Median submission lag","ຄ່າກາງຄວາມຊັກຊ້າ"], bkFuture:["Future-dated submissions","ສົ່ງກ່ອນວັນທຸລະກຳ"],
+ bkAvg:["Avg size","ຂະໜາດສະເລ່ຍ"], bkLagMed:["Lag (med)","ຊັກຊ້າ (ກາງ)"], bkLate:[">30d",">30 ວັນ"],
+ days:["days","ວັນ"], qScore:["Overall data quality","ຄຸນນະພາບຂໍ້ມູນລວມ"], qScoreSub:["Selected period","ໄລຍະທີ່ເລືອກ"],
+ qIssues:["Validation exceptions","ຂໍ້ຜິດພາດການກວດສອບ"], qIssuesSub:["Records failing each check","ລາຍການທີ່ບໍ່ຜ່ານ"],
+ qComp:["Field completeness by year","ຄວາມຄົບຖ້ວນຂອງຊ່ອງຂໍ້ມູນ"], qCompSub:["Percentage populated","ເປີເຊັນທີ່ມີຄ່າ"],
+ qBank:["Bank reporting scorecard","ຄະແນນການລາຍງານຂອງທະນາຄານ"], qBankSub:["Exceptions per 10,000","ຂໍ້ຜິດພາດຕໍ່ 10,000"],
+ qConc:["Value concentration","ການກະຈຸກຕົວຂອງມູນຄ່າ"], qConcSub:["Share held by largest transactions","ສັດສ່ວນຂອງທຸລະກຳໃຫຍ່ສຸດ"],
+ qConcNote:["Verifying the top 100 records each year covers roughly a fifth of reported value.","ການກວດ 100 ລາຍການໃຫຍ່ສຸດຂອງແຕ່ລະປີ ກວມປະມານໜຶ່ງສ່ວນຫ້າຂອງມູນຄ່າລາຍງານ."],
+ exceptions:["exceptions per 10,000 records","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ"],
+ clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
+ noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
+};
+let LANG = 0;                              // 0 = en, 1 = lo
+const t = k => (I18N[k] ? I18N[k][LANG] : k);
+const isLo = () => LANG === 1;
+/** Label for a dimension entry that carries both languages. */
+const bi = o => (o && (isLo() ? (o.lo || o.en) : (o.en || o.lo))) || '';
+
+/* ===================== helpers ===================== */
+const PAY = 0, REC = 1;
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const SC = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8','--c9','--c10'];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function fmtM(v, dp){
+  const a = Math.abs(v), s = v < 0 ? '-' : '';
+  if (a >= 1e6) return s+'$'+(a/1e6).toFixed(dp??2)+'tn';
+  if (a >= 1000) return s+'$'+(a/1000).toFixed(dp??1)+'bn';
+  if (a >= 1)    return s+'$'+a.toFixed(dp??0)+'m';
+  if (a >= 0.001)return s+'$'+(a*1000).toFixed(0)+'k';
+  return '$0';
+}
+function fmtN(v){
+  const a = Math.abs(v), s = v < 0 ? '-' : '';
+  if (a >= 1e9) return s+(a/1e9).toFixed(2)+'bn';
+  if (a >= 1e6) return s+(a/1e6).toFixed(2)+'m';
+  if (a >= 1e3) return s+(a/1e3).toFixed(1)+'k';
+  return s+a.toFixed(0);
+}
+const int = v => Math.round(v).toLocaleString('en-US');
+const num2 = v => (v==null?'—':v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+const fmtPct = (v, dp) => (v>=0?'':'-')+Math.abs(v).toFixed(dp??1)+'%';
+const fmtV = v => state.meas === 'usd' ? fmtM(v) : fmtN(v);
+function axisFmt(v){
+  if (state.meas === 'n') return fmtN(v);
+  const a = Math.abs(v), s = v<0?'-':'';
+  if (a >= 1000) return s+(a/1000).toFixed(a>=10000?0:1)+'bn';
+  return s+a.toFixed(0);
+}
+function downloadCsv(name, rows){
+  const body = rows.map(r => r.map(c => {
+    const s = c == null ? '' : String(c);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+body], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();}, 100);
+}
+
+/* ===================== state ===================== */
+const YEARS = dims.years, MONTHS = dims.months, BANKS = dims.banks;
+const PUR2 = dims.pur2, PURPOSES = dims.purposes, LINES = dims.reportLines;
+const pur2Ix = Object.fromEntries(PUR2.map((p,i)=>[p.code,i]));
+const purposeByCode = Object.fromEntries(PURPOSES.map((p,i)=>[p.code,i]));
+const yOfMonth = MONTHS.map(m => YEARS.indexOf(+m.slice(0,4)));
+
+const state = {
+  yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
+  purpParent:null, cpCountry:-1, hidden:{},
+  tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
+  wkDate:null, wkScope:'all', dupTier:'A', seQuery:'', seSel:-1,
+};
+const yearsInRange = () => YEARS.map((y,i)=>i).filter(i => i>=state.yFrom && i<=state.yTo);
+const monthsInRange = () => MONTHS.map((m,i)=>i).filter(i => {
+  const y = yOfMonth[i]; return y>=state.yFrom && y<=state.yTo; });
+const vIdx = () => state.meas === 'usd' ? 1 : 0;
+/** The Use flag is the BOP compilation switch: Yes enters the accounts, No does not. */
+const useOK = u => state.basis === 'all' ? true : state.basis === 'excl' ? u === 0 : u === 1;
+
+/* ===================== tooltip ===================== */
+const tipEl = $('#tip'); let tipRaf = null;
+function showTip(html, ev){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  if (tipRaf) cancelAnimationFrame(tipRaf);
+  tipRaf = requestAnimationFrame(()=>{
+    const r = tipEl.getBoundingClientRect();
+    let x = ev.clientX + 14, y = ev.clientY + 14;
+    if (x + r.width  > innerWidth  - 8) x = ev.clientX - r.width  - 14;
+    if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+    tipEl.style.left = Math.max(8,x)+'px'; tipEl.style.top = Math.max(8,y)+'px';
+  });
+}
+const hideTip = () => { tipEl.style.opacity = 0; };
+addEventListener('scroll', hideTip, true);
+
+/* ===================== chart primitives ===================== */
+function niceTicks(min, max, count){
+  if (min === max){ min -= 1; max += 1; }
+  const raw = (max-min)/(count||5);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw||1)));
+  const n = raw/mag;
+  const step = (n>=7.5?10:n>=3.5?5:n>=1.5?2:1)*mag;
+  const out = [];
+  for (let v = Math.floor(min/step)*step; v <= Math.ceil(max/step)*step + step/1e6; v += step)
+    out.push(+v.toFixed(10));
+  return out;
+}
+const svgEl = (w,h,extra) =>
+  `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" ${extra||''}>`;
+
+function legendHtml(series, key){
+  if (series.length < 2) return '';
+  return '<div class="legend">' + series.map(s =>
+    `<button data-s="${esc(s.name)}" class="${state.hidden[key+s.name]?'off':''}"><i style="background:${s.color}"></i>${esc(s.name)}</button>`
+  ).join('') + '</div>';
+}
+function bindLegend(host, key, redraw){
+  host.querySelectorAll('.legend button').forEach(b => b.addEventListener('click', () => {
+    const k = key + b.dataset.s; state.hidden[k] = !state.hidden[k]; redraw();
+  }));
+}
+
+function lineChart(host, labels, series, opt){
+  opt = opt||{};
+  const W = opt.w||800, H = opt.h||260;
+  const m = {t:12, r:14, b:opt.rotate?46:24, l:opt.left ?? 50};
+  const iw = W-m.l-m.r, ih = H-m.t-m.b;
+  const key = opt.key||'';
+  const active = series.filter(s => !state.hidden[key+s.name]);
+  let vals = [];
+  active.forEach(s => s.values.forEach(v => { if (v!=null && isFinite(v)) vals.push(v); }));
+  if (!vals.length) vals = [0,1];
+  const ticks = niceTicks(Math.min(...vals, opt.zero===false?Infinity:0), Math.max(...vals,0), 5);
+  const lo = ticks[0], hi = ticks[ticks.length-1];
+  const x = i => m.l + (labels.length<2 ? iw/2 : i*iw/(labels.length-1));
+  const y = v => m.t + ih - (v-lo)/(hi-lo||1)*ih;
+
+  let s = svgEl(W,H);
+  ticks.forEach(tk => {
+    s += `<line class="${tk===0?'zero-line':'grid-line'}" x1="${m.l}" x2="${W-m.r}" y1="${y(tk).toFixed(1)}" y2="${y(tk).toFixed(1)}"/>`;
+    s += `<text x="${m.l-6}" y="${(y(tk)+3.5).toFixed(1)}" text-anchor="end">${(opt.axisFmt||axisFmt)(tk)}</text>`;
+  });
+  const every = Math.max(1, Math.ceil(labels.length/(opt.rotate?24:10)));
+  labels.forEach((L,i) => {
+    if (i%every && i!==labels.length-1) return;
+    s += opt.rotate
+      ? `<text x="${x(i)}" y="${H-m.b+14}" text-anchor="end" transform="rotate(-45 ${x(i)} ${H-m.b+14})">${esc(L)}</text>`
+      : `<text x="${x(i)}" y="${H-m.b+15}" text-anchor="middle">${esc(L)}</text>`;
+  });
+  active.forEach(sr => {
+    const pts = sr.values.map((v,i)=> v==null?null:[x(i),y(v)]).filter(Boolean);
+    if (!pts.length) return;
+    const d = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    if (sr.area) s += `<path d="${d} L ${pts[pts.length-1][0].toFixed(1)} ${y(clamp(0,lo,hi)).toFixed(1)} L ${pts[0][0].toFixed(1)} ${y(clamp(0,lo,hi)).toFixed(1)} Z" fill="${sr.color}" opacity=".13"/>`;
+    s += `<path d="${d}" fill="none" stroke="${sr.color}" stroke-width="${sr.width||1.9}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (labels.length <= 24) pts.forEach(p => s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.3" fill="${sr.color}"/>`);
+  });
+  const bw = iw/Math.max(1,labels.length-1);
+  labels.forEach((L,i) => s += `<rect class="hover-band" data-i="${i}" x="${(x(i)-bw/2).toFixed(1)}" y="${m.t}" width="${bw.toFixed(1)}" height="${ih}"/>`);
+  s += `</svg>`;
+  host.innerHTML = s + legendHtml(series, key);
+  bindLegend(host, key, () => lineChart(host, labels, series, opt));
+  host.querySelectorAll('.hover-band').forEach(b => {
+    b.addEventListener('mousemove', ev => {
+      const i = +b.dataset.i;
+      let h = `<div class="t-h">${esc(opt.tipTitle?opt.tipTitle(i):labels[i])}</div>`;
+      active.forEach(sr => { if (sr.values[i]!=null)
+        h += `<div class="t-r"><span><i style="background:${sr.color}"></i>${esc(sr.name)}</span><span>${(opt.fmt||fmtV)(sr.values[i])}</span></div>`; });
+      showTip(h, ev);
+    });
+    b.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function barChart(host, groups, opt){
+  opt = opt||{};
+  const W = opt.w||800, H = opt.h||260;
+  const m = {t:12, r:14, b:opt.rotate?52:26, l:opt.left ?? 50};
+  const iw = W-m.l-m.r, ih = H-m.t-m.b;
+  const all = groups.flatMap(g => g.values.map(v=>v.value));
+  const ticks = niceTicks(Math.min(0,...all), Math.max(0,...all), 5);
+  const lo = ticks[0], hi = ticks[ticks.length-1];
+  const y = v => m.t + ih - (v-lo)/(hi-lo||1)*ih;
+  const gw = iw/Math.max(1,groups.length);
+  const nS = groups[0] ? groups[0].values.length : 1;
+  const bw = Math.min(30, gw*0.74/nS);
+  let s = svgEl(W,H);
+  ticks.forEach(tk => {
+    s += `<line class="${tk===0?'zero-line':'grid-line'}" x1="${m.l}" x2="${W-m.r}" y1="${y(tk).toFixed(1)}" y2="${y(tk).toFixed(1)}"/>`;
+    s += `<text x="${m.l-6}" y="${(y(tk)+3.5).toFixed(1)}" text-anchor="end">${(opt.axisFmt||axisFmt)(tk)}</text>`;
+  });
+  groups.forEach((g,gi) => {
+    const cx = m.l + gw*gi + gw/2;
+    g.values.forEach((v,vi) => {
+      const bx = cx - (nS*bw)/2 + vi*bw, y0 = y(0), y1 = y(v.value);
+      s += `<rect data-g="${gi}" x="${(bx+1).toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${Math.max(1,Math.abs(y1-y0)).toFixed(1)}" fill="${v.color}" rx="1.5"/>`;
+    });
+    s += opt.rotate
+      ? `<text x="${cx}" y="${H-m.b+14}" text-anchor="end" transform="rotate(-45 ${cx} ${H-m.b+14})">${esc(g.label)}</text>`
+      : `<text x="${cx}" y="${H-m.b+16}" text-anchor="middle">${esc(g.label)}</text>`;
+  });
+  s += `</svg>`;
+  host.innerHTML = s + (opt.legend===false ? '' :
+    legendHtml((groups[0]?groups[0].values:[]).map(v=>({name:v.name,color:v.color})), opt.key||''));
+  host.querySelectorAll('rect[data-g]').forEach(r => {
+    r.addEventListener('mousemove', ev => {
+      const g = groups[+r.dataset.g];
+      let h = `<div class="t-h">${esc(g.label)}</div>`;
+      g.values.forEach(v => h += `<div class="t-r"><span><i style="background:${v.color}"></i>${esc(v.name)}</span><span>${(opt.fmt||fmtV)(v.value)}</span></div>`);
+      showTip(h, ev);
+    });
+    r.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function rankBars(host, items, opt){
+  opt = opt||{};
+  const rowH = opt.rowH||26, labelW = opt.labelW||132;
+  const W = opt.w||460, H = items.length*rowH + 22;
+  const iw = W - labelW - 62, diverge = !!opt.diverge;
+  const maxV = Math.max(1, ...items.map(d => diverge ? Math.max(d.a||0,d.b||0) : Math.abs(d.value)));
+  let s = svgEl(W,H);
+  if (!items.length) s += `<text x="${W/2}" y="24" text-anchor="middle">${esc(t('noData'))}</text>`;
+  items.forEach((d,i) => {
+    const yy = i*rowH + 10;
+    const maxL = opt.maxLabel||20;
+    const label = d.label.length > maxL ? d.label.slice(0,maxL-1)+'…' : d.label;
+    s += `<text x="${labelW-8}" y="${yy+rowH/2+3.5}" text-anchor="end" class="${opt.lao?'lao':''}" style="fill:var(--ink-2)">${esc(label)}</text>`;
+    if (diverge){
+      const wa = (d.a/maxV)*iw/2, wb = (d.b/maxV)*iw/2, mid = labelW + iw/2;
+      s += `<rect data-i="${i}" x="${(mid-wa).toFixed(1)}" y="${yy+4}" width="${Math.max(1,wa).toFixed(1)}" height="${rowH-10}" fill="${cssv('--in')}" rx="2" opacity=".85"/>`;
+      s += `<rect data-i="${i}" x="${mid}" y="${yy+4}" width="${Math.max(1,wb).toFixed(1)}" height="${rowH-10}" fill="${cssv('--out')}" rx="2" opacity=".85"/>`;
+      s += `<text x="${W-4}" y="${yy+rowH/2+3.5}" text-anchor="end" style="fill:var(--ink-3)">${(opt.fmt||fmtV)(d.a+d.b)}</text>`;
+    } else {
+      const w = Math.abs(d.value)/maxV*iw;
+      s += `<rect data-i="${i}" x="${labelW}" y="${yy+4}" width="${Math.max(1,w).toFixed(1)}" height="${rowH-10}" fill="${d.color||cssv('--c1')}" rx="2" opacity=".9"/>`;
+      s += `<text x="${W-4}" y="${yy+rowH/2+3.5}" text-anchor="end" style="fill:var(--ink-3)">${(opt.fmt||fmtV)(d.value)}</text>`;
+    }
+  });
+  s += `</svg>`;
+  host.innerHTML = s;
+  host.querySelectorAll('rect[data-i]').forEach(r => {
+    r.addEventListener('mousemove', ev => {
+      const d = items[+r.dataset.i];
+      let h = `<div class="t-h ${opt.lao?'lao':''}">${esc(d.full||d.label)}</div>`;
+      if (diverge){
+        h += `<div class="t-r"><span><i style="background:${cssv('--in')}"></i>${esc(t('inflow'))}</span><span>${(opt.fmt||fmtV)(d.a)}</span></div>`;
+        h += `<div class="t-r"><span><i style="background:${cssv('--out')}"></i>${esc(t('outflow'))}</span><span>${(opt.fmt||fmtV)(d.b)}</span></div>`;
+        const nv = d.a-d.b;
+        h += `<div class="t-r"><span>${esc(t('net'))}</span><span style="color:${nv>=0?cssv('--in'):cssv('--out')}">${(opt.fmt||fmtV)(nv)}</span></div>`;
+      } else h += `<div class="t-r"><span>${esc(t('value'))}</span><span>${(opt.fmt||fmtV)(d.value)}</span></div>`;
+      if (d.note) h += `<div class="t-r"><span class="muted">${esc(d.note)}</span><span></span></div>`;
+      showTip(h, ev);
+    });
+    r.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function stackArea(host, labels, series, opt){
+  opt = opt||{};
+  const W = opt.w||800, H = opt.h||240;
+  const m = {t:10, r:14, b:opt.rotate?46:24, l:42};
+  const iw = W-m.l-m.r, ih = H-m.t-m.b, n = labels.length;
+  const totals = labels.map((_,i) => series.reduce((a,s)=>a+(s.values[i]||0),0));
+  const x = i => m.l + (n<2?iw/2:i*iw/(n-1));
+  const y = v => m.t + ih - v*ih;
+  let s = svgEl(W,H);
+  [0,.25,.5,.75,1].forEach(g => {
+    s += `<line class="grid-line" x1="${m.l}" x2="${W-m.r}" y1="${y(g).toFixed(1)}" y2="${y(g).toFixed(1)}"/>`;
+    s += `<text x="${m.l-6}" y="${(y(g)+3.5).toFixed(1)}" text-anchor="end">${(g*100).toFixed(0)}%</text>`;
+  });
+  const acc = new Array(n).fill(0);
+  series.forEach(sr => {
+    const top = [], bot = [];
+    for (let i=0;i<n;i++){
+      const den = totals[i]||1, v0 = acc[i]/den;
+      acc[i] += (sr.values[i]||0);
+      bot.push([x(i), y(v0)]); top.push([x(i), y(acc[i]/den)]);
+    }
+    s += `<path d="${top.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')} ${bot.reverse().map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')} Z" fill="${sr.color}" opacity=".82"/>`;
+  });
+  const every = Math.max(1, Math.ceil(n/(opt.rotate?24:10)));
+  labels.forEach((L,i) => {
+    if (i%every && i!==n-1) return;
+    s += opt.rotate
+      ? `<text x="${x(i)}" y="${H-m.b+14}" text-anchor="end" transform="rotate(-45 ${x(i)} ${H-m.b+14})">${esc(L)}</text>`
+      : `<text x="${x(i)}" y="${H-m.b+15}" text-anchor="middle">${esc(L)}</text>`;
+  });
+  const bw = iw/Math.max(1,n-1);
+  labels.forEach((L,i) => s += `<rect class="hover-band" data-i="${i}" x="${(x(i)-bw/2).toFixed(1)}" y="${m.t}" width="${bw.toFixed(1)}" height="${ih}"/>`);
+  s += `</svg>`;
+  host.innerHTML = s + legendHtml(series, opt.key||'');
+  bindLegend(host, opt.key||'', ()=>stackArea(host,labels,series,opt));
+  host.querySelectorAll('.hover-band').forEach(b => {
+    b.addEventListener('mousemove', ev => {
+      const i = +b.dataset.i;
+      let h = `<div class="t-h">${esc(labels[i])}</div>`;
+      series.slice().reverse().forEach(sr => {
+        const v = sr.values[i]||0; if (!v) return;
+        h += `<div class="t-r"><span><i style="background:${sr.color}"></i>${esc(sr.name)}</span><span>${fmtV(v)} · ${(100*v/(totals[i]||1)).toFixed(1)}%</span></div>`;
+      });
+      showTip(h, ev);
+    });
+    b.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function donut(host, items, opt){
+  opt = opt||{};
+  const size = opt.size||168, R = size/2, r = R*0.62;
+  const total = items.reduce((a,d)=>a+d.value,0) || 1;
+  let ang = -Math.PI/2, s = svgEl(size,size,`style="max-width:${size}px;margin:0 auto"`);
+  items.forEach((d,i) => {
+    const a0 = ang, a1 = ang + 2*Math.PI*d.value/total; ang = a1;
+    const big = (a1-a0) > Math.PI ? 1 : 0;
+    const p = (rr,a)=>[R+rr*Math.cos(a), R+rr*Math.sin(a)];
+    const [x0,y0]=p(R-1,a0),[x1,y1]=p(R-1,a1),[x2,y2]=p(r,a1),[x3,y3]=p(r,a0);
+    s += `<path data-i="${i}" d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R-1} ${R-1} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)} A${r} ${r} 0 ${big} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z" fill="${d.color}" opacity=".9"/>`;
+  });
+  s += `<text x="${R}" y="${R-2}" text-anchor="middle" style="font-size:15px;font-weight:650;fill:var(--ink)">${(opt.fmt||fmtV)(total)}</text>`;
+  s += `<text x="${R}" y="${R+13}" text-anchor="middle" style="font-size:10px">${esc(opt.centerLabel||t('gross'))}</text></svg>`;
+  s += '<div class="legend">' + items.slice(0,8).map(d =>
+    `<span><i style="background:${d.color}"></i>${esc(d.label)} <span class="muted">${(100*d.value/total).toFixed(1)}%</span></span>`).join('') + '</div>';
+  host.innerHTML = s;
+  host.querySelectorAll('path[data-i]').forEach(p => {
+    p.addEventListener('mousemove', ev => {
+      const d = items[+p.dataset.i];
+      showTip(`<div class="t-h">${esc(d.label)}</div>
+        <div class="t-r"><span>${esc(t('value'))}</span><span>${(opt.fmt||fmtV)(d.value)}</span></div>
+        <div class="t-r"><span>${esc(t('share'))}</span><span>${(100*d.value/total).toFixed(2)}%</span></div>`, ev);
+    });
+    p.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function sparkline(host, values, color){
+  const W=120,H=30, lo=Math.min(...values,0), hi=Math.max(...values,0);
+  const x=i=>i*W/Math.max(1,values.length-1), y=v=>H-2-(v-lo)/(hi-lo||1)*(H-4);
+  const d = values.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  host.innerHTML = svgEl(W,H,`preserveAspectRatio="none" style="width:100%;height:30px"`)
+    + `<path d="${d} L ${W} ${H} L 0 ${H} Z" fill="${color}" opacity=".12"/>`
+    + `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6"/></svg>`;
+}
+
+/* ===================== sortable table ===================== */
+function sortableTable(host, cfg){
+  host._sort = host._sort || {k:cfg.sort, dir:-1};
+  const st = host._sort;
+  const rows = cfg.rows.slice().sort((a,b) => {
+    const va = a[st.k], vb = b[st.k];
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return typeof va === 'string' ? st.dir*vb.localeCompare(va) : st.dir*(va-vb);
+  });
+  const shown = rows.slice(0, cfg.maxRows||50);
+  const maxByCol = {};
+  cfg.cols.forEach((c,ci) => { if (c.bar) maxByCol[ci] = Math.max(1, ...rows.map(r=>Math.abs(r[c.k]||0))); });
+  let h = '<table><thead><tr>' + cfg.cols.map((c,ci) =>
+    `<th data-ci="${ci}" class="${st.k===c.k?'sorted'+(st.dir>0?' asc':''):''}" style="${c.align==='left'?'text-align:left':''}">${esc(c.t)}</th>`).join('') + '</tr></thead><tbody>';
+  if (!shown.length) h += `<tr><td colspan="${cfg.cols.length}" class="muted" style="text-align:center;padding:22px">${esc(t('noData'))}</td></tr>`;
+  shown.forEach((r,ri) => {
+    h += `<tr data-ri="${ri}" ${cfg.onClick?'style="cursor:pointer"':''} ${cfg.rowClass?cfg.rowClass(r):''}>`;
+    cfg.cols.forEach((c,ci) => {
+      const v = r[c.k];
+      const inner = c.fmt ? c.fmt(v, r) : (v==null ? '—' : esc(String(v)));
+      h += c.bar
+        ? `<td class="num bar-cell"><span class="fill" style="width:${(100*Math.abs(v||0)/maxByCol[ci]).toFixed(1)}%;background:var(${c.barColor||'--accent'})"></span><span>${inner}</span></td>`
+        : `<td class="${c.align==='left'?'name':'num'}">${inner}</td>`;
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  if (rows.length > shown.length)
+    h += `<p class="note">${esc(t('showingTop'))} ${shown.length} ${esc(t('of'))} ${rows.length}.</p>`;
+  host.innerHTML = h;
+  host.querySelectorAll('th[data-ci]').forEach(th => th.addEventListener('click', () => {
+    const c = cfg.cols[+th.dataset.ci];
+    if (st.k === c.k) st.dir = -st.dir; else { st.k = c.k; st.dir = -1; }
+    sortableTable(host, cfg);
+  }));
+  if (cfg.onClick) host.querySelectorAll('tr[data-ri]').forEach(tr =>
+    tr.addEventListener('click', () => cfg.onClick(shown[+tr.dataset.ri])));
+}
+/* ===================== aggregation ===================== */
+/** Cube rows end with [count, usdMillions]; dims sit in front. */
+function byDim(rows, dimPos, hasUse){
+  const vi = rows.length ? rows[0].length-2+vIdx() : 0;
+  const usePos = hasUse ? 3 : -1;
+  const m = new Map();
+  for (const r of rows){
+    if (r[0] < state.yFrom || r[0] > state.yTo) continue;
+    if (usePos >= 0 && !useOK(r[usePos])) continue;
+    let e = m.get(r[dimPos]); if (!e) m.set(r[dimPos], e = {in:0,out:0});
+    e[r[1]===REC?'in':'out'] += r[vi];
+  }
+  return m;
+}
+function monthlySeries(){
+  const mIdx = monthsInRange(), first = mIdx[0] ?? 0;
+  const inV = new Array(mIdx.length).fill(0), outV = new Array(mIdx.length).fill(0);
+  const vi = 4+vIdx();
+  for (const r of cubes.month){
+    const m = r[0]-first;
+    if (m<0||m>=mIdx.length||!useOK(r[3])) continue;
+    (r[1]===REC?inV:outV)[m] += r[vi];
+  }
+  return {labels: mIdx.map(i=>MONTHS[i]), inV, outV};
+}
+function monthlyCounts(flow){
+  const mIdx = monthsInRange(), first = mIdx[0] ?? 0;
+  const arr = new Array(mIdx.length).fill(0);
+  for (const r of cubes.month){
+    const m = r[0]-first;
+    if (m<0||m>=mIdx.length||r[1]!==flow||!useOK(r[3])) continue;
+    arr[m] += r[4];
+  }
+  return arr;
+}
+function yearlyTotals(){
+  const res = {}; yearsInRange().forEach(y => res[y] = {in:0,out:0});
+  const vi = 4+vIdx();
+  if (state.bank >= 0){
+    for (const r of cubes.bank){
+      if (r[2]!==state.bank || !useOK(r[3]) || !(r[0] in res)) continue;
+      res[r[0]][r[1]===REC?'in':'out'] += r[vi];
+    }
+  } else {
+    for (const r of cubes.month){
+      const y = yOfMonth[r[0]];
+      if (!(y in res) || !useOK(r[3])) continue;
+      res[y][r[1]===REC?'in':'out'] += r[vi];
+    }
+  }
+  return res;
+}
+function categoryTotals(){
+  const vi = 4+vIdx(), out = {};
+  for (const r of cubes.month){
+    const y = yOfMonth[r[0]];
+    if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
+    (out[r[2]] = out[r[2]] || {in:0,out:0})[r[1]===REC?'in':'out'] += r[vi];
+  }
+  return out;
+}
+function coverageCount(){
+  let n = 0;
+  for (const r of cubes.month){
+    const y = yOfMonth[r[0]];
+    if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
+    n += r[4];
+  }
+  return n;
+}
+const purposeChildren = (()=>{ const k={};
+  PURPOSES.forEach((p,i)=>{ if(p.parent!=null)(k[p.parent]=k[p.parent]||[]).push(i); }); return k; })();
+function purposeTotals(){
+  const direct = byDim(cubes.purpose, 2, true), roll = new Map();
+  const order = PURPOSES.map((p,i)=>[i,p.code.length]).sort((a,b)=>b[1]-a[1]);
+  for (const [i] of order){
+    const own = direct.get(i) || {in:0,out:0};
+    let ain = own.in, aout = own.out;
+    for (const c of (purposeChildren[PURPOSES[i].code]||[])){
+      const cv = roll.get(c); if (cv){ ain += cv.in; aout += cv.out; }
+    }
+    roll.set(i, {in:ain, out:aout});
+  }
+  return roll;
+}
+function flagTotals(){
+  let gross=0,grossN=0,useYes=0,noUse=0,noUseN=0,m2Yes=0,moveYes=0,noMove=0;
+  for (const r of cubes.flags){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    const v = state.meas==='usd' ? r[6] : r[5], n = r[5];
+    gross += v; grossN += n;
+    if (r[2]===1) useYes += v; else { noUse += v; noUseN += n; }
+    if (r[3]===1) m2Yes += v;
+    if (r[4]===1) moveYes += v; else noMove += v;
+  }
+  return {gross,grossN,useYes,noUse,noUseN,m2Yes,moveYes,noMove};
+}
+
+/* ===================== shared UI bits ===================== */
+function kpiCard(label, value, cls, foot, spark, sparkColor){
+  return `<div class="card kpi"><div class="label">${esc(label)}</div>
+    <div class="val ${cls||''}">${value}</div><div class="foot">${foot||''}</div>
+    ${spark ? `<div class="spark" data-vals="${spark.join(',')}" data-color="${sparkColor}"></div>` : ''}</div>`;
+}
+function mountSparks(root){
+  root.querySelectorAll('.spark[data-vals]').forEach(el =>
+    sparkline(el, el.dataset.vals.split(',').map(Number), el.dataset.color));
+}
+function deltaHtml(cur, prev, invert){
+  if (prev == null || !isFinite(prev) || prev === 0) return '<span class="muted">—</span>';
+  const d = (cur-prev)/Math.abs(prev)*100, good = invert ? d<0 : d>0;
+  return `<span class="delta ${good?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1)}%</span>
+          <span class="muted">${esc(t('vsPrior'))} ${YEARS[state.yTo-1]??''}</span>`;
+}
+const countryLabel = c => isLo() ? c.code : c.name;
+const purposeLabel = p => p.name;
+
+/* ===================== Overview ===================== */
+function renderOverview(){
+  const yt = yearlyTotals(), yrs = yearsInRange();
+  const tot = yrs.reduce((a,y)=>({in:a.in+yt[y].in, out:a.out+yt[y].out}), {in:0,out:0});
+  const last = yrs[yrs.length-1], prev = yrs.length>1 ? yrs[yrs.length-2] : null;
+  const net = tot.in - tot.out;
+  $('#kpis').innerHTML =
+    kpiCard(t('inflows'), fmtV(tot.in), '', deltaHtml(yt[last].in, prev!=null?yt[prev].in:null),
+            yrs.map(y=>yt[y].in), cssv('--in')) +
+    kpiCard(t('outflows'), fmtV(tot.out), '', deltaHtml(yt[last].out, prev!=null?yt[prev].out:null, true),
+            yrs.map(y=>yt[y].out), cssv('--out')) +
+    kpiCard(t('netPos'), fmtV(net), net>=0?'pos':'neg',
+            `<span class="muted">${yrs.length} ${isLo()?'ປີ':'year'+(yrs.length>1?'s':'')}</span>`,
+            yrs.map(y=>yt[y].in-yt[y].out), net>=0?cssv('--in'):cssv('--out')) +
+    kpiCard(t('coverage'), int(coverageCount()), '',
+            `<span class="muted">${esc(t('transactions'))} · ${dims.countries.length} ${esc(t('countries'))} · ${BANKS.length} ${esc(t('banks'))}</span>`);
+  mountSparks($('#kpis'));
+
+  const ms = monthlySeries();
+  lineChart($('#ovMonthly'), ms.labels, [
+    {name:t('inflow'), color:cssv('--in'), values:ms.inV, area:true},
+    {name:t('outflow'), color:cssv('--out'), values:ms.outV, area:true},
+  ], {h:280, rotate:true, key:'ovm'});
+
+  barChart($('#ovNetYear'), yrs.map(y => ({label:String(YEARS[y]),
+    values:[{name:t('net'), value:yt[y].in-yt[y].out,
+             color:(yt[y].in-yt[y].out)>=0?cssv('--in'):cssv('--out')}]})),
+    {h:280, legend:false, w:440});
+
+  const cm = byDim(cubes.country, 2, true);
+  rankBars($('#ovCountries'), [...cm.entries()].map(([i,v])=>({
+      label:countryLabel(dims.countries[i]), full:dims.countries[i].name+' ('+dims.countries[i].code+')',
+      a:v.in, b:v.out, value:v.in+v.out
+    })).sort((x,y)=>y.value-x.value).slice(0,12),
+    {diverge:true, labelW:112, w:440, maxLabel:16});
+
+  const cat = categoryTotals();
+  rankBars($('#ovCategory'), PUR2.map((p,i)=>({
+      label:bi(p), a:(cat[i]||{}).in||0, b:(cat[i]||{}).out||0,
+      value:((cat[i]||{}).in||0)+((cat[i]||{}).out||0)
+    })).filter(d=>d.value>0).sort((x,y)=>y.value-x.value),
+    {diverge:true, labelW:140, w:440, maxLabel:21, lao:isLo()});
+
+  const curm = byDim(cubes.currency, 2, true);
+  const curList = [...curm.entries()].map(([i,v])=>({label:dims.currencies[i], value:v.in+v.out}))
+    .sort((a,b)=>b.value-a.value);
+  const topCur = curList.slice(0,7);
+  const restV = curList.slice(7).reduce((a,d)=>a+d.value,0);
+  if (restV > 0) topCur.push({label:t('other'), value:restV});
+  donut($('#ovCurrency'), topCur.map((d,i)=>({...d, color:cssv(SC[i%10])})));
+
+  const pr = purposeTotals();
+  const leaves = PURPOSES.map((p,i)=>({p,i})).filter(x => !(purposeChildren[x.p.code]||[]).length);
+  const mk = dir => leaves.map(({p,i}) => ({label:purposeLabel(p), full:p.name+'  ['+p.code+']',
+      value:(pr.get(i)||{})[dir]||0})).filter(d=>d.value>0).sort((a,b)=>b.value-a.value).slice(0,10);
+  rankBars($('#ovPurposeIn'), mk('in').map(d=>({...d,color:cssv('--in')})),
+    {labelW:240, w:620, maxLabel:36, lao:true});
+  rankBars($('#ovPurposeOut'), mk('out').map(d=>({...d,color:cssv('--out')})),
+    {labelW:240, w:620, maxLabel:36, lao:true});
+}
+
+/* ===================== BOP ===================== */
+function renderBop(){
+  const cat = categoryTotals();
+  const acct = {current:{in:0,out:0}, financial:{in:0,out:0}, other:{in:0,out:0}};
+  PUR2.forEach((p,i) => { const v = cat[i]; if (!v) return;
+    acct[p.account].in += v.in; acct[p.account].out += v.out; });
+  const bal = code => { const v = cat[pur2Ix[code]] || {in:0,out:0}; return v.in - v.out; };
+  const ca = acct.current.in - acct.current.out, fa = acct.financial.in - acct.financial.out;
+
+  $('#bopKpis').innerHTML =
+    kpiCard(t('curAcct'), fmtV(ca), ca>=0?'pos':'neg',
+      `<span class="muted">${isLo()?'ສິນຄ້າ + ບໍລິການ + ລາຍໄດ້':'Goods + services + income'}</span>`) +
+    kpiCard(t('goodsBal'), fmtV(bal('01')), bal('01')>=0?'pos':'neg',
+      `<span class="muted">${isLo()?'ຕົວແທນການຄ້າສິນຄ້າ':'ITRS proxy for merchandise trade'}</span>`) +
+    kpiCard(t('svcBal'), fmtV(bal('02')), bal('02')>=0?'pos':'neg',
+      `<span class="muted">${isLo()?'ຂົນສົ່ງ, ທ່ອງທ່ຽວ, ທຸລະກິດ':'Transport, travel, business'}</span>`) +
+    kpiCard(t('finAcct'), fmtV(fa), fa>=0?'pos':'neg',
+      `<span class="muted">${isLo()?'ເງິນກູ້, ເງິນຝາກ, ຮຸ້ນ':'Loans, deposits, equity'}</span>`);
+
+  const fl = flagTotals();
+  const rows = [
+    [t('grossTurnover'), fl.gross, isLo()?'ທຸກລາຍການໃນໄລຍະທີ່ເລືອກ':'All records in the selected period', 0],
+    [t('lessNoMove'), -fl.noMove, '<code>Move_Fund = No</code>', 0],
+    [t('lessExcl'), -(fl.gross - fl.noMove - fl.useYes), '<code>Use = No</code>', 0],
+    [t('bopFlows'), fl.useYes, isLo()?'ຖານທີ່ໃຊ້ໃນ dashboard ນີ້':'The default base on this dashboard', 1],
+  ];
+  let bh = `<table><thead><tr><th>${esc(t('step'))}</th><th>${esc(t('value'))}</th><th>${esc(t('shareGross'))}</th><th style="text-align:left">${esc(t('basis'))}</th></tr></thead><tbody>`;
+  rows.forEach(([lbl,v,note,isTot]) => {
+    bh += `<tr class="${isTot?'total':''}"><td>${esc(lbl)}</td>
+      <td class="num ${v<0?'neg':''}">${fmtM(Math.abs(v))}${v<0?' ⊖':''}</td>
+      <td class="num muted">${fl.gross?fmtPct(100*Math.abs(v)/fl.gross):'—'}</td>
+      <td style="text-align:left;white-space:normal" class="muted">${note}</td></tr>`;
+  });
+  $('#bopBridge').innerHTML = bh + '</tbody></table>';
+  $('#bopBridgeNote').innerHTML = isLo()
+    ? `<b>ເປັນຫຍັງຈຶ່ງສຳຄັນ:</b> ${fmtM(fl.noUse)} ຂອງມູນຄ່າລວມມີ <code>Use = No</code> ພຽງແຕ່ ${int(fl.noUseN)} ລາຍການ. ສ່ວນຫຼາຍແມ່ນທຸລະກຳລະຫວ່າງທະນາຄານໃນບັນຊີການເງິນ. ການອ້າງມູນຄ່າລວມວ່າເປັນ "ກະແສຂ້າມຊາຍແດນ" ຈະເກີນຄວາມຈິງປະມານ ${fl.useYes?(fl.gross/fl.useYes).toFixed(1):'—'} ເທົ່າ.`
+    : `<b>Why this matters:</b> ${fmtM(fl.noUse)} of gross turnover carries <code>Use = No</code> on just ${int(fl.noUseN)} records — overwhelmingly financial-account placements between banks. Quoting gross turnover as "cross-border flows" overstates activity by roughly ${fl.useYes?(fl.gross/fl.useYes).toFixed(1):'—'}×.`;
+
+  const mIdx = monthsInRange(), first = mIdx[0] ?? 0, vi = 4+vIdx();
+  const series = ['01','02','03','04'].map((code,ci) => {
+    const arr = new Array(mIdx.length).fill(0), pi = pur2Ix[code];
+    for (const r of cubes.month){
+      const m = r[0]-first;
+      if (m<0||m>=mIdx.length||r[2]!==pi||!useOK(r[3])) continue;
+      arr[m] += (r[1]===REC ? r[vi] : -r[vi]);
+    }
+    return {name:bi(PUR2[pi]), color:cssv(SC[ci]), values:arr};
+  });
+  lineChart($('#bopCurrentSeries'), mIdx.map(i=>MONTHS[i]), series, {h:300, rotate:true, key:'bopca'});
+
+  rankBars($('#bopBalances'), PUR2.map((p,i)=>({
+      label:bi(p), value:((cat[i]||{}).in||0)-((cat[i]||{}).out||0)
+    })).filter(d=>d.value!==0).sort((a,b)=>Math.abs(b.value)-Math.abs(a.value))
+      .map(d=>({...d, color:d.value>=0?cssv('--in'):cssv('--out')})),
+    {labelW:148, w:440, maxLabel:23, rowH:30, lao:isLo()});
+
+  renderPurposeTable();
+
+  const yrs = yearsInRange(), cells = {}; let maxAbs = 1;
+  for (const r of cubes.month){
+    const y = yOfMonth[r[0]];
+    if (y<state.yFrom||y>state.yTo||!useOK(r[3])) continue;
+    const k = y+'|'+r[2];
+    cells[k] = (cells[k]||0) + (r[1]===REC ? r[vi] : -r[vi]);
+  }
+  Object.values(cells).forEach(v => maxAbs = Math.max(maxAbs, Math.abs(v)));
+  const shown = PUR2.map((p,i)=>i).filter(i => yrs.some(y => Math.abs(cells[y+'|'+i]||0) > 0));
+  let hm = `<div class="hm" style="grid-template-columns:auto repeat(${yrs.length},1fr)"><div></div>`
+    + yrs.map(y=>`<div class="hd">${YEARS[y]}</div>`).join('');
+  shown.forEach(ci => {
+    hm += `<div class="lbl ${isLo()?'lao':''}">${esc(bi(PUR2[ci]))}</div>`;
+    yrs.forEach(y => {
+      const v = cells[y+'|'+ci]||0, tt = Math.abs(v)/maxAbs;
+      const col = v>=0 ? cssv('--in') : cssv('--out');
+      hm += `<div class="cell" style="background:color-mix(in srgb, ${col} ${(Math.sqrt(tt)*72).toFixed(0)}%, transparent);color:${tt>0.42?'#fff':'var(--ink-2)'}"
+        data-tip="${esc(bi(PUR2[ci]))}|${YEARS[y]}|${fmtV(v)}">${tt>0.03?axisFmt(v):''}</div>`;
+    });
+  });
+  $('#bopHeatmap').innerHTML = hm + '</div>';
+  bindHeat($('#bopHeatmap'));
+
+  renderUsePanel(fl);
+}
+
+/** Use = Yes / No side by side, plus what the exclusion is made of. */
+function renderUsePanel(fl){
+  const share = (a,b) => b ? fmtPct(100*a/b) : '—';
+  const yesN = fl.grossN - fl.noUseN;
+  $('#bopUse').innerHTML = `<div class="tw"><table><thead><tr>
+      <th style="text-align:left">Use</th><th>${esc(t('records'))}</th><th>${esc(t('share'))}</th>
+      <th>${esc(t('value'))}</th><th>${esc(t('share'))}</th>
+      <th style="text-align:left">${esc(isLo()?'ຄວາມໝາຍ':'Meaning')}</th></tr></thead><tbody>
+    <tr><td><span class="pill ok">Yes</span></td>
+      <td class="num">${int(yesN)}</td><td class="num muted">${share(yesN, fl.grossN)}</td>
+      <td class="num">${fmtM(fl.useYes)}</td><td class="num muted">${share(fl.useYes, fl.gross)}</td>
+      <td style="text-align:left;white-space:normal">${esc(isLo()?'ເຂົ້າໃນການລວບລວມດຸນຊຳລະ':'Enters balance-of-payments compilation')}</td></tr>
+    <tr><td><span class="pill bad">No</span></td>
+      <td class="num">${int(fl.noUseN)}</td><td class="num muted">${share(fl.noUseN, fl.grossN)}</td>
+      <td class="num">${fmtM(fl.noUse)}</td><td class="num muted">${share(fl.noUse, fl.gross)}</td>
+      <td style="text-align:left;white-space:normal">${esc(isLo()?'ຍົກເວັ້ນ — ສ່ວນຫຼາຍເປັນທຸລະກຳບັນຊີຕົນເອງລະຫວ່າງທະນາຄານ':'Excluded — mostly own-account interbank positions')}</td></tr>
+    </tbody></table></div>
+    <p class="note">${esc(isLo()
+      ? `${fmtPct(100*fl.noUseN/(fl.grossN||1),3)} ຂອງລາຍການ ແຕ່ກວມ ${share(fl.noUse, fl.gross)} ຂອງມູນຄ່າ. ນີ້ຄືເຫດຜົນທີ່ຕົວເລກລວມບໍ່ສາມາດໃຊ້ເປັນຕົວຊີ້ວັດ BOP ໄດ້.`
+      : `${fmtPct(100*fl.noUseN/(fl.grossN||1),3)} of records but ${share(fl.noUse, fl.gross)} of value. That asymmetry is exactly why gross turnover cannot be read as a BOP measure.`)}</p>`;
+
+  rankBars($('#bopFlags'), [
+    {label:isLo()?'Use = ແມ່ນ':'Use = Yes', value:fl.useYes, color:cssv('--c2')},
+    {label:isLo()?'Use = ບໍ່':'Use = No', value:fl.noUse, color:cssv('--c3')},
+    {label:isLo()?'ມີຜົນຕໍ່ M2':'M2-affecting', value:fl.m2Yes, color:cssv('--c1')},
+    {label:isLo()?'ມີການເຄື່ອນຍ້າຍເງິນຈິງ':'Funds actually moved', value:fl.moveYes, color:cssv('--c6')},
+  ], {labelW:isLo()?150:150, w:460, rowH:30, fmt:fmtM, lao:isLo()});
+}
+
+function bindHeat(host){
+  host.querySelectorAll('[data-tip]').forEach(c => {
+    c.addEventListener('mousemove', ev => {
+      const p = c.dataset.tip.split('|');
+      showTip(`<div class="t-h">${esc(p[0])} · ${esc(p[1])}</div><div class="t-r"><span>${esc(p[3]||t('net'))}</span><span>${esc(p[2])}</span></div>`, ev);
+    });
+    c.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function renderPurposeTable(){
+  const roll = purposeTotals(), parent = state.purpParent;
+  const kids = parent == null
+    ? PURPOSES.map((p,i)=>({p,i})).filter(x => x.p.code.length === 2)
+    : (purposeChildren[parent]||[]).map(i => ({p:PURPOSES[i], i}));
+  let cb = `<button data-c="">${esc(isLo()?'ທັງໝົດ':'All categories')}</button>`;
+  if (parent){
+    for (let k = 2; k <= parent.length; k += 2){
+      const acc = parent.slice(0,k), p = PURPOSES[purposeByCode[acc]];
+      cb += `<span class="muted">›</span>` + (acc === parent
+        ? `<span class="cur lao">${esc(p?p.name:acc)} <span class="muted">${acc}</span></span>`
+        : `<button data-c="${acc}" class="lao">${esc(p?p.name:acc)}</button>`);
+    }
+  }
+  $('#purpCrumb').innerHTML = cb;
+  $('#purpCrumb').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    state.purpParent = b.dataset.c || null; renderPurposeTable(); }));
+
+  const rows = kids.map(({p,i}) => {
+    const v = roll.get(i) || {in:0,out:0};
+    return {code:p.code, name:p.name, in:v.in, out:v.out, net:v.in-v.out,
+            gross:v.in+v.out, hasKids:(purposeChildren[p.code]||[]).length>0};
+  }).filter(r => r.gross > 0).sort((a,b)=>b.gross-a.gross);
+  const maxG = Math.max(1, ...rows.map(r=>r.gross)), totG = rows.reduce((a,r)=>a+r.gross,0);
+  let h = `<table><thead><tr><th style="width:42%">${esc(t('purpose'))}</th><th>${esc(t('code'))}</th>
+    <th>${esc(t('inflow'))}</th><th>${esc(t('outflow'))}</th><th>${esc(t('net'))}</th>
+    <th style="min-width:96px">${esc(t('share'))}</th></tr></thead><tbody>`;
+  if (!rows.length) h += `<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">${esc(t('noData'))}</td></tr>`;
+  rows.forEach(r => {
+    h += `<tr class="drill-row ${r.hasKids?'':'leaf'}" data-c="${esc(r.code)}" data-k="${r.hasKids?1:0}">
+      <td class="name lao">${esc(r.name)}</td><td class="num muted">${esc(r.code)}</td>
+      <td class="num">${fmtV(r.in)}</td><td class="num">${fmtV(r.out)}</td>
+      <td class="num ${r.net>=0?'pos':'neg'}">${fmtV(r.net)}</td>
+      <td class="num bar-cell"><span class="fill" style="width:${(100*r.gross/maxG).toFixed(1)}%;background:var(--accent)"></span>
+        <span>${totG?fmtPct(100*r.gross/totG):'—'}</span></td></tr>`;
+  });
+  $('#purpTable').innerHTML = h + '</tbody></table>';
+  $('#purpTable').querySelectorAll('tr[data-k="1"]').forEach(tr =>
+    tr.addEventListener('click', () => { state.purpParent = tr.dataset.c; renderPurposeTable(); }));
+}
+/* ===================== Time Series ===================== */
+const TS_META = {
+  tsBank:    {items:()=>BANKS.map((b,i)=>({i,label:b})), key:'dimBank'},
+  tsCountry: {items:()=>dims.countries.map((c,i)=>({i,label:countryLabel(c), full:c.name})), key:'dimCountry'},
+  tsCurrency:{items:()=>dims.currencies.map((c,i)=>({i,label:c})), key:'dimCurrency'},
+  tsPurpose: {items:()=>PURPOSES.map((p,i)=>({i,label:p.name+' ['+p.code+']', lao:true}))
+                        .filter(x=>x.label.length), key:'dimPurpose'},
+};
+/** Collapse the month axis to the chosen frequency, returning bucket labels. */
+function tsBuckets(){
+  const mIdx = monthsInRange();
+  if (state.tsFreq === 'M') return {keys:mIdx.map(i=>MONTHS[i]), of:i=>MONTHS[i]};
+  if (state.tsFreq === 'Q'){
+    const of = i => { const m = MONTHS[i]; return m.slice(0,4)+' Q'+(Math.floor((+m.slice(5,7)-1)/3)+1); };
+    return {keys:[...new Set(mIdx.map(of))], of};
+  }
+  const of = i => MONTHS[i].slice(0,4);
+  return {keys:[...new Set(mIdx.map(of))], of};
+}
+function tsMatrix(){
+  const rows = cubes[state.tsDim] || [];
+  const {keys, of} = tsBuckets();
+  const kIx = Object.fromEntries(keys.map((k,i)=>[k,i]));
+  const inR = state.tsFrom;
+  const acc = new Map();                       // dimIx -> array over buckets
+  const vi = 3 + vIdx();                       // ts cubes: [m, flow, dim, n, usd]
+  for (const r of rows){
+    const y = yOfMonth[r[0]];
+    if (y < state.yFrom || y > state.yTo) continue;
+    const b = kIx[of(r[0])]; if (b == null) continue;
+    if (state.tsFlow !== 2 && r[1] !== state.tsFlow) continue;
+    let a = acc.get(r[2]); if (!a) acc.set(r[2], a = new Array(keys.length).fill(0));
+    a[b] += (state.tsFlow === 2 ? (r[1]===REC ? r[vi] : -r[vi]) : r[vi]);
+  }
+  const items = TS_META[state.tsDim].items();
+  const out = [];
+  for (const [ix, arr] of acc){
+    const it = items[ix]; if (!it) continue;
+    const tot = arr.reduce((a,b)=>a+b,0);
+    out.push({ix, label:it.label, full:it.full||it.label, lao:it.lao, values:arr, total:tot});
+  }
+  out.sort((a,b)=>Math.abs(b.total)-Math.abs(a.total));
+  return {keys, rows:out};
+}
+function renderTimeSeries(){
+  const {keys, rows} = tsMatrix();
+  const pick = state.tsPick;
+  const shown = pick != null ? rows.filter(r=>r.ix===pick) : rows.slice(0,8);
+  lineChart($('#tsChart'), keys, shown.map((r,i)=>({
+      name:r.label.length>26 ? r.label.slice(0,25)+'…' : r.label,
+      color:cssv(SC[i%10]), values:r.values, area:shown.length===1})),
+    {h:300, rotate:keys.length>14, key:'ts'+state.tsDim+state.tsFreq});
+
+  const maxT = Math.max(1, ...rows.map(r=>Math.abs(r.total)));
+  let h = `<table><thead><tr><th style="text-align:left">${esc(t(TS_META[state.tsDim].key))}</th>`
+        + keys.map(k=>`<th>${esc(k)}</th>`).join('')
+        + `<th>${esc(t('total'))}</th></tr></thead><tbody>`;
+  if (!rows.length) h += `<tr><td colspan="${keys.length+2}" class="muted" style="text-align:center;padding:22px">${esc(t('noData'))}</td></tr>`;
+  rows.slice(0,60).forEach(r => {
+    h += `<tr data-ix="${r.ix}" style="cursor:pointer" ${pick===r.ix?'class="total"':''}>
+      <td class="name ${r.lao?'lao':''}">${esc(r.label)}</td>`
+      + r.values.map(v=>`<td class="num ${v<0?'neg':''}">${v?v.toFixed(2):'—'}</td>`).join('')
+      + `<td class="num bar-cell"><span class="fill" style="width:${(100*Math.abs(r.total)/maxT).toFixed(1)}%;background:var(--accent)"></span>
+         <span><b>${r.total.toFixed(2)}</b></span></td></tr>`;
+  });
+  const totals = keys.map((_,i)=>rows.reduce((a,r)=>a+r.values[i],0));
+  h += `<tr class="total"><td>${esc(t('total'))}</td>`
+     + totals.map(v=>`<td class="num">${v.toFixed(2)}</td>`).join('')
+     + `<td class="num">${totals.reduce((a,b)=>a+b,0).toFixed(2)}</td></tr>`;
+  $('#tsTable').innerHTML = h + '</tbody></table>';
+  $('#tsTable').querySelectorAll('tr[data-ix]').forEach(tr => tr.addEventListener('click', () => {
+    const ix = +tr.dataset.ix;
+    state.tsPick = state.tsPick === ix ? null : ix;
+    renderTimeSeries();
+  }));
+}
+function tsCsv(){
+  const {keys, rows} = tsMatrix();
+  const flowName = state.tsFlow===2 ? 'Net' : state.tsFlow===1 ? 'Receive' : 'Payment';
+  const out = [[TS_META[state.tsDim].key.replace('dim',''), ...keys, 'Total']];
+  rows.forEach(r => out.push([r.full, ...r.values.map(v=>v.toFixed(4)), r.total.toFixed(4)]));
+  downloadCsv(`ITRS_${state.tsDim}_${state.tsFreq}_${flowName}.csv`, out);
+}
+
+/* ===================== Weekly Report ===================== */
+const DAY = 86400000;
+const toISO = d => d.toISOString().slice(0,10);
+const parseISO = s => new Date(s + 'T00:00:00Z');
+/** ISO-style week containing d, starting Thursday-to-Wednesday is not used here:
+    the BOL note runs a plain 7-day window, so we anchor on the chosen start date. */
+function weekRange(startISO){
+  const s = parseISO(startISO);
+  return {from:startISO, to:toISO(new Date(s.getTime() + 6*DAY))};
+}
+/** Sum the daily line cube over [from,to]; returns per-line in/out plus totals. */
+function weekTotals(fromISO, toISO_){
+  const nonbank = state.wkScope === 'nonbank';
+  const lines = LINES.map(()=>({in:0,out:0,nIn:0,nOut:0}));
+  let tin=0, tout=0;
+  for (const r of cubes.dayLine){
+    if (r[0] < fromISO || r[0] > toISO_) continue;
+    if (!useOK(r[3])) continue;
+    const li = r[2];
+    if (nonbank && LINES[li] && LINES[li].bankOwn) continue;
+    const e = lines[li]; if (!e) continue;
+    if (r[1] === REC){ e.in += r[5]; e.nIn += r[4]; tin += r[5]; }
+    else { e.out += r[5]; e.nOut += r[4]; tout += r[5]; }
+  }
+  return {lines, tin, tout, net:tin-tout};
+}
+function weekCurrency(fromISO, toISO_){
+  const inM = new Map(), outM = new Map();
+  for (const r of cubes.dayCurrency){
+    if (r[0] < fromISO || r[0] > toISO_) continue;
+    if (!useOK(r[3])) continue;
+    const m = r[1] === REC ? inM : outM;
+    m.set(r[2], (m.get(r[2])||0) + r[4]);
+  }
+  const mk = m => [...m.entries()].map(([i,v])=>({code:dims.currencies[i], v}))
+      .filter(d=>d.v>0).sort((a,b)=>b.v-a.v);
+  return {inn:mk(inM), out:mk(outM)};
+}
+const CCY_LO = {USD:'ໂດລາສະຫະລັດ', CNY:'ຢວນ', THB:'ບາດ', LAK:'ກີບ', EUR:'ເອີໂຣ',
+  VND:'ດົ່ງ', JPY:'ເຢນ', GBP:'ປອນ', AUD:'ໂດລາອົດສະຕຣາລີ', HKD:'ໂດລາຮົງກົງ', SGD:'ໂດລາສິງກະໂປ'};
+const ccyName = c => isLo() ? (CCY_LO[c] || c) : c;
+
+function renderWeekly(){
+  if (!state.wkDate) return;
+  const cur = weekRange(state.wkDate);
+  const prevStart = toISO(new Date(parseISO(state.wkDate).getTime() - 7*DAY));
+  const prv = weekRange(prevStart);
+  const A = weekTotals(prv.from, prv.to), B = weekTotals(cur.from, cur.to);
+  const pct = (a,b) => (a === 0 ? null : (b-a)/Math.abs(a)*100);
+  const fm = v => v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+
+  const dLabel = s => { const d = parseISO(s);
+    return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); };
+  const hdr = `${dLabel(cur.from)}–${dLabel(cur.to)}/${cur.to.slice(0,4)}`;
+
+  const block = (label, a, b, cls) => {
+    const c = b - a, p = pct(a,b);
+    return `<tr class="${cls||''}"><td>${esc(label)}</td>
+      <td class="num">${fm(a)}</td><td class="num">${fm(b)}</td>
+      <td class="num ${c<0?'neg':'pos'}">${fm(c)}</td>
+      <td class="num ${p!=null&&p<0?'neg':'pos'}">${p==null?'—':fmtPct(p,2)}</td></tr>`;
+  };
+  let h = `<table><thead><tr><th style="text-align:left">${esc(hdr)}</th>
+    <th>${esc(t('wkPrior'))}</th><th>${esc(t('wkThis'))}</th>
+    <th>${esc(t('wkChange'))}</th><th>${esc(t('wkPct'))}</th></tr></thead><tbody>`;
+  h += block(isLo()?'ສຸດທິ':'Net', A.net, B.net, 'total');
+  h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total');
+  LINES.forEach((L,i) => { if (A.lines[i].in || B.lines[i].in)
+    h += block(bi(L), A.lines[i].in, B.lines[i].in, 'sub'); });
+  h += block(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, 'total');
+  LINES.forEach((L,i) => { if (A.lines[i].out || B.lines[i].out)
+    h += block(bi(L), A.lines[i].out, B.lines[i].out, 'sub'); });
+  $('#wkTable').innerHTML = h + '</tbody></table>'
+    + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`;
+
+  $('#wkNarrative').textContent = narrative(cur, A, B);
+  const wc = weekCurrency(cur.from, cur.to);
+  renderWkCurrency(wc);
+  renderWkTrend(cur);
+  $('#wkTable')._csv = () => {
+    const out = [[hdr, t('wkPrior'), t('wkThis'), t('wkChange'), t('wkPct')]];
+    const push = (l,a,b) => out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
+      pct(a,b)==null?'':pct(a,b).toFixed(2)]);
+    push(isLo()?'ສຸດທິ':'Net', A.net, B.net);
+    push(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin);
+    LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].in, B.lines[i].in));
+    push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout);
+    LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].out, B.lines[i].out));
+    downloadCsv(`ITRS_weekly_${cur.from}_${cur.to}.csv`, out);
+  };
+}
+
+/** Draft the weekly note in the house style of the BOL weekly report. */
+function narrative(range, A, B){
+  const f2 = v => v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+  const d = s => { const x = parseISO(s);
+    return String(x.getUTCDate()).padStart(2,'0')+'/'+String(x.getUTCMonth()+1).padStart(2,'0')+'/'+x.getUTCFullYear(); };
+  const period = `${d(range.from).slice(0,5)}-${d(range.to)}`;
+  const wow = (a,b) => { if (!a) return '';
+    const p = (b-a)/Math.abs(a)*100;
+    return isLo()
+      ? ` (${p>=0?'ເພີ່ມຂຶ້ນ':'ຫຼຸດລົງ'} ${Math.abs(p).toFixed(0)}% ເມື່ອທຽບກັບອາທິດຜ່ານມາ)`
+      : ` (${p>=0?'up':'down'} ${Math.abs(p).toFixed(0)}% on the prior week)`;
+  };
+  const parts = dir => LINES.map((L,i)=>({L, v:B.lines[i][dir]}))
+      .filter(x=>x.v > 0.005).sort((a,b)=>b.v-a.v)
+      .map(x => `${bi(x.L)} ${f2(x.v)}`).join(isLo()?' ລ້ານໂດລາທຽບເທົ່າ, ':' m, ');
+  const unit = isLo() ? ' ລ້ານໂດລາທຽບເທົ່າ' : ' m';
+  const scope = state.wkScope === 'nonbank'
+    ? (isLo() ? ' (ບໍ່ລວມທຸລະກຳຂອງທະນາຄານທຸລະກິດ)' : ' (excluding commercial bank own transactions)') : '';
+
+  if (isLo()){
+    return `ສະພາບການໂອນເງິນເຂົ້າ-ອອກຜ່ານລະບົບທະນາຄານ${scope}\n\n`
+      + `ໄລຍະແຕ່ວັນ ${period} ມີກະແສເງິນໂອນ${B.net>=0?'ເຂົ້າ':'ອອກ'}ຜ່ານລະບົບທະນາຄານສຸດທິ ${f2(Math.abs(B.net))}${unit}. `
+      + `ໃນນັ້ນ, ກະແສເງິນໂອນເຂົ້າມີ ${f2(B.tin)}${unit}${wow(A.tin,B.tin)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ `
+      + `${parts('in')}${unit}. `
+      + `ກະແສເງິນໂອນອອກມີ ${f2(B.tout)}${unit}${wow(A.tout,B.tout)} ຊຶ່ງສ່ວນໃຫຍ່ແມ່ນມາຈາກ `
+      + `${parts('out')}${unit}.`;
+  }
+  return `Cross-border transfers through the banking system${scope}\n\n`
+    + `Over ${period} net ${B.net>=0?'inflows':'outflows'} through the banking system were `
+    + `USD ${f2(Math.abs(B.net))}m. Inflows totalled USD ${f2(B.tin)}m${wow(A.tin,B.tin)}, mainly `
+    + `${parts('in')}${unit}. Outflows totalled USD ${f2(B.tout)}m${wow(A.tout,B.tout)}, mainly `
+    + `${parts('out')}${unit}.`;
+}
+
+function renderWkCurrency(wc){
+  const mk = list => { const tot = list.reduce((a,d)=>a+d.v,0)||1;
+    return list.slice(0,6).map((d,i)=>({label:ccyName(d.code), value:d.v, color:cssv(SC[i%10]),
+      note:fmtPct(100*d.v/tot)})); };
+  const host = $('#wkCurrency');
+  host.innerHTML = `<div style="display:grid;gap:12px">
+    <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase">${esc(t('inflow'))}</div><div id="wkCcyIn"></div></div>
+    <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase">${esc(t('outflow'))}</div><div id="wkCcyOut"></div></div></div>`;
+  rankBars($('#wkCcyIn'), mk(wc.inn), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
+  rankBars($('#wkCcyOut'), mk(wc.out), {labelW:110, w:430, rowH:24, fmt:v=>fmtM(v,2)});
+}
+function renderWkTrend(cur){
+  const labels = [], inV = [], outV = [];
+  for (let k = 12; k >= 0; k--){
+    const s = toISO(new Date(parseISO(cur.from).getTime() - k*7*DAY));
+    const r = weekRange(s), w = weekTotals(r.from, r.to);
+    labels.push(s.slice(5)); inV.push(w.tin); outV.push(w.tout);
+  }
+  lineChart($('#wkTrend'), labels, [
+    {name:t('inflow'), color:cssv('--in'), values:inV, area:true},
+    {name:t('outflow'), color:cssv('--out'), values:outV, area:true},
+  ], {h:250, rotate:true, key:'wktr', w:440, fmt:v=>fmtM(v,2)});
+}
+function defaultWeek(){
+  const last = parseISO(meta.dateMax);
+  // Back up to the most recent Thursday-start window fully inside the data.
+  const s = new Date(last.getTime() - 6*DAY);
+  return toISO(s);
+}
+/* ===================== Search ===================== */
+const ENT_KEYS = entities.map(e => e.nm.toUpperCase());
+function renderSearch(){
+  $('#seInput').placeholder = t('seePlaceholder');
+  const em = meta.entityMeta;
+  $('#seSub').textContent = isLo()
+    ? `ດັດຊະນີ ${int(em.kept)} ຄູ່ຮ່ວມໃຫຍ່ສຸດ ຈາກ ${int(em.total)} ທີ່ມີຊື່ (${em.coverPct}% ຂອງມູນຄ່າທີ່ມີຊື່)`
+    : `Index of the ${int(em.kept)} largest counterparties out of ${int(em.total)} named (${em.coverPct}% of named value)`;
+  const q = state.seQuery.trim().toUpperCase();
+  const host = $('#seResults');
+  if (!q){ host.innerHTML = `<div class="empty">${esc(t('seStart'))}</div>`; $('#seDetail').innerHTML=''; return; }
+  const hits = [];
+  for (let i = 0; i < ENT_KEYS.length; i++){
+    const p = ENT_KEYS[i].indexOf(q);
+    if (p >= 0) hits.push([i, p]);
+    if (hits.length > 600) break;
+  }
+  hits.sort((a,b) => a[1]-b[1] || entities[b[0]].usd - entities[a[0]].usd);
+  if (!hits.length){ host.innerHTML = `<div class="empty">${esc(t('seNoResult'))}</div>`; $('#seDetail').innerHTML=''; return; }
+  const top = hits.slice(0,40);
+  host.innerHTML = `<p class="note" style="margin-top:0">${top.length}${hits.length>40?'+':''} ${esc(t('seResults'))}</p>`
+    + top.map(([i]) => { const e = entities[i];
+      return `<div class="ent" data-i="${i}"><div class="n">${esc(e.nm)}</div>
+        <div class="m"><span>${esc(t('inflow'))} ${fmtM(e.in)}</span><span>${esc(t('outflow'))} ${fmtM(e.out)}</span>
+        <span>${int(e.n)} ${esc(t('transactions'))}</span><span>${e.y0}–${e.y1}</span></div></div>`;
+    }).join('');
+  host.querySelectorAll('.ent').forEach(el => el.addEventListener('click', () => {
+    state.seSel = +el.dataset.i; renderEntity();
+  }));
+  if (state.seSel >= 0 && top.some(([i])=>i===state.seSel)) renderEntity(); else $('#seDetail').innerHTML='';
+}
+function renderEntity(){
+  const e = entities[state.seSel]; if (!e){ $('#seDetail').innerHTML=''; return; }
+  const yrs = {}; e.yr.forEach(([y,f,n,u]) => {
+    const k = YEARS[y] ?? y; (yrs[k] = yrs[k] || {in:0,out:0,n:0});
+    yrs[k][f===REC?'in':'out'] += u; yrs[k].n += n; });
+  const yKeys = Object.keys(yrs).sort();
+  const topList = (arr, lut, lao) => arr.length
+    ? arr.map(([i,v]) => `<div class="t-r" style="padding:2px 0"><span class="${lao?'lao':''}">${esc(lut(i))}</span><span>${fmtM(v)}</span></div>`).join('')
+    : `<span class="muted">—</span>`;
+  const txRows = e.tx.map(([d,f,b,c,amt,usd,ct,pu,other]) => `<tr>
+      <td>${esc(d)}</td>
+      <td><span class="pill ${f===REC?'ok':'bad'}">${esc(f===REC?t('inflow'):t('outflow'))}</span></td>
+      <td class="num">${num2(amt)} ${esc(dims.currencies[c]||'')}</td>
+      <td class="num">${fmtM(usd,2)}</td>
+      <td>${esc(BANKS[b]||'—')}</td>
+      <td>${esc(ct>=0?dims.countries[ct].code:'—')}</td>
+      <td class="name lao">${esc(pu>=0?PURPOSES[pu].name:'—')}</td>
+      <td class="name">${esc(other||'—')}</td></tr>`).join('');
+
+  $('#seDetail').innerHTML = `
+   <div class="grid g-4" style="margin-top:13px">
+     ${kpiCard(t('inflow'), fmtM(e.in), 'pos', `<span class="muted">${esc(t('seCounterparty'))}</span>`)}
+     ${kpiCard(t('outflow'), fmtM(e.out), 'neg', `<span class="muted">${esc(t('seCounterparty'))}</span>`)}
+     ${kpiCard(t('net'), fmtM(e.in-e.out), (e.in-e.out)>=0?'pos':'neg', '')}
+     ${kpiCard(t('records'), int(e.n), '', `<span class="muted">${esc(t('seActive'))} ${e.y0}–${e.y1}</span>`)}
+   </div>
+   <div class="card" style="margin-top:13px"><h3 style="word-break:break-word">${esc(e.nm)}</h3>
+     <div class="grid g-4" style="margin-top:4px">
+       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopCtry'))}</div>${topList(e.ctry, i=>dims.countries[i]?dims.countries[i].name:'—')}</div>
+       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopPur'))}</div>${topList(e.pur, i=>PURPOSES[i]?PURPOSES[i].name:'—', true)}</div>
+       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopBank'))}</div>${topList(e.bank, i=>BANKS[i]||'—')}</div>
+       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('currency'))}</div>${topList(e.curr, i=>dims.currencies[i]||'—')}</div>
+     </div></div>
+   <div class="grid g-2">
+     <div class="card"><h3>${esc(t('seYearly'))}</h3><div class="tw"><table><thead><tr>
+        <th style="text-align:left">${esc(isLo()?'ປີ':'Year')}</th><th>${esc(t('inflow'))}</th><th>${esc(t('outflow'))}</th><th>${esc(t('net'))}</th><th>${esc(t('records'))}</th>
+        </tr></thead><tbody>${yKeys.map(y=>`<tr><td>${y}</td>
+        <td class="num">${fmtM(yrs[y].in,2)}</td><td class="num">${fmtM(yrs[y].out,2)}</td>
+        <td class="num ${yrs[y].in-yrs[y].out>=0?'pos':'neg'}">${fmtM(yrs[y].in-yrs[y].out,2)}</td>
+        <td class="num">${int(yrs[y].n)}</td></tr>`).join('')}</tbody></table></div></div>
+     <div class="card"><h3>${esc(t('seYearly'))}</h3><div id="seChart"></div></div>
+   </div>
+   <div class="card"><h3>${esc(t('seTop'))} <span class="hint">${esc(isLo()?'ສູງສຸດ':'top')} ${meta.entityTxLimit}</span></h3>
+     <p class="sub">${esc(isLo()?'ທຸລະກຳໃຫຍ່ສຸດຂອງຄູ່ຮ່ວມນີ້ທີ່ບັນທຶກໄວ້ໃນດັດຊະນີ':'Largest transactions carried in the index for this counterparty')}</p>
+     <div class="scroll"><table><thead><tr>
+       <th style="text-align:left">${esc(t('date'))}</th><th style="text-align:left">${esc(t('net'))}</th>
+       <th>${esc(t('amount'))}</th><th>USD</th><th style="text-align:left">${esc(t('bank'))}</th>
+       <th style="text-align:left">${esc(t('country'))}</th><th style="text-align:left">${esc(t('purpose'))}</th>
+       <th style="text-align:left">${esc(t('seCounterparty'))}</th></tr></thead><tbody>${txRows}</tbody></table></div></div>`;
+
+  barChart($('#seChart'), yKeys.map(y => ({label:y, values:[
+      {name:t('inflow'), value:yrs[y].in, color:cssv('--in')},
+      {name:t('outflow'), value:yrs[y].out, color:cssv('--out')}]})),
+    {h:240, w:440, fmt:v=>fmtM(v,2), axisFmt:v=>fmtM(v,0)});
+}
+
+/* ===================== FX & Duplicates ===================== */
+function chkTotals(){
+  let fxNull=0, fxLow=0, fxHigh=0;
+  for (const r of exceptions.fxByYearBank){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    if (state.bank>=0 && r[1]!==state.bank) continue;
+    fxNull += r[2]; fxLow += r[3]; fxHigh += r[4];
+  }
+  const dup = {};
+  for (const tier of ['A','B','C']){
+    let extra=0, usd=0;
+    for (const r of exceptions.dupByYearBank[tier]){
+      if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+      if (state.bank>=0 && r[1]!==state.bank) continue;
+      extra += r[2]; usd += r[3];
+    }
+    dup[tier] = {extra, usd};
+  }
+  return {fxNull, fxLow, fxHigh, fxTotal:fxNull+fxLow+fxHigh, dup};
+}
+function renderChecks(){
+  const c = chkTotals();
+  $('#chkKpis').innerHTML =
+    kpiCard(t('chkFx'), int(c.fxTotal), c.fxTotal?'neg':'',
+      `<span class="muted">${int(c.fxNull)} ${esc(t('fxNull'))} · ${int(c.fxLow)} ${esc(t('fxLow'))} · ${int(c.fxHigh)} ${esc(t('fxHigh'))}</span>`) +
+    kpiCard(t('chkDupA'), int(c.dup.A.extra), c.dup.A.extra?'neg':'',
+      `<span class="muted">${fmtM(c.dup.A.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
+    kpiCard(t('chkDupB'), int(c.dup.B.extra), c.dup.B.extra?'neg':'',
+      `<span class="muted">${fmtM(c.dup.B.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
+    kpiCard(t('chkDupVal'), fmtM(c.dup.A.usd + c.dup.B.usd), 'neg',
+      `<span class="muted">${esc(isLo()?'ລະດັບ A + B ລວມກັນ':'Tiers A + B combined')}</span>`);
+
+  $('#fxSub').textContent = isLo()
+    ? `ອັດຕາທີ່ຖືກຕ້ອງຄວນຢູ່ລະຫວ່າງ ${int(meta.fxBand[0])}–${int(meta.fxBand[1])} ກີບ/ໂດລາ. ສະແດງ ${exceptions.fxRows.length} ລາຍການທີ່ມີມູນຄ່າສູງສຸດ.`
+    : `A valid rate sits between ${int(meta.fxBand[0])} and ${int(meta.fxBand[1])} LAK/USD. Showing the ${exceptions.fxRows.length} largest exceptions.`;
+  const fxRows = exceptions.fxRows.filter(r => {
+    const y = YEARS.indexOf(+r.d.slice(0,4));
+    return y>=state.yFrom && y<=state.yTo && (state.bank<0 || r.b===state.bank);
+  });
+  const issue = r => r.fx == null ? t('fxNull') : r.fx < meta.fxBand[0] ? t('fxLow') : t('fxHigh');
+  sortableTable($('#fxTable'), {
+    cols:[
+      {k:'d', t:t('date'), align:'left'},
+      {k:'b', t:t('bank'), align:'left', fmt:v=>esc(BANKS[v]||'—')},
+      {k:'f', t:t('net'), align:'left', fmt:v=>`<span class="pill ${v===REC?'ok':'bad'}">${esc(v===REC?t('inflow'):t('outflow'))}</span>`},
+      {k:'amt', t:t('amount'), fmt:(v,r)=>num2(v)+' '+(dims.currencies[r.c]||'')},
+      {k:'fx', t:t('fxRate'), fmt:v=>v==null?`<span class="neg">null</span>`:`<span class="neg">${num2(v)}</span>`},
+      {k:'exp', t:t('fxExpected'), fmt:v=>`<span class="muted">${v?int(v):'—'}</span>`},
+      {k:'usd', t:'USD', fmt:v=>fmtM(v,2)},
+      {k:'d', t:t('fxIssue'), align:'left', fmt:(v,r)=>`<span class="pill bad">${esc(issue(r))}</span>`},
+    ], rows:fxRows, sort:'usd', maxRows:150});
+  $('#fxNote').innerHTML = isLo()
+    ? `ມູນຄ່າ USD ຄິດໄລ່ຈາກ <code>Amount_Kip ÷ Exchange_Rates_USD</code>. ເມື່ອອັດຕາຜິດ ມູນຄ່າ USD ກໍຜິດຕາມ — ຈຶ່ງຄວນແກ້ໄຂກ່ອນນຳໃຊ້ໃນການລວບລວມ.`
+    : `USD amounts are derived as <code>Amount_Kip ÷ Exchange_Rates_USD</code>. When the rate is wrong the USD amount is wrong too, so these should be corrected before the records feed compilation.`;
+
+  renderDupTable();
+
+  const dbank = new Map();
+  for (const r of exceptions.dupByYearBank[state.dupTier]){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    dbank.set(r[1], (dbank.get(r[1])||0) + r[2]);
+  }
+  rankBars($('#dupBank'), [...dbank.entries()].map(([i,v])=>({label:BANKS[i]||'—', value:v}))
+      .sort((a,b)=>b.value-a.value).slice(0,12).map((d,i)=>({...d, color:cssv(SC[i%10])})),
+    {labelW:100, w:440, rowH:26, fmt:int});
+
+  const yrs = yearsInRange();
+  const agg = k => yrs.map(y => exceptions.fxByYearBank
+      .filter(r => r[0]===y && (state.bank<0||r[1]===state.bank))
+      .reduce((a,r)=>a+r[k], 0));
+  barChart($('#fxYear'), yrs.map((y,i) => ({label:String(YEARS[y]), values:[
+      {name:t('fxNull'), value:agg(2)[i], color:cssv('--c8')},
+      {name:t('fxLow'),  value:agg(3)[i], color:cssv('--c3')},
+      {name:t('fxHigh'), value:agg(4)[i], color:cssv('--c5')}]})),
+    {h:250, w:440, fmt:int, axisFmt:int, key:'fxy'});
+}
+function renderDupTable(){
+  const tier = state.dupTier;
+  const rows = exceptions.dupRows[tier].filter(r => {
+    const y = YEARS.indexOf(+r.d.slice(0,4));
+    return y>=state.yFrom && y<=state.yTo && (state.bank<0 || r.b===state.bank);
+  });
+  const explain = {
+    A: [`Same bank, flow, reference number, date, amount and currency. A reference number is meant to be unique per bank, so a collision is almost always a re-sent record.`,
+        `ທະນາຄານ, ທິດທາງ, ເລກອ້າງອີງ, ວັນທີ, ມູນຄ່າ ແລະ ສະກຸນເງິນ ຄືກັນ. ເລກອ້າງອີງຄວນບໍ່ຊ້ຳກັນ ດັ່ງນັ້ນການຊ້ຳມັກແມ່ນການສົ່ງຊ້ຳ.`],
+    B: [`Every business key matches and both entity names are present. Strong evidence of a genuine double entry.`,
+        `ຂໍ້ມູນຫຼັກກົງກັນທັງໝົດ ແລະ ມີຊື່ທັງສອງຝ່າຍ. ເປັນຫຼັກຖານທີ່ໜັກແໜ້ນຂອງການບັນທຶກຊ້ຳ.`],
+    C: [`Same business key but no entity names, so these cannot be told apart from genuinely repeated small transfers. Treat as a lead, not a finding.`,
+        `ຂໍ້ມູນຫຼັກກົງກັນແຕ່ບໍ່ມີຊື່ ຈຶ່ງແຍກບໍ່ອອກຈາກການໂອນຊ້ຳຈິງ. ຖືເປັນເບາະແສ ບໍ່ແມ່ນຂໍ້ສະຫຼຸບ.`],
+  }[tier];
+  const s = exceptions.dupSummary[tier];
+  $('#dupExplain').innerHTML = esc(explain[LANG]) +
+    `  <b>${int(s.groups)}</b> ${esc(t('dupGroups'))} · <b>${int(s.extra)}</b> ${esc(t('dupExtra'))} · <b>${fmtM(s.usdM)}</b>`;
+  const cols = [
+    {k:'d', t:t('date'), align:'left'},
+    {k:'b', t:t('bank'), align:'left', fmt:v=>esc(BANKS[v]||'—')},
+    {k:'f', t:t('net'), align:'left', fmt:v=>`<span class="pill ${v===REC?'ok':'bad'}">${esc(v===REC?t('inflow'):t('outflow'))}</span>`},
+    {k:'n', t:t('dupCopies'), fmt:v=>`<span class="pill bad">${v}×</span>`},
+    {k:'amt', t:t('amount'), fmt:(v,r)=>num2(v)+' '+(dims.currencies[r.c]||'')},
+    {k:'usd', t:'USD', fmt:v=>fmtM(v,2)},
+    {k:'ctry', t:t('country'), align:'left', fmt:v=>esc(v||'—')},
+  ];
+  if (tier === 'A') cols.push({k:'ref', t:'Ref', align:'left', fmt:v=>`<code>${esc(v||'—')}</code>`});
+  if (tier !== 'C') cols.push({k:'nm', t:t('seCounterparty'), align:'left', fmt:(v,r)=>esc([v,r.nm2].filter(Boolean).join(' → ')||'—')});
+  if (tier !== 'A') cols.push({k:'pur', t:t('code'), align:'left', fmt:v=>esc(v||'—')});
+  sortableTable($('#dupTable'), {cols, rows, sort:'usd', maxRows:150});
+  $('#dupTable')._csv = () => downloadCsv(`ITRS_duplicates_tier${tier}.csv`,
+    [['Date','Bank','Flow','Copies','Amount','Currency','USD_m','Country','Reference','Name','Name2','Purpose'],
+     ...rows.map(r=>[r.d, BANKS[r.b]||'', r.f===REC?'Receive':'Payment', r.n, r.amt,
+       dims.currencies[r.c]||'', r.usd, r.ctry||'', r.ref||'', r.nm||'', r.nm2||'', r.pur||''])]);
+}
+/* ===================== Banks ===================== */
+function renderBanks(){
+  const bm = byDim(cubes.bank, 2, true), lag = new Map();
+  for (const r of cubes.lag){
+    if (r[0] < state.yFrom || r[0] > state.yTo) continue;
+    let e = lag.get(r[1]); if (!e) lag.set(r[1], e = {med:[], p90:[], late:0, future:0, n:0});
+    e.med.push([r[2], r[6]]); e.p90.push([r[3], r[6]]);
+    e.late += r[4]; e.future += r[5]; e.n += r[6];
+  }
+  const wmean = a => { const w = a.reduce((x,y)=>x+y[1],0); return w ? a.reduce((x,y)=>x+y[0]*y[1],0)/w : null; };
+  const cnt = new Map();
+  for (const r of cubes.bank){
+    if (r[0]<state.yFrom||r[0]>state.yTo||!useOK(r[3])) continue;
+    cnt.set(r[2], (cnt.get(r[2])||0) + r[4]);
+  }
+  const rows = [...bm.entries()].map(([i,v]) => {
+    const l = lag.get(i), gross = v.in+v.out, c = cnt.get(i)||0;
+    return {i, name:BANKS[i], in:v.in, out:v.out, net:v.in-v.out, gross, cnt:c,
+      avg: c && state.meas==='usd' ? gross*1e6/c : null,
+      lagMed: l ? wmean(l.med) : null, lagP90: l ? wmean(l.p90) : null,
+      latePct: l && l.n ? 100*l.late/l.n : null, future: l ? l.future : 0};
+  }).filter(r=>r.gross>0||r.cnt>0).sort((a,b)=>b.gross-a.gross);
+  const tot = rows.reduce((a,r)=>a+r.gross,0)||1;
+  const top5 = rows.slice(0,5).reduce((a,r)=>a+r.gross,0);
+  const lagRows = rows.filter(r=>r.lagMed!=null);
+  const medLag = lagRows.length
+    ? lagRows.reduce((a,r)=>a+r.lagMed*r.cnt,0)/(lagRows.reduce((a,r)=>a+r.cnt,0)||1) : null;
+  const totFuture = rows.reduce((a,r)=>a+r.future,0);
+
+  $('#bankKpis').innerHTML =
+    kpiCard(t('bkCount'), String(rows.length), '', `<span class="muted">${esc(isLo()?'ມີກິດຈະກຳໃນໄລຍະນີ້':'active in period')}</span>`) +
+    kpiCard(t('bkTop5'), fmtPct(100*top5/tot), '',
+      `<span class="muted">${esc(rows.slice(0,3).map(r=>r.name).join(', '))}</span>`) +
+    kpiCard(t('bkMedLag'), medLag!=null ? medLag.toFixed(1)+' '+t('days') : '—', '',
+      `<span class="muted">${esc(isLo()?'ຖ່ວງນ້ຳໜັກຕາມປະລິມານ':'volume-weighted')}</span>`) +
+    kpiCard(t('bkFuture'), int(totFuture), totFuture?'neg':'',
+      `<span class="muted">${esc(isLo()?'ສົ່ງກ່ອນວັນທຸລະກຳ':'submitted before transaction date')}</span>`);
+
+  sortableTable($('#bankTable'), {
+    cols:[
+      {k:'name', t:t('bank'), align:'left'},
+      {k:'cnt', t:t('records'), fmt:int},
+      {k:'gross', t:t('gross'), fmt:fmtV},
+      {k:'net', t:t('net'), fmt:v=>`<span class="${v>=0?'pos':'neg'}">${fmtV(v)}</span>`},
+      {k:'gross', t:t('share'), bar:true, fmt:v=>fmtPct(100*v/tot)},
+      {k:'avg', t:t('bkAvg'), fmt:v=>v==null?'—':fmtM(v/1e6,1)},
+      {k:'lagMed', t:t('bkLagMed'), fmt:v=>v==null?'—':v.toFixed(1)+'d'},
+      {k:'latePct', t:t('bkLate'), fmt:v=>v==null?'—':`<span class="${v>2?'neg':''}">${v.toFixed(2)}%</span>`},
+    ], rows, sort:'gross', maxRows:70,
+    onClick:r => { state.bank = state.bank===r.i ? -1 : r.i; $('#bankSel').value=String(state.bank); renderAll(); },
+    rowClass:r => state.bank===r.i ? 'class="total"' : ''});
+
+  const yrs = yearsInRange(), vi = 4+vIdx();
+  const bs = rows.slice(0,8).map((r,k) => ({name:r.name, color:cssv(SC[k]),
+    values: yrs.map(y => { let s=0;
+      for (const x of cubes.bank) if (x[0]===y && x[2]===r.i && useOK(x[3])) s += x[vi];
+      return s; })}));
+  bs.push({name:t('other'), color:cssv('--ink-3'), values: yrs.map((y,yi) => {
+    let all=0; for (const x of cubes.bank) if (x[0]===y && useOK(x[3])) all += x[vi];
+    return Math.max(0, all - bs.reduce((a,s)=>a+s.values[yi],0)); })});
+  stackArea($('#bankShare'), yrs.map(y=>String(YEARS[y])), bs, {h:300, key:'bshare', w:460});
+
+  barChart($('#bankLag'), rows.filter(r=>r.lagMed!=null).sort((a,b)=>b.cnt-a.cnt).slice(0,12)
+      .map(r=>({label:r.name, values:[
+        {name:isLo()?'ຄ່າກາງ':'Median', value:r.lagMed, color:cssv('--c1')},
+        {name:isLo()?'ເປີເຊັນທີ 90':'90th pct', value:r.lagP90, color:cssv('--c3')}]})),
+    {h:280, rotate:true, key:'blag', w:460, fmt:v=>v.toFixed(1)+' '+t('days'), axisFmt:v=>v.toFixed(0)});
+
+  const ms = monthlySeries();
+  lineChart($('#bankVolume'), ms.labels, [
+    {name:t('inflow'), color:cssv('--in'), values:monthlyCounts(REC)},
+    {name:t('outflow'), color:cssv('--out'), values:monthlyCounts(PAY)},
+  ], {h:280, rotate:true, key:'bvol', w:460, fmt:int, axisFmt:fmtN});
+}
+
+/* ===================== Data Quality ===================== */
+const QCHECKS = () => [
+  {k:3, label:isLo()?'ອັດຕາແລກປ່ຽນຢູ່ນອກຂອບເຂດ':'Exchange rate outside plausible band',
+   why:isLo()?`ກີບ/ໂດລານອກຊ່ວງ ${int(meta.fxBand[0])}–${int(meta.fxBand[1])}`:`LAK/USD outside ${int(meta.fxBand[0])}–${int(meta.fxBand[1])}`},
+  {k:4, label:isLo()?'ບໍ່ມີມູນຄ່າ USD':'Missing USD amount', why:'Amount_USD is null'},
+  {k:5, label:isLo()?'ມູນຄ່າເປັນສູນ':'Zero amount', why:'Amount_USD = 0'},
+  {k:6, label:isLo()?'ມູນຄ່າຕິດລົບ':'Negative amount', why:'Amount_USD < 0'},
+  {k:7, label:isLo()?'ສົ່ງກ່ອນວັນທຸລະກຳ':'Submitted before transaction date', why:'Date_of_Submission < Date_of_Transaction'},
+  {k:8, label:isLo()?'ລະຫັດຈຸດປະສົງບໍ່ຖືກຕ້ອງ':'Unclassified purpose code', why:'Pur_5 does not resolve to a BOP category'},
+  {k:9, label:isLo()?'ບໍ່ມີປະເທດຄູ່ຮ່ວມ':'Missing counterpart country', why:'Country_Code is empty'},
+];
+function renderQuality(){
+  const per = new Map(), tot = new Array(12).fill(0);
+  for (const r of cubes.quality){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    if (state.bank>=0 && r[1]!==state.bank) continue;
+    let e = per.get(r[1]); if (!e) per.set(r[1], e = new Array(12).fill(0));
+    for (let k=2;k<r.length;k++){ e[k]+=r[k]; tot[k]+=r[k]; }
+  }
+  const checks = QCHECKS(), N = tot[2]||1;
+  const ex = checks.reduce((a,c)=>a+tot[c.k],0), rate = 10000*ex/N;
+  const grade = rate<5?'A':rate<25?'B':rate<100?'C':'D';
+  $('#qGrade').className = 'g '+grade.toLowerCase();
+  $('#qGrade').textContent = grade;
+  $('#qGradeTxt').innerHTML = `${rate.toFixed(1)} ${esc(t('exceptions'))}<br><span style="font-size:11px">${int(ex)} ${esc(t('of'))} ${int(N)}</span>`;
+  $('#qScoreBar').innerHTML = `<div style="height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:10px">
+    <div style="height:100%;width:${clamp(100-rate/2,2,100).toFixed(1)}%;background:${grade==='A'?cssv('--in'):grade==='B'?cssv('--accent'):grade==='C'?cssv('--warn'):cssv('--bad')}"></div></div>`;
+  $('#qIssues').innerHTML = checks.map(c => {
+    const n = tot[c.k], p = 100*n/N;
+    const cls = n===0?'ok':p>0.5?'bad':p>0.05?'warn':'';
+    return `<li><span><b>${esc(c.label)}</b><br><span class="muted" style="font-size:11px">${esc(c.why)}</span></span>
+      <span class="n">${int(n)}<br><span class="pill ${cls}">${n===0?esc(t('clean')):p.toFixed(p<0.01?3:2)+'%'}</span></span></li>`;
+  }).join('');
+
+  const yrs = yearsInRange(), comp = {};
+  for (const r of cubes.completeness) if (r[0]>=state.yFrom && r[0]<=state.yTo) comp[r[0]] = r;
+  let hm = `<div class="hm" style="grid-template-columns:auto repeat(${yrs.length},minmax(46px,1fr))"><div></div>`
+    + yrs.map(y=>`<div class="hd">${YEARS[y]}</div>`).join('');
+  dims.qualityFields.forEach((f,fi) => {
+    hm += `<div class="lbl ${isLo()?'lao':''}">${esc(bi(f))}</div>`;
+    yrs.forEach(y => { const r = comp[y];
+      if (!r){ hm += '<div class="cell"></div>'; return; }
+      const p = 100*(r[1]-r[2+fi])/(r[1]||1);
+      const col = p>=99?cssv('--in'):p>=80?cssv('--c2'):p>=40?cssv('--warn'):cssv('--out');
+      const al = p>=99?62:Math.max(14,p*0.62);
+      hm += `<div class="cell" style="background:color-mix(in srgb, ${col} ${al.toFixed(0)}%, transparent);color:${al>45?'#fff':'var(--ink-2)'}"
+        data-tip="${esc(bi(f))}|${YEARS[y]}|${p.toFixed(1)}%|${esc(t('records'))}">${p.toFixed(0)}</div>`;
+    });
+  });
+  $('#qCompleteness').innerHTML = hm + '</div>'
+    + `<p class="note">${esc(isLo()?'ລະຫັດ LSIC, ວິທີໂອນ ແລະ ຊື່ຄູ່ຮ່ວມ ມີການລາຍງານໜ້ອຍ — ໃຫ້ຖືເປັນບັນຫາການປະຕິບັດການລາຍງານ ບໍ່ແມ່ນຄວາມຜິດພາດຂອງຂໍ້ມູນ.':'LSIC code, transfer method and counterparty identifiers are sparsely reported — read the low coverage as a reporting-compliance finding rather than a data error.')}</p>`;
+  bindHeat($('#qCompleteness'));
+
+  sortableTable($('#qBankTable'), {
+    cols:[
+      {k:'name', t:t('bank'), align:'left'},
+      {k:'n', t:t('records'), fmt:int},
+      {k:'rate', t:t('qBankSub'), bar:true, barColor:'--bad', fmt:v=>v.toFixed(1)},
+      {k:'fx', t:'FX', fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
+      {k:'future', t:t('bkFuture'), fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
+      {k:'unclass', t:t('code'), fmt:v=>v?int(v):'—'},
+      {k:'noCountry', t:t('country'), fmt:v=>v?int(v):'—'},
+    ],
+    rows:[...per.entries()].map(([bi_,c]) => {
+      const n = c[2]||0, e = checks.reduce((a,q)=>a+c[q.k],0);
+      return {name:BANKS[bi_], n, rate:n?10000*e/n:0, fx:c[3], future:c[7], unclass:c[8], noCountry:c[9]};
+    }).filter(r=>r.n>0), sort:'rate', maxRows:70});
+
+  const conc = {};
+  for (const r of cubes.concentration){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    const e = conc[r[0]] = conc[r[0]] || {a:[],b:[],c:[]};
+    e.a.push(r[2]); e.b.push(r[3]); e.c.push(r[4]);
+  }
+  const avg = a => a && a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+  lineChart($('#qConcentration'), yrs.map(y=>String(YEARS[y])), [
+    {name:isLo()?'10 ລາຍການໃຫຍ່ສຸດ':'Top 10 transactions', color:cssv('--c5'), values:yrs.map(y=>avg((conc[y]||{}).a))},
+    {name:isLo()?'100 ລາຍການໃຫຍ່ສຸດ':'Top 100 transactions', color:cssv('--c3'), values:yrs.map(y=>avg((conc[y]||{}).b))},
+    {name:isLo()?'1,000 ລາຍການໃຫຍ່ສຸດ':'Top 1,000 transactions', color:cssv('--c1'), values:yrs.map(y=>avg((conc[y]||{}).c))},
+  ], {h:250, key:'qconc', w:460, fmt:v=>v.toFixed(1)+'%', axisFmt:v=>v.toFixed(0)+'%'});
+}
+
+/* ===================== shell ===================== */
+const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
+  weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality};
+let rendered = {};
+function renderBanner(){
+  const msg = {
+    bop:[`Showing records flagged <code>Use = Yes</code> — the transactions that <b>enter the balance of payments</b>. This is the compilation basis and the correct default for BOP analysis.`,
+         `ສະແດງລາຍການທີ່ມີ <code>Use = Yes</code> — ທຸລະກຳທີ່ <b>ເຂົ້າໃນດຸນຊຳລະ</b>. ນີ້ແມ່ນຖານການລວບລວມ ແລະ ເປັນຄ່າເລີ່ມຕົ້ນທີ່ຖືກຕ້ອງສຳລັບການວິເຄາະ BOP.`],
+    excl:[`Showing only records flagged <code>Use = No</code> — transactions <b>excluded from the balance of payments</b>. Almost all are own-account interbank positions in the financial account. Use this view to audit what compilation drops and why.`,
+          `ສະແດງສະເພາະລາຍການທີ່ມີ <code>Use = No</code> — ທຸລະກຳທີ່ <b>ຖືກຍົກເວັ້ນຈາກດຸນຊຳລະ</b>. ເກືອບທັງໝົດແມ່ນທຸລະກຳລະຫວ່າງທະນາຄານໃນບັນຊີການເງິນ. ໃຊ້ມຸມມອງນີ້ເພື່ອກວດສອບສິ່ງທີ່ຖືກຕັດອອກ.`],
+    all:[`Showing <b>all ITRS records</b>, both <code>Use = Yes</code> and <code>Use = No</code>. This is gross reporting turnover and is <b>not</b> a balance-of-payments measure — a handful of very large interbank placements dominates it.`,
+         `ສະແດງ <b>ທຸກລາຍການ ITRS</b> ທັງ <code>Use = Yes</code> ແລະ <code>Use = No</code>. ນີ້ແມ່ນມູນຄ່າລວມການລາຍງານ <b>ບໍ່ແມ່ນ</b> ຕົວຊີ້ວັດດຸນຊຳລະ.`],
+  }[state.basis];
+  $('#bannerTxt').innerHTML = msg[LANG];
+}
+function applyI18n(){
+  document.body.classList.toggle('lo', isLo());
+  document.documentElement.lang = isLo() ? 'lo' : 'en';
+  $$('[data-t]').forEach(el => { const v = t(el.dataset.t); if (v) el.textContent = v; });
+  $('#bankSel').options[0].textContent = t('allBanks');
+  // Own the toggle state here rather than trusting the markup, so the highlight
+  // can never drift from the language actually in use.
+  $$('#langSeg button').forEach(b =>
+    b.setAttribute('aria-pressed', String((b.dataset.v === 'lo') === isLo())));
+}
+function renderAll(){ rendered = {}; renderBanner(); renderTab(); }
+function renderTab(){
+  if (!rendered[state.tab]){ RENDERERS[state.tab](); rendered[state.tab] = true; }
+}
+function segBind(sel, fn){
+  $(sel).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $$(sel+' button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+    fn(b.dataset.v);
+  });
+}
+function initControls(){
+  const yF = $('#yFrom'), yT = $('#yTo');
+  YEARS.forEach((y,i) => {
+    yF.insertAdjacentHTML('beforeend', `<option value="${i}">${y}</option>`);
+    yT.insertAdjacentHTML('beforeend', `<option value="${i}">${y}</option>`);
+  });
+  yF.value = state.yFrom; yT.value = state.yTo;
+  yF.addEventListener('change', () => { state.yFrom = +yF.value;
+    if (state.yFrom > state.yTo){ state.yTo = state.yFrom; yT.value = state.yTo; } renderAll(); });
+  yT.addEventListener('change', () => { state.yTo = +yT.value;
+    if (state.yTo < state.yFrom){ state.yFrom = state.yTo; yF.value = state.yFrom; } renderAll(); });
+
+  const bs = $('#bankSel');
+  BANKS.forEach((b,i) => bs.insertAdjacentHTML('beforeend', `<option value="${i}">${esc(b)}</option>`));
+  bs.addEventListener('change', () => { state.bank = +bs.value; renderAll(); });
+
+  segBind('#basisSeg', v => { state.basis = v; renderAll(); });
+  segBind('#measSeg', v => { state.meas = v; renderAll(); });
+  segBind('#tsFreqSeg', v => { state.tsFreq = v; renderTimeSeries(); });
+  segBind('#tsFlowSeg', v => { state.tsFlow = +v; renderTimeSeries(); });
+  segBind('#wkScopeSeg', v => { state.wkScope = v; renderWeekly(); });
+  segBind('#dupTierSeg', v => { state.dupTier = v; renderChecks(); });
+  $('#langSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    LANG = b.dataset.v === 'lo' ? 1 : 0;
+    $$('#langSeg button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+    applyI18n(); initMeta(); renderAll();
+  });
+  $('#tsDim').addEventListener('change', e => { state.tsDim = e.target.value; state.tsPick = null; renderTimeSeries(); });
+  $('#tsCsv').addEventListener('click', tsCsv);
+  $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
+  $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
+  $('#wkCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#wkNarrative').textContent);
+      const b = $('#wkCopy'); const old = b.textContent; b.textContent = t('copied');
+      setTimeout(()=>b.textContent = old, 1400);
+    } catch (err) { /* clipboard blocked on file:// in some browsers */ }
+  });
+  $('#wkDate').addEventListener('change', e => { state.wkDate = e.target.value; renderWeekly(); });
+  const shiftWeek = d => { state.wkDate = toISO(new Date(parseISO(state.wkDate).getTime() + d*7*DAY));
+    $('#wkDate').value = state.wkDate; renderWeekly(); };
+  $('#wkPrev').addEventListener('click', ()=>shiftWeek(-1));
+  $('#wkNext').addEventListener('click', ()=>shiftWeek(1));
+
+  let seT = null;
+  $('#seInput').addEventListener('input', e => {
+    clearTimeout(seT);
+    seT = setTimeout(() => { state.seQuery = e.target.value; state.seSel = -1; renderSearch(); }, 160);
+  });
+  $('#seClear').addEventListener('click', () => {
+    $('#seInput').value = ''; state.seQuery = ''; state.seSel = -1; renderSearch(); });
+
+  $('#nav').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    state.tab = b.dataset.tab;
+    $$('#nav button').forEach(x => x.setAttribute('aria-selected', String(x===b)));
+    $$('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-'+state.tab));
+    renderTab();
+    scrollTo({top:0, behavior:'smooth'});
+  });
+
+  ITRSTheme.bind($('#themeSeg'));
+  // Chart colours are read from CSS variables at draw time, so a theme change
+  // has to redraw — the SVG already on screen still holds the old palette.
+  ITRSTheme.onChange(() => { rendered = {}; renderTab(); });
+
+  let rzT = null;
+  addEventListener('resize', () => { clearTimeout(rzT);
+    rzT = setTimeout(() => { rendered = {}; renderTab(); }, 200); });
+
+  state.wkDate = defaultWeek();
+  const wd = $('#wkDate');
+  wd.value = state.wkDate; wd.min = meta.dateMin;
+  wd.max = toISO(new Date(parseISO(meta.dateMax).getTime() - 6*DAY));
+}
+function initMeta(){
+  $('#hdrMeta').innerHTML = `<b>${int(meta.rows)}</b> ${esc(t('transactions'))}<br>${meta.dateMin} → ${meta.dateMax}`;
+  $('#footMeta').innerHTML = isLo()
+    ? `<b>ລາຍງານ ITRS.</b> ສ້າງເມື່ອ ${esc(meta.generated)} ຈາກ ${meta.sourceFiles.length} ໄຟລ໌ ຄອບຄຸມ ${meta.dateMin} ຫາ ${meta.dateMax}. ${int(meta.rows)} ລາຍການ, ${int(meta.uniqueIds)} ລະຫັດ <code>Hash_ID</code> ທີ່ບໍ່ຊ້ຳ${meta.rows===meta.uniqueIds?'':' <b>(ມີການຊ້ຳ)</b>'}. ມູນຄ່າ USD ຄິດຈາກ <code>Amount_Kip ÷ Exchange_Rates_USD</code>. ຊື່ຈຸດປະສົງເປັນພາສາລາວຕາມທີ່ທະນາຄານລາຍງານ.<br>ສ້າງໃໝ່ດ້ວຍ <code>python build_dashboard.py</code> ຫຼັງເພີ່ມໄຟລ໌ໃໝ່.`
+    : `<b>ITRS Live Report.</b> Generated ${esc(meta.generated)} from ${meta.sourceFiles.length} source files covering ${meta.dateMin} to ${meta.dateMax}. ${int(meta.rows)} records, ${int(meta.uniqueIds)} distinct <code>Hash_ID</code> values${meta.rows===meta.uniqueIds?' (no duplicates)':' <b>(duplicates present)</b>'}. USD amounts derived as <code>Amount_Kip ÷ Exchange_Rates_USD</code>. Purpose names are reproduced in Lao exactly as recorded by reporting banks.<br>Rebuild with <code>python build_dashboard.py</code> after adding new source files.`;
+}
+initControls();
+applyI18n();
+initMeta();
+renderAll();
+}   /* end bootApp */
+
+/* ===================== unlock gate ===================== */
+/* When the payload is encrypted the HTML holds ciphertext only: there is no
+   plaintext copy to find in the file, and no password hash to attack. The
+   GCM authentication tag is the password check — a wrong passphrase simply
+   fails to authenticate and decryption throws. */
+(function(){
+  const GT = {
+    title:["ITRS Live Report","ລາຍງານ ITRS ປັດຈຸບັນ"],
+    org:["Lao PDR — International Transactions Reporting System","ສປປ ລາວ — ລະບົບລາຍງານທຸລະກຳລະຫວ່າງປະເທດ"],
+    label:["Passphrase","ລະຫັດຜ່ານ"],
+    go:["Unlock","ປົດລັອກ"],
+    show:["SHOW","ສະແດງ"], hide:["HIDE","ເຊື່ອງ"],
+    working:["Deriving key and decrypting…","ກຳລັງຖອດລະຫັດ…"],
+    wrong:["Incorrect passphrase.","ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ."],
+    nocrypto:["This browser cannot decrypt the report. Use a current version of Chrome, Edge, Safari or Firefox over HTTPS.","ບຣາວເຊີນີ້ບໍ່ສາມາດຖອດລະຫັດໄດ້. ກະລຸນາໃຊ້ Chrome, Edge, Safari ຫຼື Firefox ລຸ້ນປັດຈຸບັນຜ່ານ HTTPS."],
+    foot:["Confidential supervisory data. The report is encrypted with AES-256-GCM; the passphrase is never transmitted and never stored. Do not share the passphrase or any extract outside authorised staff.",
+          "ຂໍ້ມູນຄວບຄຸມທີ່ເປັນຄວາມລັບ. ລາຍງານຖືກເຂົ້າລະຫັດດ້ວຍ AES-256-GCM; ລະຫັດຜ່ານບໍ່ຖືກສົ່ງ ແລະ ບໍ່ຖືກເກັບໄວ້. ຫ້າມແບ່ງປັນລະຫັດຜ່ານ ຫຼື ຂໍ້ມູນໃຫ້ຜູ້ບໍ່ມີສິດ."],
+  };
+  let L = 0, shown = false;
+  const g = id => document.getElementById(id);
+  const paint = () => {
+    g('gateTitle').textContent = GT.title[L];
+    g('gateOrg').textContent = GT.org[L];
+    g('gateLabel').textContent = GT.label[L];
+    g('gateGo').textContent = GT.go[L];
+    g('gateFoot').textContent = GT.foot[L];
+    // Drive the field from `shown` rather than reading the DOM back, so the
+    // label and the masking can never disagree.
+    g('gatePw').type = shown ? 'text' : 'password';
+    g('gateEye').textContent = shown ? GT.hide[L] : GT.show[L];
+    [...g('gateLang').children].forEach(x =>
+      x.setAttribute('aria-pressed', String((x.dataset.v === 'lo') === !!L)));
+    document.documentElement.lang = L ? 'lo' : 'en';
+  };
+
+  let env;
+  try { env = JSON.parse(g('itrs-data').textContent); }
+  catch (e) { document.body.innerHTML = '<p style="padding:40px;font:14px system-ui">Data payload is missing or corrupt.</p>'; return; }
+
+  const reveal = data => {
+    g('gate').classList.add('hide');
+    g('app').classList.remove('locked');
+    bootApp(data);
+  };
+  if (!env.ct){ reveal(env); return; }        // plaintext build — no gate
+
+  g('gate').classList.remove('hide');
+  paint();
+  ITRSTheme.bind(g('gateTheme'));
+  setTimeout(()=>g('gatePw').focus(), 60);
+
+  g('gateLang').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    L = b.dataset.v === 'lo' ? 1 : 0;
+    paint();
+  });
+  g('gateEye').addEventListener('click', () => {
+    shown = !shown; paint(); g('gatePw').focus();
+  });
+
+  const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+  async function unlock(pw){
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:b64(env.salt), iterations:env.iter, hash:'SHA-256'},
+      base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+    let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, key, b64(env.ct));
+    if (env.gz){
+      const ds = new DecompressionStream('gzip');
+      const stream = new Blob([plain]).stream().pipeThrough(ds);
+      plain = await new Response(stream).arrayBuffer();
+    }
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  g('gateForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = g('gateMsg'), go = g('gateGo');
+    if (!crypto.subtle){ msg.className = 'gate-msg err'; msg.textContent = GT.nocrypto[L]; return; }
+    go.disabled = true;
+    msg.className = 'gate-msg busy';
+    msg.innerHTML = '<span class="spin"></span>' + GT.working[L];
+    // Yield a frame so the spinner paints before PBKDF2 blocks the thread.
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      const data = await unlock(g('gatePw').value);
+      msg.textContent = '';
+      reveal(data);
+    } catch (err) {
+      go.disabled = false;
+      msg.className = 'gate-msg err';
+      msg.textContent = GT.wrong[L];
+      g('gatePw').select();
+    }
+  });
+})();
+</script>
+</body>
+</html>
