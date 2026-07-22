@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>ITRS Live Report</title>
+<!-- Installable on a phone: manifest + icons live beside index.html in docs/.
+     They are only present on the published build; a local file:// copy simply
+     ignores them. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ITRS">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
 /* ---------------------------------------------------------------------------
    Theme. Light is the base; dark arrives either from the OS (when the user has
@@ -588,6 +600,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     </div>
     <div class="hdr-right">
       <span class="pill" id="roleTag" style="margin-right:2px"></span>
+      <button class="iconbtn" id="installBtn" type="button" title="Install" hidden>
+        <svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.6 5.6h2.8"/><path d="M12 10v6m0 0 2.4-2.4M12 16l-2.4-2.4"/></svg>
+      </button>
       <button class="iconbtn" id="importBtn" type="button" title="Import data">
         <svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
       </button>
@@ -3521,7 +3536,32 @@ initControls();
 applyI18n();
 initMeta();
 renderAll();
+initInstall();
 }   /* end bootApp */
+
+/* ===================== install on phone ===================== */
+function initInstall(){
+  // Only meaningful over http(s); a file:// copy has no service-worker scope.
+  if (location.protocol.startsWith('http') && 'serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  let prompt = null;
+  const btn = document.getElementById('installBtn');
+  if (!btn) return;
+  addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();          // keep the mini-infobar out of the way
+    prompt = e;
+    btn.hidden = false;
+  });
+  btn.addEventListener('click', async () => {
+    if (!prompt) return;
+    prompt.prompt();
+    await prompt.userChoice;
+    prompt = null;
+    btn.hidden = true;
+  });
+  addEventListener('appinstalled', () => { btn.hidden = true; prompt = null; });
+}
 
 /* ===================== unlock gate ===================== */
 /* When the payload is encrypted the HTML holds ciphertext only: there is no
