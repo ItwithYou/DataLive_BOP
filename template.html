@@ -678,7 +678,9 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="timeseries" aria-selected="false" data-t="tabTs">Time Series</button>
     <button data-tab="weekly" aria-selected="false" data-t="tabWeekly">Weekly Report</button>
     <button data-tab="search" aria-selected="false" data-t="tabSearch">Search</button>
-    <button data-tab="checks" aria-selected="false" data-t="tabChecks">FX &amp; Duplicates</button>
+    <button data-tab="fx" aria-selected="false" data-t="tabFx">Exchange rate</button>
+    <button data-tab="dups" aria-selected="false" data-t="tabDups">Duplicates</button>
+    <button data-tab="officers" aria-selected="false" data-t="tabOfficers">Officers</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
     <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
   </nav>
@@ -843,15 +845,24 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div id="seDetail"></div>
   </section>
 
-  <section class="tab" id="tab-checks">
-    <div class="grid g-4" id="chkKpis"></div>
+  <section class="tab" id="tab-fx">
+    <div class="grid g-4" id="fxKpis"></div>
     <div class="card" style="margin-top:13px">
       <h3 data-t="fxTitle">Exchange rate validation</h3>
       <p class="sub" id="fxSub"></p>
+      <div class="row" style="margin-bottom:11px">
+        <button class="btn" id="fxCsv" data-t="csv">Download CSV</button>
+      </div>
       <div class="scroll" id="fxTable"></div>
       <p class="note" id="fxNote"></p>
     </div>
-    <div class="card">
+    <div class="card"><h3 data-t="fxByYear">FX errors by year</h3>
+      <p class="sub" data-t="fxByYearSub">Null, too low, and too high rates</p><div id="fxYear"></div></div>
+  </section>
+
+  <section class="tab" id="tab-dups">
+    <div class="grid g-4" id="dupKpis"></div>
+    <div class="card" style="margin-top:13px">
       <h3 data-t="dupTitle">Duplicate transaction detection</h3>
       <p class="sub" data-t="dupSub">Three confidence tiers. Review tier A first — a repeated reference number is almost always a re-send.</p>
       <div class="row" style="margin-bottom:11px">
@@ -865,11 +876,20 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <div id="dupExplain" class="note" style="margin-top:0;margin-bottom:9px"></div>
       <div class="scroll" id="dupTable"></div>
     </div>
-    <div class="grid g-2">
-      <div class="card"><h3 data-t="dupByBank">Duplicates by bank</h3>
-        <p class="sub" data-t="dupByBankSub">Extra records in the selected tier</p><div id="dupBank"></div></div>
-      <div class="card"><h3 data-t="fxByYear">FX errors by year</h3>
-        <p class="sub" data-t="fxByYearSub">Null, too low, and too high rates</p><div id="fxYear"></div></div>
+    <div class="card"><h3 data-t="dupByBank">Duplicates by bank</h3>
+      <p class="sub" data-t="dupByBankSub">Extra records in the selected tier</p><div id="dupBank"></div></div>
+  </section>
+
+  <section class="tab" id="tab-officers">
+    <div class="grid g-4" id="ofKpis"></div>
+    <div class="card" style="margin-top:13px">
+      <h3 data-t="ofTitle">Responsible officers</h3>
+      <p class="sub" data-t="ofSub">Each reporting bank is checked by a named officer. Export that officer's exceptions to send them their own list.</p>
+      <div class="row" style="margin-bottom:11px">
+        <button class="btn pri" id="ofCsvAll" data-t="ofExportAll">Export all exceptions with officer</button>
+      </div>
+      <div class="scroll" id="ofTable"></div>
+      <p class="note" id="ofNote"></p>
     </div>
   </section>
 
@@ -996,6 +1016,20 @@ const I18N = {
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
  tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
+ tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
+ tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
+ ofTitle:["Responsible officers","ຜູ້ຮັບຜິດຊອບຕໍ່ທະນາຄານ"],
+ ofSub:["Each reporting bank is checked by a named officer. Export that officer's exceptions to send them their own list.",
+        "ແຕ່ລະທະນາຄານມີເຈົ້າໜ້າທີ່ຮັບຜິດຊອບກວດສອບ. ສົ່ງອອກລາຍການຜິດປົກກະຕິຂອງແຕ່ລະຄົນ ເພື່ອສົ່ງໃຫ້ຜູ້ຮັບຜິດຊອບ."],
+ ofOfficer:["Officer","ຜູ້ຮັບຜິດຊອບ"], ofBanks:["Banks","ທະນາຄານ"],
+ ofFxErr:["FX errors","ອັດຕາຜິດ"], ofDupEx:["Duplicate records","ລາຍການຊ້ຳ"],
+ ofTotal:["Total exceptions","ລວມລາຍການຜິດປົກກະຕິ"],
+ ofExport:["Export","ສົ່ງອອກ"],
+ ofExportAll:["Export all exceptions with officer","ສົ່ງອອກທັງໝົດພ້ອມຊື່ຜູ້ຮັບຜິດຊອບ"],
+ ofUnassigned:["Unassigned","ຍັງບໍ່ໄດ້ມອບໝາຍ"],
+ ofPeople:["Officers","ຈຳນວນຜູ້ຮັບຜິດຊອບ"], ofCovered:["Banks covered","ທະນາຄານທີ່ມີຜູ້ຮັບຜິດຊອບ"],
+ ofNoteTxt:["The duplicate count is the complete figure for the period. The exported file carries the largest exceptions by value that this report holds — {n} rows for the whole team — not every underlying record. Work the export, then use the count to know how much is left.",
+            "ຈຳນວນລາຍການຊ້ຳແມ່ນຕົວເລກຄົບຖ້ວນຂອງໄລຍະນີ້. ແຕ່ໄຟລ໌ທີ່ສົ່ງອອກມີສະເພາະລາຍການທີ່ມີມູນຄ່າສູງສຸດເທົ່າທີ່ລາຍງານນີ້ເກັບໄວ້ — {n} ແຖວສຳລັບທັງທີມ — ບໍ່ແມ່ນທຸກລາຍການ. ໃຫ້ນຳໃຊ້ໄຟລ໌ທີ່ສົ່ງອອກກ່ອນ ແລ້ວເບິ່ງຕົວເລກເພື່ອຮູ້ວ່າຍັງເຫຼືອເທົ່າໃດ."],
  tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"], tabSettings:["Settings","ການຕັ້ງຄ່າ"],
  setFx:["Exchange rate bands","ຂອບເຂດອັດຕາແລກປ່ຽນ"],
  setFxSub:["A rate outside its band is flagged as an exception","ອັດຕານອກຂອບເຂດຈະຖືກໝາຍ"],
@@ -1117,7 +1151,8 @@ const I18N = {
  tierC:["Weak, unnamed","ອ່ອນ, ບໍ່ມີຊື່"],
  dupByBank:["Duplicates by bank","ທຸລະກຳຊ້ຳຕາມທະນາຄານ"], dupByBankSub:["Extra records in tier","ລາຍການເກີນໃນລະດັບນີ້"],
  dupCopies:["Copies","ສຳເນົາ"], dupExtra:["Extra records","ລາຍການເກີນ"], dupGroups:["Groups","ກຸ່ມ"],
- chkFx:["FX rate errors","ອັດຕາຜິດພາດ"], chkDupA:["Tier A duplicates","ຊ້ຳລະດັບ A"],
+ chkFx:["FX rate errors","ອັດຕາຜິດພາດ"], chkDupC:["Duplicates tier C","ລາຍການຊ້ຳ ລະດັບ C"],
+ chkDupA:["Tier A duplicates","ຊ້ຳລະດັບ A"],
  chkDupB:["Tier B duplicates","ຊ້ຳລະດັບ B"], chkDupVal:["Duplicate value at risk","ມູນຄ່າສ່ຽງຈາກການຊ້ຳ"],
  bkTable:["Reporting bank league table","ຕາຕະລາງທະນາຄານລາຍງານ"], bkHint:["tap to filter","ແຕະເພື່ອກັ່ນຕອງ"],
  bkTableSub:["Selected period","ໄລຍະທີ່ເລືອກ"], bkShare:["Market share over time","ສ່ວນແບ່ງຕະຫຼາດຕາມເວລາ"],
@@ -2638,17 +2673,22 @@ function chkTotals(){
   }
   return {fxNull, fxLow, fxHigh, fxTotal:fxNull+fxLow+fxHigh, dup};
 }
-function renderChecks(){
+/** Exchange rates and duplicates are separate checks with separate owners, so
+    they are separate tabs. fxExceptions() is shared with the officer tab. */
+function fxExceptions(){
+  return exceptions.fxRows.filter(r => {
+    const y = YEARS.indexOf(+r.d.slice(0,4));
+    return y>=state.yFrom && y<=state.yTo && (state.bank<0 || r.b===state.bank);
+  });
+}
+function renderFx(){
   const c = chkTotals();
-  $('#chkKpis').innerHTML =
+  $('#fxKpis').innerHTML =
     kpiCard(t('chkFx'), int(c.fxTotal), c.fxTotal?'neg':'',
       `<span class="muted">${int(c.fxNull)} ${esc(t('fxNull'))} · ${int(c.fxLow)} ${esc(t('fxLow'))} · ${int(c.fxHigh)} ${esc(t('fxHigh'))}</span>`) +
-    kpiCard(t('chkDupA'), int(c.dup.A.extra), c.dup.A.extra?'neg':'',
-      `<span class="muted">${fmtM(c.dup.A.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
-    kpiCard(t('chkDupB'), int(c.dup.B.extra), c.dup.B.extra?'neg':'',
-      `<span class="muted">${fmtM(c.dup.B.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
-    kpiCard(t('chkDupVal'), fmtM(c.dup.A.usd + c.dup.B.usd), 'neg',
-      `<span class="muted">${esc(isLo()?'ລະດັບ A + B ລວມກັນ':'Tiers A + B combined')}</span>`);
+    kpiCard(t('fxNull'), int(c.fxNull), c.fxNull?'neg':'', '') +
+    kpiCard(t('fxLow'), int(c.fxLow), c.fxLow?'neg':'', '') +
+    kpiCard(t('fxHigh'), int(c.fxHigh), c.fxHigh?'neg':'', '');
 
   $('#fxSub').textContent = isLo()
     ? `ອັດຕາທີ່ຖືກຕ້ອງຄວນຢູ່ລະຫວ່າງ ${int(meta.fxBand[0])}–${int(meta.fxBand[1])} ກີບ/ໂດລາ. ສະແດງ ${exceptions.fxRows.length} ລາຍການທີ່ມີມູນຄ່າສູງສຸດ.`
@@ -2673,16 +2713,10 @@ function renderChecks(){
     ? `ມູນຄ່າ USD ຄິດໄລ່ຈາກ <code>Amount_Kip ÷ Exchange_Rates_USD</code>. ເມື່ອອັດຕາຜິດ ມູນຄ່າ USD ກໍຜິດຕາມ — ຈຶ່ງຄວນແກ້ໄຂກ່ອນນຳໃຊ້ໃນການລວບລວມ.`
     : `USD amounts are derived as <code>Amount_Kip ÷ Exchange_Rates_USD</code>. When the rate is wrong the USD amount is wrong too, so these should be corrected before the records feed compilation.`;
 
-  renderDupTable();
-
-  const dbank = new Map();
-  for (const r of exceptions.dupByYearBank[state.dupTier]){
-    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
-    dbank.set(r[1], (dbank.get(r[1])||0) + r[2]);
-  }
-  rankBars($('#dupBank'), [...dbank.entries()].map(([i,v])=>({label:BANKS[i]||'—', value:v}))
-      .sort((a,b)=>b.value-a.value).slice(0,12).map((d,i)=>({...d, color:cssv(SC[i%10])})),
-    {labelW:100, w:440, rowH:26, fmt:int});
+  $('#fxTable')._csv = () => downloadCsv('ITRS_fx_exceptions.csv',
+    [['Date','Bank','Flow','Amount','Currency','Rate','Expected','USD_m','Issue'],
+     ...fxRows.map(r=>[r.d, BANKS[r.b]||'', r.f===REC?'Receive':'Payment', r.amt,
+       dims.currencies[r.c]||'', r.fx==null?'':r.fx, r.exp||'', r.usd, issue(r)])]);
 
   const yrs = yearsInRange();
   const agg = k => yrs.map(y => exceptions.fxByYearBank
@@ -2693,6 +2727,133 @@ function renderChecks(){
       {name:t('fxLow'),  value:agg(3)[i], color:cssv('--c3')},
       {name:t('fxHigh'), value:agg(4)[i], color:cssv('--c5')}]})),
     {h:250, w:440, fmt:int, axisFmt:int, key:'fxy'});
+}
+function renderDups(){
+  const c = chkTotals();
+  $('#dupKpis').innerHTML =
+    kpiCard(t('chkDupA'), int(c.dup.A.extra), c.dup.A.extra?'neg':'',
+      `<span class="muted">${fmtM(c.dup.A.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
+    kpiCard(t('chkDupB'), int(c.dup.B.extra), c.dup.B.extra?'neg':'',
+      `<span class="muted">${fmtM(c.dup.B.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
+    kpiCard(t('chkDupC'), int(c.dup.C.extra), '',
+      `<span class="muted">${fmtM(c.dup.C.usd)} ${esc(isLo()?'ມູນຄ່າ':'at risk')}</span>`) +
+    kpiCard(t('chkDupVal'), fmtM(c.dup.A.usd + c.dup.B.usd), 'neg',
+      `<span class="muted">${esc(isLo()?'ລະດັບ A + B ລວມກັນ':'Tiers A + B combined')}</span>`);
+
+  renderDupTable();
+
+  const dbank = new Map();
+  for (const r of exceptions.dupByYearBank[state.dupTier]){
+    if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+    if (state.bank>=0 && r[1]!==state.bank) continue;
+    dbank.set(r[1], (dbank.get(r[1])||0) + r[2]);
+  }
+  rankBars($('#dupBank'), [...dbank.entries()].map(([i,v])=>({label:BANKS[i]||'—', value:v}))
+      .sort((a,b)=>b.value-a.value).slice(0,12).map((d,i)=>({...d, color:cssv(SC[i%10])})),
+    {labelW:100, w:440, rowH:26, fmt:int});
+}
+
+/* ===================== Responsible officers ===================== */
+/* The officer list was typed by hand in a spreadsheet, so its bank codes vary
+   in case and spacing from the codes in the data (KBANK / Kbank / kbank all
+   appear). Matching loosely is what makes the assignment actually land. */
+const OFFICER_OF = (() => {
+  const raw = DATA.officers || {}, m = new Map();
+  const key = x => String(x).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (const [bank, person] of Object.entries(raw)) m.set(key(bank), person);
+  return code => m.get(key(code)) || null;
+})();
+
+/** Group the reporting banks by the officer who checks them, and count the
+    open exceptions per officer so the work can be handed out as it is owned. */
+function officerRows(){
+  const who = {};
+  const dupTiers = ['A','B'];
+  const byOfficer = new Map();
+  const get = nm => {
+    let o = byOfficer.get(nm);
+    if (!o) byOfficer.set(nm, o = {nm, banks:[], fx:0, dup:0});
+    return o;
+  };
+  BANKS.forEach((code, ix) => {
+    if (state.bank >= 0 && ix !== state.bank) return;
+    get(OFFICER_OF(code) || t('ofUnassigned')).banks.push(code);
+  });
+  for (const r of fxExceptions()){
+    const o = byOfficer.get(OFFICER_OF(BANKS[r.b]) || t('ofUnassigned'));
+    if (o) o.fx++;
+  }
+  for (const tier of dupTiers){
+    for (const r of exceptions.dupByYearBank[tier]){
+      if (r[0]<state.yFrom||r[0]>state.yTo) continue;
+      if (state.bank>=0 && r[1]!==state.bank) continue;
+      const o = byOfficer.get(OFFICER_OF(BANKS[r[1]]) || t('ofUnassigned'));
+      if (o) o.dup += r[2];
+    }
+  }
+  return [...byOfficer.values()].map(o => ({...o, total:o.fx + o.dup}))
+    .sort((a,b) => b.total - a.total || b.banks.length - a.banks.length);
+}
+/** Every exception row for the given banks, tagged with the officer. Passing
+    null for banks exports everyone, which is the "one file for the whole team"
+    case the weekly routine needs. */
+function officerCsvRows(banks){
+  const inScope = ix => !banks || banks.includes(BANKS[ix]);
+  const out = [['Officer','Bank','Check','Tier','Date','Flow','Amount','Currency',
+                'Rate','Expected','USD_m','Copies','Reference','Counterparty']];
+  for (const r of fxExceptions()){
+    if (!inScope(r.b)) continue;
+    out.push([OFFICER_OF(BANKS[r.b]) || t('ofUnassigned'), BANKS[r.b]||'', 'FX rate', '',
+      r.d, r.f===REC?'Receive':'Payment', r.amt, dims.currencies[r.c]||'',
+      r.fx==null?'':r.fx, r.exp||'', r.usd, '', '', '']);
+  }
+  for (const tier of ['A','B']){
+    for (const r of exceptions.dupRows[tier]){
+      const y = YEARS.indexOf(+r.d.slice(0,4));
+      if (y<state.yFrom || y>state.yTo) continue;
+      if (state.bank>=0 && r.b!==state.bank) continue;
+      if (!inScope(r.b)) continue;
+      out.push([OFFICER_OF(BANKS[r.b]) || t('ofUnassigned'), BANKS[r.b]||'', 'Duplicate', tier,
+        r.d, r.f===REC?'Receive':'Payment', r.amt, dims.currencies[r.c]||'',
+        '', '', r.usd, r.n, r.ref||'', [r.nm, r.nm2].filter(Boolean).join(' -> ')]);
+    }
+  }
+  return out;
+}
+function renderOfficers(){
+  const rows = officerRows();
+  const named = rows.filter(o => o.nm !== t('ofUnassigned'));
+  const covered = named.reduce((a,o) => a + o.banks.length, 0);
+  const unassigned = rows.find(o => o.nm === t('ofUnassigned'));
+  $('#ofKpis').innerHTML =
+    kpiCard(t('ofPeople'), int(named.length), '', '') +
+    kpiCard(t('ofCovered'), int(covered), '',
+      `<span class="muted">${int(BANKS.length)} ${esc(isLo()?'ທະນາຄານທັງໝົດ':'banks in total')}</span>`) +
+    kpiCard(t('ofUnassigned'), int(unassigned ? unassigned.banks.length : 0),
+      unassigned && unassigned.banks.length ? 'neg' : '', '') +
+    kpiCard(t('ofTotal'), int(rows.reduce((a,o)=>a+o.total,0)), 'neg', '');
+
+  sortableTable($('#ofTable'), {
+    cols:[
+      {k:'nm', t:t('ofOfficer'), align:'left', fmt:v=>`<b>${esc(v)}</b>`},
+      {k:'banks', t:t('ofBanks'), align:'left',
+       fmt:v=>`<span class="muted">${esc(v.length)}</span> ${esc(v.slice(0,6).join(', '))}${v.length>6?' …':''}`},
+      {k:'fx', t:t('ofFxErr'), fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
+      {k:'dup', t:t('ofDupEx'), fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
+      {k:'total', t:t('ofTotal'), fmt:v=>`<b>${int(v)}</b>`},
+      {k:'nm', t:'', align:'left',
+       fmt:(v,r)=>`<button class="btn ofdl" data-of="${esc(v)}">${esc(t('ofExport'))}</button>`},
+    ], rows, sort:'total', maxRows:60});
+
+  $$('#ofTable .ofdl').forEach(b => b.addEventListener('click', () => {
+    const o = rows.find(x => x.nm === b.dataset.of);
+    if (!o) return;
+    downloadCsv(`ITRS_exceptions_${o.nm.replace(/[^\w]+/g,'_')}.csv`, officerCsvRows(o.banks));
+  }));
+  // State the real export size rather than implying the CSV holds everything.
+  $('#ofNote').textContent = t('ofNoteTxt')
+    .replace('{n}', int(Math.max(0, officerCsvRows(null).length - 1)));
+  $('#ofTable')._csv = () => downloadCsv('ITRS_exceptions_all_officers.csv', officerCsvRows(null));
 }
 function renderDupTable(){
   const tier = state.dupTier;
@@ -3659,7 +3820,8 @@ function renderSettings(){
 
 /* ===================== shell ===================== */
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
-  weekly:renderWeekly, search:renderSearch, checks:renderChecks, banks:renderBanks, quality:renderQuality, settings:renderSettings};
+  weekly:renderWeekly, search:renderSearch, fx:renderFx, dups:renderDups,
+  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings};
 let rendered = {};
 function renderBanner(){
   const msg = {
@@ -3738,7 +3900,7 @@ function initControls(){
   segBind('#measSeg', v => { state.meas = v; renderAll(); });
   segBind('#tsFreqSeg', v => { state.tsFreq = v; renderTimeSeries(); });
   segBind('#tsFlowSeg', v => { state.tsFlow = +v; renderTimeSeries(); });
-  segBind('#dupTierSeg', v => { state.dupTier = v; renderChecks(); });
+  segBind('#dupTierSeg', v => { state.dupTier = v; renderDups(); });
   $('#langBtn').addEventListener('click', e => {
     LANG = LANG ? 0 : 1;
     applyI18n(); initMeta(); renderAll();
@@ -3749,6 +3911,8 @@ function initControls(){
   $('#tsCsv').addEventListener('click', tsCsv);
   $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
   $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
+  $('#fxCsv').addEventListener('click', () => $('#fxTable')._csv && $('#fxTable')._csv());
+  $('#ofCsvAll').addEventListener('click', () => $('#ofTable')._csv && $('#ofTable')._csv());
   $('#wkCopy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText($('#wkNarrative').textContent);
       const b = $('#wkCopy'); const old = b.textContent; b.textContent = t('copied');

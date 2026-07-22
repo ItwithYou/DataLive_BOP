@@ -842,16 +842,57 @@ def build_exceptions(con, dims):
 # Entity search index
 # --------------------------------------------------------------------------
 
+# Strings banks type into the name field when there is no counterparty to
+# report. Grouped by name they dominate the index: "NULL" alone summed to
+# $127.8bn. Extend via config/name_blocklist.json; never shrink below this.
+PLACEHOLDER_NAMES = {
+    "NULL", "NONE", "N/A", "NA", "NIL", "N.A.", "UNKNOWN", "NOT AVAILABLE",
+    "XXX", "XX", "X", "XXXX", "XXXXX", "-", ".", "--", "0",
+    "CASH", "SELF", "OTHER", "OTHERS", "TEST", "TT", "IB", "SWIFT", "NAME",
+}
+
+
+def load_name_blocklist():
+    names = set(PLACEHOLDER_NAMES)
+    path = CONFIG / "name_blocklist.json"
+    if path.exists():
+        try:
+            extra = json.loads(path.read_text(encoding="utf-8")).get("names", [])
+            names |= {str(x).strip().upper() for x in extra if str(x).strip()}
+        except Exception as e:
+            print(f"  WARNING: name_blocklist.json unreadable ({e}); built-in list only")
+    return sorted(names)
+
+
 def build_entities(con, dims):
     """Searchable index of the largest counterparties, with their top transactions."""
     con.execute("""
-        CREATE VIEW ent AS
+        CREATE VIEW ent_raw AS
         SELECT tr_name AS nm, 0 AS side, * EXCLUDE (tr_name, rc_name), rc_name AS other
         FROM txf WHERE tr_name IS NOT NULL
         UNION ALL BY NAME
         SELECT rc_name AS nm, 1 AS side, * EXCLUDE (tr_name, rc_name), tr_name AS other
         FROM txf WHERE rc_name IS NOT NULL
     """)
+    block = load_name_blocklist()
+    con.execute("CREATE TABLE ent_block (nm VARCHAR NOT NULL)")
+    con.executemany("INSERT INTO ent_block VALUES (?)", [(n,) for n in block])
+    # NOT EXISTS, not NOT IN: a single NULL in the blocklist would make NOT IN
+    # reject every row and empty the entity index without any error.
+    con.execute(r"""
+        CREATE VIEW ent AS
+        SELECT * FROM ent_raw e
+        WHERE LENGTH(TRIM(e.nm)) >= 3
+          AND NOT EXISTS (SELECT 1 FROM ent_block b WHERE b.nm = UPPER(TRIM(e.nm)))
+          AND NOT regexp_matches(TRIM(e.nm), '^[0-9]+$')
+          AND regexp_matches(TRIM(e.nm), '[A-Za-z\x{0E80}-\x{0EFF}]')
+    """)
+    d = con.execute("""
+        SELECT COUNT(*), COALESCE(SUM(usd)/1e6, 0)
+        FROM ent_raw WHERE nm IS NOT NULL
+    """).fetchone()
+    k = con.execute("SELECT COUNT(*), COALESCE(SUM(usd)/1e6, 0) FROM ent").fetchone()
+    print(f"  placeholder names removed: {d[0]-k[0]:,} rows, ${d[1]-k[1]:,.0f}m")
     # Normalise names in SQL so the index groups spelling-identical entries.
     con.execute("""
         CREATE TABLE ent_tot AS
