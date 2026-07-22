@@ -353,12 +353,59 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .narr{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);
   border-radius:8px;padding:13px 15px;line-height:1.95;font-size:13.5px;white-space:pre-wrap;word-break:break-word}
 .searchbar{display:flex;gap:8px;align-items:center;margin-bottom:11px}
-.searchbar input{flex:1;max-width:none;font-size:15px;padding:10px 12px;min-height:var(--tap)}
-.ent{border:1px solid var(--line);border-radius:8px;padding:11px;margin-bottom:8px;cursor:pointer;background:var(--panel-2)}
+.searchbar .field{position:relative;flex:1;display:flex}
+.searchbar input{flex:1;max-width:none;font-size:15px;padding:10px 12px 10px 36px;min-height:var(--tap)}
+.searchbar .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;
+  fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linecap:round;pointer-events:none}
+
+/* selected-name chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:11px;
+  padding:10px 11px;border-radius:11px;background:var(--accent-soft);
+  border:1px solid color-mix(in srgb,var(--accent) 26%,transparent)}
+.chips .hd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--accent);margin-right:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:20px;
+  background:var(--panel-solid);border:1px solid var(--line);font-size:12px;max-width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34ch}
+.chip button{border:0;background:transparent;color:var(--ink-3);cursor:pointer;font-size:15px;
+  line-height:1;padding:0 3px;border-radius:50%;min-height:22px}
+.chip button:hover{color:var(--bad)}
+
+/* result group card */
+.ent{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--panel-2);
+  overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .ent:hover{border-color:var(--accent)}
-.ent .n{font-weight:640;font-size:13px;word-break:break-word}
-.ent .m{font-size:11.5px;color:var(--ink-3);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
-.empty{text-align:center;padding:34px 14px;color:var(--ink-3);font-size:13px}
+.ent.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ent .row1{display:flex;gap:11px;align-items:flex-start;padding:12px;cursor:pointer}
+.tick-box{flex:0 0 auto;width:20px;height:20px;border-radius:6px;border:1.6px solid var(--line);
+  display:flex;align-items:center;justify-content:center;margin-top:1px;transition:.15s}
+.tick-box svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2.6;
+  stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.ent.on .tick-box{background:var(--accent);border-color:var(--accent)}
+.ent.on .tick-box svg{opacity:1}
+.ent .body{flex:1;min-width:0}
+.ent .n{font-weight:640;font-size:13.5px;word-break:break-word;line-height:1.35}
+.ent .m{font-size:11.5px;color:var(--ink-3);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;
+  align-items:center}
+.ent .m b{color:var(--ink-2);font-weight:600;font-variant-numeric:tabular-nums}
+.vbadge{border:0;background:var(--warn-soft);color:var(--warn);font-size:10.5px;font-weight:700;
+  padding:2px 8px;border-radius:20px;cursor:pointer;min-height:22px}
+.vbadge:hover{filter:brightness(1.08)}
+.variants{border-top:1px solid var(--line-2);background:var(--panel);display:none}
+.variants.open{display:block}
+.variants .v{display:flex;gap:10px;align-items:center;padding:9px 12px 9px 14px;cursor:pointer;
+  border-bottom:1px solid var(--line-2);font-size:12px}
+.variants .v:last-child{border-bottom:0}
+.variants .v:hover{background:var(--panel-2)}
+.variants .v.on{background:var(--accent-soft)}
+.variants .v .nm{flex:1;min-width:0;word-break:break-word}
+.variants .v .amt{color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.empty{text-align:center;padding:30px 14px;color:var(--ink-3);font-size:13px;line-height:1.7}
+.empty svg{width:30px;height:30px;fill:none;stroke:var(--ink-3);stroke-width:1.6;
+  stroke-linecap:round;opacity:.55;margin-bottom:9px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-top:2px}
+.mini .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);
+  font-weight:700;margin-bottom:5px}
 footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px solid var(--line);
   font-size:11px;color:var(--ink-3);line-height:1.7}
 @media(min-width:760px){footer{padding:16px 20px}}
@@ -702,9 +749,13 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <h3 data-t="seTitle">Company / counterparty search</h3>
       <p class="sub" id="seSub"></p>
       <div class="searchbar">
-        <input type="search" id="seInput" placeholder="Type a company name…" autocomplete="off" spellcheck="false">
+        <div class="field">
+          <svg class="mag" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="seInput" autocomplete="off" spellcheck="false">
+        </div>
         <button class="btn" id="seClear" data-t="clear">Clear</button>
       </div>
+      <div id="seChips"></div>
       <div id="seResults"></div>
     </div>
     <div id="seDetail"></div>
@@ -873,7 +924,13 @@ const I18N = {
  clear:["Clear","ລຶບ"], seePlaceholder:["Type a company name…","ພິມຊື່ບໍລິສັດ…"],
  seNoResult:["No counterparty matches that name.","ບໍ່ພົບຄູ່ຮ່ວມທີ່ກົງກັບຊື່ນີ້."],
  seStart:["Start typing to search the counterparty index.","ເລີ່ມພິມເພື່ອຄົ້ນຫາ."],
- seResults:["results","ຜົນລັບ"], seTop:["Largest transactions","ທຸລະກຳໃຫຍ່ສຸດ"],
+ seResults:["matches","ຜົນລັບ"], seTop:["Largest transactions","ທຸລະກຳໃຫຍ່ສຸດ"],
+ seSpellings:["spellings","ຮູບແບບການຂຽນ"], seSelected:["Selected","ທີ່ເລືອກ"],
+ seClearPick:["Clear selection","ລຶບການເລືອກ"], seCombined:["Combined","ລວມກັນ"],
+ seNamesLbl:["names combined","ຊື່ທີ່ລວມກັນ"], seMoreNames:["more","ຊື່ອື່ນ"],
+ seProfileSub:["Combined profile across every selected spelling","ຂໍ້ມູນລວມຂອງທຸກຊື່ທີ່ເລືອກ"],
+ seTopSub:["Largest transactions carried in the index for the selected names","ທຸລະກຳໃຫຍ່ສຸດຂອງຊື່ທີ່ເລືອກ"],
+ flowCol:["Direction","ທິດທາງ"],
  seYearly:["Activity by year","ກິດຈະກຳຕາມປີ"], seTopCtry:["Top countries","ປະເທດຫຼັກ"],
  seTopPur:["Top purposes","ຈຸດປະສົງຫຼັກ"], seTopBank:["Banks used","ທະນາຄານທີ່ໃຊ້"],
  seCounterparty:["Counterparty","ຄູ່ຮ່ວມ"], seActive:["Active","ເຄື່ອນໄຫວ"],
@@ -918,6 +975,19 @@ const I18N = {
  impBadDate:["Skipped, bad date","ຂ້າມ, ວັນທີບໍ່ຖືກ"], impBadAmt:["Skipped, no amount","ຂ້າມ, ບໍ່ມີມູນຄ່າ"],
  impRange:["Date range","ຊ່ວງວັນທີ"], impNewDims:["New codes added","ລະຫັດໃໝ່ທີ່ເພີ່ມ"],
  impDone:["Imported. The report has been updated.","ນຳເຂົ້າແລ້ວ. ລາຍງານໄດ້ຮັບການປັບປຸງ."],
+ impMapped:["Columns matched","ຊ່ອງຂໍ້ມູນທີ່ກົງກັນ"],
+ impPack:["Data pack","ຊຸດຂໍ້ມູນ"],
+ impPackWarn:["Applying replaces the current dataset.","ການນຳໃຊ້ຈະແທນທີ່ຂໍ້ມູນປັດຈຸບັນທັງໝົດ."],
+ impReady:["data rows read. Press Apply to merge.","ແຖວຂໍ້ມູນ. ກົດ ນຳໃຊ້ ເພື່ອລວມເຂົ້າກັນ."],
+ impCols:["columns recognised","ຊ່ອງທີ່ຮັບຮູ້"],
+ errNotPack:["Not a valid ITRS data pack.","ບໍ່ແມ່ນຊຸດຂໍ້ມູນ ITRS ທີ່ຖືກຕ້ອງ."],
+ errNoRows:["The file has no data rows.","ໄຟລ໌ນີ້ບໍ່ມີແຖວຂໍ້ມູນ."],
+ errMissing:["Missing column(s):","ຂາດຊ່ອງຂໍ້ມູນ:"],
+ errNoDate:["No transaction date column found.","ບໍ່ພົບຊ່ອງວັນທີທຸລະກຳ."],
+ errNoAmt:["Need Amount_USD, or Amount_Kip together with Exchange_Rates_USD.",
+           "ຕ້ອງມີ Amount_USD ຫຼື Amount_Kip ພ້ອມກັບ Exchange_Rates_USD."],
+ errNoUsable:["No usable rows. Check the date and amount columns.",
+              "ບໍ່ມີແຖວທີ່ໃຊ້ໄດ້. ກະລຸນາກວດຊ່ອງວັນທີ ແລະ ມູນຄ່າ."],
  impNote:["Submission-lag percentiles and value-concentration ranks are not recalculated by an in-browser import — rebuild for those.",
           "ຄ່າສະຖິຕິຄວາມຊັກຊ້າ ແລະ ການກະຈຸກຕົວຂອງມູນຄ່າ ບໍ່ຖືກຄິດໄລ່ໃໝ່ຈາກການນຳເຂົ້າໃນບຣາວເຊີ — ຕ້ອງສ້າງໃໝ່."],
  copyChart:["Copy chart image — paste into Excel or Word","ສຳເນົາຮູບກຣາຟ — ວາງໃສ່ Excel ຫຼື Word"],
@@ -991,7 +1061,8 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
-  wkDate:null, wkScope:'all', dupTier:'A', seQuery:'', seSel:-1,
+  wkDate:null, wkScope:'all', dupTier:'A', seQuery:'',
+  sePick:new Set(),                   // entity rows chosen for the combined view
 };
 const yearsInRange = () => YEARS.map((y,i)=>i).filter(i => i>=state.yFrom && i<=state.yTo);
 const monthsInRange = () => MONTHS.map((m,i)=>i).filter(i => {
@@ -1926,89 +1997,226 @@ function defaultWeek(){
 }
 /* ===================== Search ===================== */
 const ENT_KEYS = entities.map(e => e.nm.toUpperCase());
+
+/* The same company is registered under many spellings — punctuation, legal-form
+   suffixes, spacing. Stripping those gives a key that pulls the variants
+   together so they can be selected and reported as one. */
+const LEGAL_FORMS = /\b(CO|COS|LTD|LTDS|LIMITED|COMPANY|SOLE|CORP|CORPORATION|INCORPORATED|INC|PLC|PCL|JSC|LLC|LLP|PTE|PVT|PT|GMBH|SARL|SA|BHD|SDN|GROUP|HOLDINGS?|ENTERPRISES?)\b/g;
+const LAO_FORMS = /(ບໍລິສັດ|ຈຳກັດ|ຈໍາກັດ|ຜູ້ດຽວ|ຫົວໜ່ວຍ)/g;
+function normEnt(s){
+  return String(s || '').toUpperCase()
+    .replace(/[.,;:'"`()\[\]{}\-_/\\&+]/g, ' ')
+    .replace(LAO_FORMS, ' ')
+    .replace(LEGAL_FORMS, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+const ENT_NORM = entities.map(e => normEnt(e.nm) || e.nm.toUpperCase());
+/** normalised key -> entity indexes, biggest first. */
+const ENT_GROUPS = (() => {
+  const g = new Map();
+  ENT_NORM.forEach((k,i) => { (g.get(k) || g.set(k, []).get(k)).push(i); });
+  g.forEach(list => list.sort((a,b) => entities[b].usd - entities[a].usd));
+  return g;
+})();
+function groupTotals(idxs){
+  let n = 0, inn = 0, out = 0, y0 = Infinity, y1 = -Infinity;
+  idxs.forEach(i => { const e = entities[i];
+    n += e.n; inn += e.in; out += e.out;
+    y0 = Math.min(y0, e.y0); y1 = Math.max(y1, e.y1); });
+  return {n, in:inn, out, y0, y1, gross:inn+out};
+}
+/** Combine any set of entity rows into one profile. */
+function aggregateEntities(idxs){
+  const t = groupTotals(idxs);
+  const yr = {}, top = {ctry:new Map(), pur:new Map(), bank:new Map(), curr:new Map()};
+  let tx = [];
+  idxs.forEach(i => {
+    const e = entities[i];
+    e.yr.forEach(([y,f,n,u]) => {
+      const k = YEARS[y] ?? y;
+      const c = yr[k] || (yr[k] = {in:0, out:0, n:0});
+      c[f===REC?'in':'out'] += u; c.n += n;
+    });
+    ['ctry','pur','bank','curr'].forEach(key =>
+      (e[key]||[]).forEach(([ix,u]) => top[key].set(ix, (top[key].get(ix)||0) + u)));
+    tx = tx.concat(e.tx || []);
+  });
+  const best = m => [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  tx.sort((a,b) => b[5] - a[5]);
+  return {...t, yr, tx:tx.slice(0, meta.entityTxLimit * Math.min(idxs.length, 3)),
+          ctry:best(top.ctry), pur:best(top.pur), bank:best(top.bank), curr:best(top.curr)};
+}
 function renderSearch(){
   $('#seInput').placeholder = t('seePlaceholder');
   const em = meta.entityMeta;
   $('#seSub').textContent = isLo()
-    ? `ດັດຊະນີ ${int(em.kept)} ຄູ່ຮ່ວມໃຫຍ່ສຸດ ຈາກ ${int(em.total)} ທີ່ມີຊື່ (${em.coverPct}% ຂອງມູນຄ່າທີ່ມີຊື່)`
-    : `Index of the ${int(em.kept)} largest counterparties out of ${int(em.total)} named (${em.coverPct}% of named value)`;
+    ? `ດັດຊະນີ ${int(em.kept)} ຄູ່ຮ່ວມໃຫຍ່ສຸດ ຈາກ ${int(em.total)} ທີ່ມີຊື່ (${em.coverPct}% ຂອງມູນຄ່າທີ່ມີຊື່). ຊື່ທີ່ຂຽນຕ່າງກັນຂອງບໍລິສັດດຽວກັນຈະຖືກຈັດເປັນກຸ່ມ.`
+    : `Index of the ${int(em.kept)} largest counterparties out of ${int(em.total)} named (${em.coverPct}% of named value). Spelling variants of the same company are grouped.`;
+
+  renderChips();
   const q = state.seQuery.trim().toUpperCase();
   const host = $('#seResults');
-  if (!q){ host.innerHTML = `<div class="empty">${esc(t('seStart'))}</div>`; $('#seDetail').innerHTML=''; return; }
-  const hits = [];
-  for (let i = 0; i < ENT_KEYS.length; i++){
-    const p = ENT_KEYS[i].indexOf(q);
-    if (p >= 0) hits.push([i, p]);
-    if (hits.length > 600) break;
+  if (!q){
+    host.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <div>${esc(t('seStart'))}</div></div>`;
+    renderSelection();
+    return;
   }
-  hits.sort((a,b) => a[1]-b[1] || entities[b[0]].usd - entities[a[0]].usd);
-  if (!hits.length){ host.innerHTML = `<div class="empty">${esc(t('seNoResult'))}</div>`; $('#seDetail').innerHTML=''; return; }
-  const top = hits.slice(0,40);
-  host.innerHTML = `<p class="note" style="margin-top:0">${top.length}${hits.length>40?'+':''} ${esc(t('seResults'))}</p>`
-    + top.map(([i]) => { const e = entities[i];
-      return `<div class="ent" data-i="${i}"><div class="n">${esc(e.nm)}</div>
-        <div class="m"><span>${esc(t('inflow'))} ${fmtM(e.in)}</span><span>${esc(t('outflow'))} ${fmtM(e.out)}</span>
-        <span>${int(e.n)} ${esc(t('transactions'))}</span><span>${e.y0}–${e.y1}</span></div></div>`;
+
+  // Match on the raw name and on the normalised form, so "LAO BREWERY CO LTD"
+  // finds "LAO BREWERY CO.,LTD" and vice versa.
+  const qn = normEnt(q);
+  const seen = new Set(), groups = [];
+  for (let i = 0; i < entities.length; i++){
+    const pos = ENT_KEYS[i].indexOf(q);
+    const posN = qn ? ENT_NORM[i].indexOf(qn) : -1;
+    if (pos < 0 && posN < 0) continue;
+    const key = ENT_NORM[i];
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const idxs = ENT_GROUPS.get(key) || [i];
+    groups.push({key, idxs, rank:Math.min(pos < 0 ? 99 : pos, posN < 0 ? 99 : posN),
+                 tot:groupTotals(idxs)});
+    if (groups.length > 300) break;
+  }
+  if (!groups.length){
+    host.innerHTML = `<div class="empty">${esc(t('seNoResult'))}</div>`;
+    renderSelection();
+    return;
+  }
+  groups.sort((a,b) => a.rank - b.rank || b.tot.gross - a.tot.gross);
+  const shown = groups.slice(0, 30);
+
+  host.innerHTML = `<p class="note" style="margin:0 0 9px">${shown.length}${groups.length>30?'+':''} ${esc(t('seResults'))}</p>`
+    + shown.map((g,gi) => {
+      const all = g.idxs.every(i => state.sePick.has(i));
+      const label = entities[g.idxs[0]].nm;
+      return `<div class="ent ${all?'on':''}" data-g="${gi}">
+        <div class="row1" data-pick="${gi}">
+          <div class="tick-box"><svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg></div>
+          <div class="body">
+            <div class="n">${esc(label)}</div>
+            <div class="m">
+              <span>${esc(t('inflow'))} <b>${fmtM(g.tot.in)}</b></span>
+              <span>${esc(t('outflow'))} <b>${fmtM(g.tot.out)}</b></span>
+              <span><b>${int(g.tot.n)}</b> ${esc(t('transactions'))}</span>
+              <span>${g.tot.y0}–${g.tot.y1}</span>
+              ${g.idxs.length>1 ? `<button class="vbadge" data-v="${gi}">${g.idxs.length} ${esc(t('seSpellings'))}</button>` : ''}
+            </div>
+          </div>
+        </div>
+        ${g.idxs.length>1 ? `<div class="variants" data-vl="${gi}">${
+          g.idxs.map(i => `<div class="v ${state.sePick.has(i)?'on':''}" data-i="${i}">
+            <div class="tick-box"><svg viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></svg></div>
+            <div class="nm">${esc(entities[i].nm)}</div>
+            <div class="amt">${fmtM(entities[i].usd)}</div></div>`).join('')
+        }</div>` : ''}
+      </div>`;
     }).join('');
-  host.querySelectorAll('.ent').forEach(el => el.addEventListener('click', () => {
-    state.seSel = +el.dataset.i; renderEntity();
+
+  host.querySelectorAll('[data-pick]').forEach(el => el.addEventListener('click', e => {
+    if (e.target.closest('.vbadge')) return;
+    const g = shown[+el.dataset.pick];
+    const all = g.idxs.every(i => state.sePick.has(i));
+    g.idxs.forEach(i => all ? state.sePick.delete(i) : state.sePick.add(i));
+    renderSearch();
   }));
-  if (state.seSel >= 0 && top.some(([i])=>i===state.seSel)) renderEntity(); else $('#seDetail').innerHTML='';
+  host.querySelectorAll('.vbadge').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const list = host.querySelector(`[data-vl="${b.dataset.v}"]`);
+    if (list) list.classList.toggle('open');
+  }));
+  host.querySelectorAll('.variants .v').forEach(v => v.addEventListener('click', e => {
+    e.stopPropagation();
+    const i = +v.dataset.i;
+    state.sePick.has(i) ? state.sePick.delete(i) : state.sePick.add(i);
+    renderSearch();
+    const still = $('#seResults').querySelector(`[data-vl="${v.parentNode.dataset.vl}"]`);
+    if (still) still.classList.add('open');
+  }));
+  renderSelection();
 }
-function renderEntity(){
-  const e = entities[state.seSel]; if (!e){ $('#seDetail').innerHTML=''; return; }
-  const yrs = {}; e.yr.forEach(([y,f,n,u]) => {
-    const k = YEARS[y] ?? y; (yrs[k] = yrs[k] || {in:0,out:0,n:0});
-    yrs[k][f===REC?'in':'out'] += u; yrs[k].n += n; });
-  const yKeys = Object.keys(yrs).sort();
+
+function renderChips(){
+  const host = $('#seChips');
+  const picked = [...state.sePick];
+  if (!picked.length){ host.innerHTML = ''; return; }
+  const tot = groupTotals(picked);
+  host.innerHTML = `<div class="chips">
+    <span class="hd">${esc(t('seSelected'))} ${picked.length}</span>
+    ${picked.slice(0,12).map(i => `<span class="chip"><span>${esc(entities[i].nm)}</span>
+      <button data-x="${i}" aria-label="remove">&times;</button></span>`).join('')}
+    ${picked.length>12 ? `<span class="chip"><span>+${picked.length-12}</span></span>` : ''}
+    <button class="btn" id="seClearPick" style="margin-left:auto">${esc(t('seClearPick'))}</button>
+  </div>`;
+  host.querySelectorAll('[data-x]').forEach(b => b.addEventListener('click', () => {
+    state.sePick.delete(+b.dataset.x); renderSearch();
+  }));
+  const c = $('#seClearPick');
+  if (c) c.addEventListener('click', () => { state.sePick.clear(); renderSearch(); });
+}
+
+function renderSelection(){
+  const picked = [...state.sePick];
+  const host = $('#seDetail');
+  if (!picked.length){ host.innerHTML = ''; return; }
+  const a = aggregateEntities(picked);
+  const heading = picked.length === 1 ? entities[picked[0]].nm
+    : `${entities[picked[0]].nm} ${isLo()?'ແລະ ອີກ':'and'} ${picked.length-1} ${esc(t('seMoreNames'))}`;
+  const yKeys = Object.keys(a.yr).sort();
   const topList = (arr, lut, lao) => arr.length
     ? arr.map(([i,v]) => `<div class="t-r" style="padding:2px 0"><span class="${lao?'lao':''}">${esc(lut(i))}</span><span>${fmtM(v)}</span></div>`).join('')
     : `<span class="muted">—</span>`;
-  const txRows = e.tx.map(([d,f,b,c,amt,usd,ct,pu,other]) => `<tr>
+  const txRows = a.tx.map(([d,f,b,c,amt,usd,ct,pu,other]) => `<tr>
       <td>${esc(d)}</td>
       <td><span class="pill ${f===REC?'ok':'bad'}">${esc(f===REC?t('inflow'):t('outflow'))}</span></td>
       <td class="num">${num2(amt)} ${esc(dims.currencies[c]||'')}</td>
       <td class="num">${fmtM(usd,2)}</td>
       <td>${esc(BANKS[b]||'—')}</td>
-      <td>${esc(ct>=0?dims.countries[ct].code:'—')}</td>
+      <td>${esc(ct>=0?countryLabel(dims.countries[ct]):'—')}</td>
       <td class="name lao">${esc(pu>=0?PURPOSES[pu].name:'—')}</td>
       <td class="name">${esc(other||'—')}</td></tr>`).join('');
 
-  $('#seDetail').innerHTML = `
+  host.innerHTML = `
    <div class="grid g-4" style="margin-top:13px">
-     ${kpiCard(t('inflow'), fmtM(e.in), 'pos', `<span class="muted">${esc(t('seCounterparty'))}</span>`)}
-     ${kpiCard(t('outflow'), fmtM(e.out), 'neg', `<span class="muted">${esc(t('seCounterparty'))}</span>`)}
-     ${kpiCard(t('net'), fmtM(e.in-e.out), (e.in-e.out)>=0?'pos':'neg', '')}
-     ${kpiCard(t('records'), int(e.n), '', `<span class="muted">${esc(t('seActive'))} ${e.y0}–${e.y1}</span>`)}
+     ${kpiCard(t('inflow'), fmtM(a.in), 'pos', `<span class="muted">${esc(t('seCombined'))}</span>`)}
+     ${kpiCard(t('outflow'), fmtM(a.out), 'neg', `<span class="muted">${esc(t('seCombined'))}</span>`)}
+     ${kpiCard(t('net'), fmtM(a.in-a.out), (a.in-a.out)>=0?'pos':'neg',
+        `<span class="muted">${picked.length} ${esc(t('seNamesLbl'))}</span>`)}
+     ${kpiCard(t('records'), int(a.n), '', `<span class="muted">${esc(t('seActive'))} ${a.y0}–${a.y1}</span>`)}
    </div>
-   <div class="card" style="margin-top:13px"><h3 style="word-break:break-word">${esc(e.nm)}</h3>
-     <div class="grid g-4" style="margin-top:4px">
-       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopCtry'))}</div>${topList(e.ctry, i=>dims.countries[i]?countryLabel(dims.countries[i]):'—', isLo())}</div>
-       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopPur'))}</div>${topList(e.pur, i=>PURPOSES[i]?PURPOSES[i].name:'—', true)}</div>
-       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('seTopBank'))}</div>${topList(e.bank, i=>BANKS[i]||'—')}</div>
-       <div><div class="label" style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;margin-bottom:5px">${esc(t('currency'))}</div>${topList(e.curr, i=>dims.currencies[i]||'—')}</div>
+   <div class="card" style="margin-top:13px"><h3 style="word-break:break-word">${esc(heading)}</h3>
+     <p class="sub">${esc(t('seProfileSub'))}</p>
+     <div class="mini">
+       <div><div class="k">${esc(t('seTopCtry'))}</div>${topList(a.ctry, i=>dims.countries[i]?countryLabel(dims.countries[i]):'—', isLo())}</div>
+       <div><div class="k">${esc(t('seTopPur'))}</div>${topList(a.pur, i=>PURPOSES[i]?PURPOSES[i].name:'—', true)}</div>
+       <div><div class="k">${esc(t('seTopBank'))}</div>${topList(a.bank, i=>BANKS[i]||'—')}</div>
+       <div><div class="k">${esc(t('currency'))}</div>${topList(a.curr, i=>dims.currencies[i]||'—')}</div>
      </div></div>
    <div class="grid g-2">
      <div class="card"><h3>${esc(t('seYearly'))}</h3><div class="tw"><table><thead><tr>
-        <th style="text-align:left">${esc(isLo()?'ປີ':'Year')}</th><th>${esc(t('inflow'))}</th><th>${esc(t('outflow'))}</th><th>${esc(t('net'))}</th><th>${esc(t('records'))}</th>
+        <th style="text-align:left">${esc(isLo()?'ປີ':'Year')}</th><th>${esc(t('inflow'))}</th>
+        <th>${esc(t('outflow'))}</th><th>${esc(t('net'))}</th><th>${esc(t('records'))}</th>
         </tr></thead><tbody>${yKeys.map(y=>`<tr><td>${y}</td>
-        <td class="num">${fmtM(yrs[y].in,2)}</td><td class="num">${fmtM(yrs[y].out,2)}</td>
-        <td class="num ${yrs[y].in-yrs[y].out>=0?'pos':'neg'}">${fmtM(yrs[y].in-yrs[y].out,2)}</td>
-        <td class="num">${int(yrs[y].n)}</td></tr>`).join('')}</tbody></table></div></div>
+        <td class="num">${fmtM(a.yr[y].in,2)}</td><td class="num">${fmtM(a.yr[y].out,2)}</td>
+        <td class="num ${a.yr[y].in-a.yr[y].out>=0?'pos':'neg'}">${fmtM(a.yr[y].in-a.yr[y].out,2)}</td>
+        <td class="num">${int(a.yr[y].n)}</td></tr>`).join('')}</tbody></table></div></div>
      <div class="card"><h3>${esc(t('seYearly'))}</h3><div id="seChart"></div></div>
    </div>
-   <div class="card"><h3>${esc(t('seTop'))} <span class="hint">${esc(isLo()?'ສູງສຸດ':'top')} ${meta.entityTxLimit}</span></h3>
-     <p class="sub">${esc(isLo()?'ທຸລະກຳໃຫຍ່ສຸດຂອງຄູ່ຮ່ວມນີ້ທີ່ບັນທຶກໄວ້ໃນດັດຊະນີ':'Largest transactions carried in the index for this counterparty')}</p>
+   <div class="card"><h3>${esc(t('seTop'))}</h3>
+     <p class="sub">${esc(t('seTopSub'))}</p>
      <div class="scroll"><table><thead><tr>
-       <th style="text-align:left">${esc(t('date'))}</th><th style="text-align:left">${esc(t('net'))}</th>
+       <th style="text-align:left">${esc(t('date'))}</th><th style="text-align:left">${esc(t('flowCol'))}</th>
        <th>${esc(t('amount'))}</th><th>USD</th><th style="text-align:left">${esc(t('bank'))}</th>
        <th style="text-align:left">${esc(t('country'))}</th><th style="text-align:left">${esc(t('purpose'))}</th>
        <th style="text-align:left">${esc(t('seCounterparty'))}</th></tr></thead><tbody>${txRows}</tbody></table></div></div>`;
 
   barChart($('#seChart'), yKeys.map(y => ({label:y, values:[
-      {name:t('inflow'), value:yrs[y].in, color:cssv('--in')},
-      {name:t('outflow'), value:yrs[y].out, color:cssv('--out')}]})),
-    {h:240, w:440, fmt:v=>fmtM(v,2), axisFmt:v=>fmtM(v,0)});
+      {name:t('inflow'), value:a.yr[y].in, color:cssv('--in')},
+      {name:t('outflow'), value:a.yr[y].out, color:cssv('--out')}]})),
+    {h:240, fmt:v=>fmtM(v,2), axisFmt:v=>fmtM(v,0)});
+  mountExports(host);
 }
 
 /* ===================== FX & Duplicates ===================== */
@@ -2201,12 +2409,18 @@ function renderBanks(){
 const QCHECKS = () => [
   {k:3, label:isLo()?'ອັດຕາແລກປ່ຽນຢູ່ນອກຂອບເຂດ':'Exchange rate outside plausible band',
    why:isLo()?`ກີບ/ໂດລານອກຊ່ວງ ${int(meta.fxBand[0])}–${int(meta.fxBand[1])}`:`LAK/USD outside ${int(meta.fxBand[0])}–${int(meta.fxBand[1])}`},
-  {k:4, label:isLo()?'ບໍ່ມີມູນຄ່າ USD':'Missing USD amount', why:'Amount_USD is null'},
-  {k:5, label:isLo()?'ມູນຄ່າເປັນສູນ':'Zero amount', why:'Amount_USD = 0'},
-  {k:6, label:isLo()?'ມູນຄ່າຕິດລົບ':'Negative amount', why:'Amount_USD < 0'},
-  {k:7, label:isLo()?'ສົ່ງກ່ອນວັນທຸລະກຳ':'Submitted before transaction date', why:'Date_of_Submission < Date_of_Transaction'},
-  {k:8, label:isLo()?'ລະຫັດຈຸດປະສົງບໍ່ຖືກຕ້ອງ':'Unclassified purpose code', why:'Pur_5 does not resolve to a BOP category'},
-  {k:9, label:isLo()?'ບໍ່ມີປະເທດຄູ່ຮ່ວມ':'Missing counterpart country', why:'Country_Code is empty'},
+  {k:4, label:isLo()?'ບໍ່ມີມູນຄ່າ USD':'Missing USD amount',
+   why:isLo()?'ຊ່ອງ Amount_USD ບໍ່ມີຄ່າ':'Amount_USD is null'},
+  {k:5, label:isLo()?'ມູນຄ່າເປັນສູນ':'Zero amount',
+   why:isLo()?'Amount_USD ເທົ່າກັບ 0':'Amount_USD = 0'},
+  {k:6, label:isLo()?'ມູນຄ່າຕິດລົບ':'Negative amount',
+   why:isLo()?'Amount_USD ຕ່ຳກວ່າ 0':'Amount_USD < 0'},
+  {k:7, label:isLo()?'ສົ່ງກ່ອນວັນທຸລະກຳ':'Submitted before transaction date',
+   why:isLo()?'ວັນທີສົ່ງ ກ່ອນ ວັນທີທຸລະກຳ':'Date_of_Submission is earlier than Date_of_Transaction'},
+  {k:8, label:isLo()?'ລະຫັດຈຸດປະສົງບໍ່ຖືກຕ້ອງ':'Unclassified purpose code',
+   why:isLo()?'ລະຫັດ Pur_5 ບໍ່ກົງກັບໝວດ BOP ໃດ':'Pur_5 does not resolve to a BOP category'},
+  {k:9, label:isLo()?'ບໍ່ມີປະເທດຄູ່ຮ່ວມ':'Missing counterpart country',
+   why:isLo()?'ຊ່ອງ Country_Code ຫວ່າງເປົ່າ':'Country_Code is empty'},
 ];
 function renderQuality(){
   const per = new Map(), tot = new Array(12).fill(0);
@@ -2402,9 +2616,9 @@ function bump(map, key, vals){
 
 function buildImport(rows){
   const header = rows[0], col = mapColumns(header);
-  if (col.date < 0) throw new Error('No Date_of_Transaction column found.');
+  if (col.date < 0) throw new Error(t('errNoDate'));
   if (col.usd < 0 && (col.kip < 0 || col.fx < 0))
-    throw new Error('Need Amount_USD, or Amount_Kip together with Exchange_Rates_USD.');
+    throw new Error(t('errNoAmt'));
 
   const purposeCodes = PURPOSES.map(p => p.code);
   // Same longest-prefix rule as report_line_for() in the build script.
@@ -2451,7 +2665,7 @@ function buildImport(rows){
     if (!stat.minD || ymd < stat.minD) stat.minD = ymd;
     if (!stat.maxD || ymd > stat.maxD) stat.maxD = ymd;
   }
-  if (!stat.ok) throw new Error('No usable rows. Check the date and amount columns.');
+  if (!stat.ok) throw new Error(t('errNoUsable'));
 
   extendPeriods([...months]);
 
@@ -2820,24 +3034,24 @@ function initImport(){
       const text = await f.text();
       if (/^\s*[{[]/.test(text)){
         const pack = JSON.parse(text);
-        if (!pack.cubes || !pack.dims) throw new Error('Not a valid ITRS data pack.');
+        if (!pack.cubes || !pack.dims) throw new Error(t('errNotPack'));
         pending = {kind:'pack', payload:pack};
-        say('ok', `Data pack: <b>${int(pack.meta.rows)}</b> transactions, `
+        say('ok', `${esc(t('impPack'))}: <b>${int(pack.meta.rows)}</b> ${esc(t('transactions'))}, `
           + `${esc(pack.meta.dateMin)} → ${esc(pack.meta.dateMax)}. `
-          + `Applying replaces the current dataset.`);
+          + `${esc(t('impPackWarn'))}`);
       } else {
         const rows = parseCsv(text);
-        if (rows.length < 2) throw new Error('The file has no data rows.');
+        if (rows.length < 2) throw new Error(t('errNoRows'));
         pending = {kind:'csv', payload:rows};
         const cols = mapColumns(rows[0]);
         const missing = [];
         if (cols.date < 0) missing.push('Date_of_Transaction');
         if (cols.usd < 0 && (cols.kip < 0 || cols.fx < 0)) missing.push('Amount_USD');
-        if (missing.length) throw new Error('Missing column(s): ' + missing.join(', '));
-        say('ok', `<b>${int(rows.length-1)}</b> data rows, `
-          + `<b>${rows[0].length}</b> columns recognised. Press Apply to merge.`);
+        if (missing.length) throw new Error(t('errMissing') + ' ' + missing.join(', '));
+        say('ok', `<b>${int(rows.length-1)}</b> ${esc(t('impReady'))} `
+          + `<b>${rows[0].length}</b> ${esc(t('impCols'))}.`);
         const named = Object.entries(cols).filter(([,v]) => v >= 0).map(([k]) => k);
-        log.innerHTML = `<p class="note" style="margin:0">Mapped: ${esc(named.join(', '))}</p>`;
+        log.innerHTML = `<p class="note" style="margin:0">${esc(t('impMapped'))}: ${esc(named.join(', '))}</p>`;
       }
       apply.disabled = false;
     } catch (err){
@@ -3021,10 +3235,10 @@ function initControls(){
   let seT = null;
   $('#seInput').addEventListener('input', e => {
     clearTimeout(seT);
-    seT = setTimeout(() => { state.seQuery = e.target.value; state.seSel = -1; renderSearch(); }, 160);
+    seT = setTimeout(() => { state.seQuery = e.target.value; renderSearch(); }, 160);
   });
   $('#seClear').addEventListener('click', () => {
-    $('#seInput').value = ''; state.seQuery = ''; state.seSel = -1; renderSearch(); });
+    $('#seInput').value = ''; state.seQuery = ''; state.sePick.clear(); renderSearch(); });
 
   $('#nav').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;

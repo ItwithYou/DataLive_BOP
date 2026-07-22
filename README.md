@@ -91,6 +91,32 @@ figure updates.
 The cleaning rules applied on import mirror `create_clean_view()` in the build
 script. If you change one, change the other.
 
+## Searching for a company
+
+The same company is registered under many spellings — `LAO BREWERY CO.,LTD`,
+`LAO BREWERY CO., LTD`, `LAO BREWERY CO LTD`, `LAO BREWERY CO LIMITED` are all
+one business. Searching each separately gives four partial answers and no total.
+
+So the search groups them. A normalised key is built by stripping punctuation,
+spacing and legal-form words in both scripts (`CO`, `LTD`, `LIMITED`, `SOLE`,
+`GROUP`, `ບໍລິສັດ`, `ຈຳກັດ`, `ຜູ້ດຽວ` …), and every spelling that reduces to the
+same key lands in one result card showing the combined totals. Matching runs
+against both the raw and the normalised form, so `LAO BREWERY CO LTD` finds the
+comma-spelled variant and vice versa.
+
+Tap a card to select the whole group. Tap the **N spellings** badge to expand it
+and pick individual variants — useful when the grouping is too eager, or when
+you want a parent and a subsidiary treated as one. Selected names appear as
+chips, and the profile below covers all of them at once: combined inflow,
+outflow, net, records, top countries, purposes, banks and currencies, a
+year-by-year table and chart, and the largest transactions merged and re-sorted.
+
+Selection is additive across searches, so you can search one name, select it,
+search another, and keep building a set.
+
+The grouping is a display convenience, not a change to the data — nothing is
+rewritten, and the underlying records keep their original names.
+
 ## Getting charts out
 
 Hover any chart card and three buttons appear top-right:
