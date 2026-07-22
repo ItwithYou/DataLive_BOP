@@ -283,6 +283,10 @@ def create_clean_view(con):
             Amount_USD                                                AS usd,
             Amount_Kip                                                AS kip,
             Exchange_Rates_USD                                        AS fx,
+            -- The original-currency rate (LAK per unit). This is where a
+            -- misapplied-currency error lives: a USD transfer that carries a
+            -- THB-magnitude rate here converts to the wrong number of kip.
+            Exchange_Rates_Kip                                        AS fxkip,
 
             ("Use"     = 'Yes')                                       AS use_flag,
             (M2        = 'Yes')                                       AS m2_flag,
@@ -831,18 +835,67 @@ def build_exceptions(con, dims):
             FROM txf t JOIN year_lk y ON y.yr = t.yr JOIN bank_lk bk ON bk.code = t.bank
             WHERE t.bad_fx GROUP BY 1,2 ORDER BY 1,2""".format(lo=FX_MIN, hi=FX_MAX)).fetchall()
     ]
+    # Per (currency, year) median original-currency rate. This is the reference
+    # a transaction's own rate is judged against, and the client uses it to name
+    # which currency a wrong rate actually belongs to.
+    ccy_rates = {}
+    for c, y, m, n in con.execute("""
+            SELECT currency, yr, MEDIAN(fxkip) AS m, COUNT(*) AS n
+            FROM tx WHERE fxkip > 0 AND currency IS NOT NULL
+            GROUP BY 1,2 HAVING COUNT(*) >= 30""").fetchall():
+        ci = curr_ix.get(c)
+        if ci is not None:
+            ccy_rates.setdefault(ci, {})[int(y)] = r2(m, 3)
+    exc["ccyRates"] = ccy_rates
+
+    # Totals across every transaction (not just the shown top 300), so the tab
+    # can state how many wrong-rate / out-of-band / missing records exist.
+    fc = con.execute(f"""
+        WITH med AS (SELECT currency, yr, MEDIAN(fxkip) AS m FROM tx
+                     WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30)
+        SELECT
+          COUNT(*) FILTER (WHERE t.usd IS NULL) AS missing,
+          COUNT(*) FILTER (WHERE t.usd <= 0) AS nonpos,
+          COUNT(*) FILTER (WHERE med.m IS NOT NULL AND t.fxkip > 0
+                           AND (t.fxkip > med.m*3 OR t.fxkip < med.m/3)) AS wrongrate,
+          COUNT(*) FILTER (WHERE t.bad_fx AND t.usd > 0) AS band
+        FROM tx t LEFT JOIN med ON med.currency = t.currency AND med.yr = t.yr
+    """).fetchone()
+    exc["fxCounts"] = {"missing": int(fc[0]), "nonpos": int(fc[1] or 0),
+                       "wrongrate": int(fc[2] or 0), "band": int(fc[3] or 0)}
+
+    # ---- Wrong-currency rate: the rate a bank filed sits far from what that
+    # currency was actually worth, almost always because they applied another
+    # currency's rate (a USD transfer that used the THB rate, and so on). Ranked
+    # by how much the mistake distorts the USD figure, since that is what feeds
+    # the balance of payments. The band check (null / absurd USD) stays too.
     exc["fxRows"] = [
-        {"d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
-         "c": curr_ix.get(c, -1), "amt": r2(amt, 2), "fx": None if fx is None else r2(fx, 2),
-         "usd": r2(usd, 2), "exp": r2(exp, 0), "ref": ref}
-        for d, b, fl, c, amt, fx, usd, exp, ref in con.execute(f"""
+        {"id": hid, "d": d, "b": bank_ix.get(b, -1), "f": 0 if fl == "Payment" else 1,
+         "c": curr_ix.get(c, -1), "amt": r2(amt, 2),
+         "rate": None if rate is None else r2(rate, 3),
+         "exp": None if exp is None else r2(exp, 3),
+         "usd": r2(usd, 2), "ref": ref,
+         "kind": kind}
+        for hid, d, b, fl, c, amt, rate, exp, usd, ref, kind in con.execute(f"""
             WITH med AS (
-                SELECT yr, MEDIAN(fx) AS m FROM tx
-                WHERE fx BETWEEN {FX_MIN} AND {FX_MAX} GROUP BY 1)
-            SELECT t.ymd, t.bank, t.flow, t.currency, t.amt_orig, t.fx, t.usd, med.m, t.ref
-            FROM tx t LEFT JOIN med ON med.yr = t.yr
-            WHERE t.bad_fx
-            ORDER BY COALESCE(t.usd, 0) DESC, t.ymd
+                SELECT currency, yr, MEDIAN(fxkip) AS m FROM tx
+                WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30)
+            SELECT t.Hash_ID, t.ymd, t.bank, t.flow, t.currency, t.amt_orig,
+                   t.fxkip, med.m, t.usd, t.ref,
+                   CASE
+                     WHEN t.usd IS NULL THEN 'missing'
+                     WHEN t.usd <= 0 THEN 'nonpos'
+                     WHEN med.m IS NOT NULL AND t.fxkip > 0
+                          AND (t.fxkip > med.m * 3 OR t.fxkip < med.m / 3) THEN 'wrongrate'
+                     WHEN t.bad_fx THEN 'band'
+                     ELSE 'ok' END AS kind
+            FROM tx t LEFT JOIN med ON med.currency = t.currency AND med.yr = t.yr
+            WHERE (t.usd IS NULL OR t.usd <= 0 OR t.bad_fx
+                   OR (med.m IS NOT NULL AND t.fxkip > 0
+                       AND (t.fxkip > med.m * 3 OR t.fxkip < med.m / 3)))
+            ORDER BY CASE WHEN med.m IS NOT NULL AND t.fxkip > 0
+                          THEN ABS(COALESCE(t.usd,0) * (med.m / t.fxkip) - COALESCE(t.usd,0))
+                          ELSE COALESCE(t.usd, 0) END DESC, t.ymd
             LIMIT {EXCEPTION_LIMIT}""").fetchall()
     ]
 
@@ -1051,8 +1104,25 @@ def build_entities(con, dims):
     kept_usd = sum(e["usd"] for e in entities)
     print(f"  entity index: {len(entities):,} of {int(total_named[0]):,} named entities "
           f"({100 * kept_usd / (total_named[1] or 1):.1f}% of named value)")
+
+    # Full searchable name list: EVERY counterparty, sender or receiver, so the
+    # Search tab can find anyone - not just the top few thousand by value.
+    # Only name + count + received + sent USD; no per-transaction detail, which
+    # is what keeps this affordable. Rich detail stays with the top entities.
+    # Rows: [name, count, recvUsdM, sentUsdM]. Sorted by name so gzip finds the
+    # shared prefixes between "LAO ..." and "LAO ..." neighbours.
+    allnames = [
+        [nm, int(c), r2(recv), r2(sent)]
+        for nm, c, recv, sent in con.execute("""
+            SELECT TRIM(nm) AS n, COUNT(*) AS c,
+                   SUM(CASE WHEN side = 1 THEN usd ELSE 0 END)/1e6 AS recv,
+                   SUM(CASE WHEN side = 0 THEN usd ELSE 0 END)/1e6 AS sent
+            FROM ent GROUP BY 1 ORDER BY LOWER(TRIM(nm))""").fetchall()
+    ]
+    print(f"  full name index: {len(allnames):,} names")
     return entities, {"total": int(total_named[0]), "kept": len(entities),
-                      "coverPct": r2(100 * kept_usd / (total_named[1] or 1), 1)}
+                      "coverPct": r2(100 * kept_usd / (total_named[1] or 1), 1),
+                      "allNames": len(allnames)}, allnames
 
 
 # --------------------------------------------------------------------------
@@ -1236,7 +1306,7 @@ def main():
               f"{ds[t]['extra']:,} extra rows, ${ds[t]['usdM']:,.1f}m")
 
     print("Building entity index ...")
-    entities, ent_meta = build_entities(con, dims)
+    entities, ent_meta, all_names = build_entities(con, dims)
 
     meta = build_meta(con, files, ent_meta, cfg)
     _bank_officers, _bank_names = load_bank_officers()
@@ -1253,7 +1323,7 @@ def main():
                "exceptions": exceptions, "entities": entities,
                "rules": load_bop_rules(),
                "officers": _bank_officers, "bankNames": _bank_names,
-               "nameAcronyms": _acronyms}
+               "nameAcronyms": _acronyms, "allNames": all_names}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 

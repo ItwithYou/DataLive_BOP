@@ -377,7 +377,29 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .narr{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);
-  border-radius:8px;padding:13px 15px;line-height:1.95;font-size:13.5px;white-space:pre-wrap;word-break:break-word}
+  border-radius:8px;padding:15px 18px;line-height:1.85;font-size:13.5px;word-break:break-word}
+/* Report prose: a bold heading, then paragraphs that flow with a first-line
+   indent and no blank line between them, the way a written report reads. */
+.narr h4{margin:0 0 9px;font-size:14.5px;font-weight:700;line-height:1.4}
+.narr p{margin:0;text-indent:1.8em;text-align:justify;hyphens:auto}
+@media(max-width:639px){.narr p{text-align:left;text-indent:1.4em}}
+/* Inline exchange-rate correction in the FX table. */
+.fxedit{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.fxedit .fxrate{width:88px;font-size:12px;padding:4px 7px;min-height:30px;text-align:right;
+  border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink-1)}
+.fxedit .fxrate:focus{border-color:var(--accent);outline:none}
+.fxedit .btn{padding:4px 9px;min-height:30px;font-size:11.5px}
+.fxedit .xbtn{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink-3);cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto}
+.fxedit .xbtn:hover{color:var(--neg);border-color:var(--neg)}
+/* Light result: a name that can be found but carries no chartable detail. */
+.se-more-h{margin:16px 2px 8px;font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:12px}
+.ent-lite{padding:8px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;
+  background:var(--panel-2)}
+.ent-lite .n{font-size:13px;font-weight:600;color:var(--ink-1);line-height:1.3}
+.ent-lite .m{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px;font-size:11.5px;color:var(--ink-3)}
+.ent-lite .m b{color:var(--ink-2);font-weight:650}
 .searchbar{display:flex;gap:8px;align-items:center;margin-bottom:11px}
 .searchbar .field{position:relative;flex:1;display:flex}
 .searchbar input{flex:1;max-width:none;font-size:15px;padding:10px 12px 10px 36px;min-height:var(--tap)}
@@ -1142,6 +1164,9 @@ const I18N = {
  seNoResult:["No counterparty matches that name.","ບໍ່ພົບຄູ່ຮ່ວມທີ່ກົງກັບຊື່ນີ້."],
  seStart:["Start typing to search the counterparty index.","ເລີ່ມພິມເພື່ອຄົ້ນຫາ."],
  seResults:["matches","ຜົນລັບ"], seTop:["Largest transactions","ທຸລະກຳໃຫຍ່ສຸດ"],
+ seMore:["more","ເພີ່ມເຕີມ"],
+ seMoreH:["Other matches — findable, without full detail","ຜົນລັບອື່ນໆ — ຄົ້ນພົບໄດ້ ແຕ່ບໍ່ມີລາຍລະອຽດເຕັມ"],
+ seRefine:["Refine the search to narrow these down.","ພິມເພີ່ມເພື່ອລົດຜົນລັບໃຫ້ແຄບລົງ."],
  seSpellings:["spellings","ຮູບແບບການຂຽນ"], seSelected:["Selected","ທີ່ເລືອກ"],
  seClearPick:["Clear selection","ລຶບການເລືອກ"], seCombined:["Combined","ລວມກັນ"],
  seNamesLbl:["names combined","ຊື່ທີ່ລວມກັນ"], seMoreNames:["more","ຊື່ອື່ນ"],
@@ -1154,6 +1179,15 @@ const I18N = {
  fxTitle:["Exchange rate validation","ການກວດສອບອັດຕາແລກປ່ຽນ"],
  fxRate:["Rate (LAK/USD)","ອັດຕາ (ກີບ/ໂດລາ)"], fxExpected:["Year median","ຄ່າກາງຂອງປີ"],
  fxIssue:["Issue","ບັນຫາ"], fxNull:["Missing","ບໍ່ມີຄ່າ"], fxLow:["Too low","ຕ່ຳເກີນໄປ"], fxHigh:["Too high","ສູງເກີນໄປ"],
+ fxWrong:["Wrong rate","ອັດຕາຜິດ"], fxWrongSub:["Another currency's rate applied","ໃຊ້ອັດຕາຂອງສະກຸນເງິນອື່ນ"],
+ fxBand:["Out of band","ນອກຂອບ"], fxBandSub:["Rate far from any currency","ອັດຕາຫ່າງຈາກທຸກສະກຸນເງິນ"],
+ fxNullSub:["No USD value recorded","ບໍ່ມີມູນຄ່າ USD"],
+ fxNonpos:["Zero / negative","ສູນ / ຕິດລົບ"],
+ fxFixed:["Corrected here","ແກ້ໄຂແລ້ວ"], fxFixedSub:["Saved on this device","ບັນທຶກໃນອຸປະກອນນີ້"],
+ fxLooks:["Looks like {c} rate","ຄ້າຍອັດຕາ {c}"],
+ fxRateUsed:["Rate used","ອັດຕາທີ່ໃຊ້"], fxSuggest:["Suggested","ອັດຕາທີ່ແນະນຳ"],
+ fxUsdNow:["USD now","USD ປັດຈຸບັນ"], fxUsdNew:["Corrected USD","USD ຫຼັງແກ້"],
+ fxCorrect:["Correct rate","ແກ້ອັດຕາ"], fxApply:["Use suggested","ໃຊ້ຄ່າແນະນຳ"],
  fxByYear:["FX errors by year","ຄວາມຜິດພາດອັດຕາຕາມປີ"], fxByYearSub:["Null, too low, too high","ບໍ່ມີຄ່າ, ຕ່ຳ, ສູງ"],
  dupTitle:["Duplicate transaction detection","ການກວດຫາທຸລະກຳຊ້ຳ"],
  dupSub:["Three confidence tiers","ສາມລະດັບຄວາມໜ້າເຊື່ອຖື"],
@@ -2297,7 +2331,11 @@ function renderWeekly(){
   $('#wkTable').innerHTML = h + '</tbody></table>'
     + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`;
 
-  $('#wkNarrative').textContent = narrative(cur, A, B, state.wkNarr);
+  // The first block is the heading; the rest are paragraphs. Rendering them as
+  // real <p> elements gives a first-line indent and no blank-line gaps.
+  const paras = narrative(cur, A, B, state.wkNarr).split(/\n\n+/).map(s => s.trim()).filter(Boolean);
+  $('#wkNarrative').innerHTML = paras.map((p, i) =>
+    i === 0 ? `<h4>${esc(p)}</h4>` : `<p>${esc(p)}</p>`).join('');
   const wc = weekCurrency(cur.from, cur.to);
   renderWkCurrency(wc);
   renderWkBanks(cur.from, cur.to);
@@ -2494,6 +2532,10 @@ function defaultRange(){
 }
 /* ===================== Search ===================== */
 const ENT_KEYS = entities.map(e => e.nm.toUpperCase());
+// Every counterparty, sender or receiver: [name, count, recvUsdM, sentUsdM].
+const ALL_NAMES = DATA.allNames || [];
+let ALL_UP = null;   // uppercase copy, built on first search - 259k strings
+const allUpper = () => (ALL_UP || (ALL_UP = ALL_NAMES.map(r => r[0].toUpperCase())));
 
 /* The same company is registered under many spellings — punctuation, legal-form
    suffixes, spacing. Stripping those gives a key that pulls the variants
@@ -2547,8 +2589,8 @@ function renderSearch(){
   $('#seInput').placeholder = t('seePlaceholder');
   const em = meta.entityMeta;
   $('#seSub').textContent = isLo()
-    ? `ດັດຊະນີ ${int(em.kept)} ຄູ່ຮ່ວມໃຫຍ່ສຸດ ຈາກ ${int(em.total)} ທີ່ມີຊື່ (${em.coverPct}% ຂອງມູນຄ່າທີ່ມີຊື່). ຊື່ທີ່ຂຽນຕ່າງກັນຂອງບໍລິສັດດຽວກັນຈະຖືກຈັດເປັນກຸ່ມ.`
-    : `Index of the ${int(em.kept)} largest counterparties out of ${int(em.total)} named (${em.coverPct}% of named value). Spelling variants of the same company are grouped.`;
+    ? `ຄົ້ນຫາໄດ້ທຸກຄູ່ຮ່ວມ (ຜູ້ສົ່ງ ແລະ ຜູ້ຮັບ) ທັງໝົດ ${int(ALL_NAMES.length)} ຊື່. ${int(em.kept)} ຊື່ໃຫຍ່ສຸດມີລາຍລະອຽດເຕັມ ແລະ ປຽບທຽບໄດ້.`
+    : `Search every counterparty, sender and receiver — all ${int(ALL_NAMES.length)} names. The ${int(em.kept)} largest carry full detail and can be compared.`;
 
   renderChips();
   const q = state.seQuery.trim().toUpperCase();
@@ -2585,7 +2627,25 @@ function renderSearch(){
   groups.sort((a,b) => a.rank - b.rank || b.tot.gross - a.tot.gross);
   const shown = groups.slice(0, 30);
 
-  host.innerHTML = `<p class="note" style="margin:0 0 9px">${shown.length}${groups.length>30?'+':''} ${esc(t('seResults'))}</p>`
+  // Everyone else who matches, from the full name list. A name already shown as
+  // a rich entity (same normalised key) is skipped so it is not listed twice.
+  const richKeys = new Set();
+  for (const g of groups) richKeys.add(g.key);
+  const up = allUpper();
+  const extra = [];
+  if (q.length >= 2){
+    for (let i = 0; i < ALL_NAMES.length; i++){
+      if (up[i].indexOf(q) < 0) continue;
+      const nm = ALL_NAMES[i][0];
+      if (richKeys.has(normEnt(nm) || nm.toUpperCase())) continue;
+      extra.push(ALL_NAMES[i]);
+      if (extra.length > 400) break;
+    }
+    extra.sort((a,b) => (b[2]+b[3]) - (a[2]+a[3]));
+  }
+  const extraShown = extra.slice(0, 60);
+
+  host.innerHTML = `<p class="note" style="margin:0 0 9px">${shown.length}${groups.length>30?'+':''} ${esc(t('seResults'))}${extra.length?` · ${extra.length}${extra.length>400?'+':''} ${esc(t('seMore'))}`:''}</p>`
     + shown.map((g,gi) => {
       const all = g.idxs.every(i => state.sePick.has(i));
       const label = entities[g.idxs[0]].nm;
@@ -2610,7 +2670,18 @@ function renderSearch(){
             <div class="amt">${fmtM(entities[i].usd)}</div></div>`).join('')
         }</div>` : ''}
       </div>`;
-    }).join('');
+    }).join('')
+    + (extraShown.length ? `<div class="se-more-h">${esc(t('seMoreH'))}</div>`
+        + extraShown.map(r => `<div class="ent-lite">
+            <div class="n">${esc(titleName(r[0]))}</div>
+            <div class="m">
+              <span>${esc(t('inflow'))} <b>${fmtM(r[2])}</b></span>
+              <span>${esc(t('outflow'))} <b>${fmtM(r[3])}</b></span>
+              <span><b>${int(r[1])}</b> ${esc(t('transactions'))}</span>
+            </div></div>`).join('')
+        + (extra.length > extraShown.length
+            ? `<p class="note" style="margin:9px 2px 0">${esc(t('seRefine'))}</p>` : '')
+      : '');
 
   host.querySelectorAll('[data-pick]').forEach(el => el.addEventListener('click', e => {
     if (e.target.closest('.vbadge')) return;
@@ -2724,6 +2795,8 @@ function chkTotals(){
     if (state.bank>=0 && r[1]!==state.bank) continue;
     fxNull += r[2]; fxLow += r[3]; fxHigh += r[4];
   }
+  // System-wide totals by kind (not capped at the shown 300).
+  const fc = exceptions.fxCounts || {wrongrate:0, band:0, missing:0, nonpos:0};
   const dup = {};
   for (const tier of ['A','B','C']){
     let extra=0, usd=0;
@@ -2734,7 +2807,37 @@ function chkTotals(){
     }
     dup[tier] = {extra, usd};
   }
-  return {fxNull, fxLow, fxHigh, fxTotal:fxNull+fxLow+fxHigh, dup};
+  return {fxNull, fxLow, fxHigh, fxTotal:fxNull+fxLow+fxHigh, fc, dup};
+}
+
+/* ---- exchange-rate corrections -------------------------------------------
+   A wrong rate is corrected on this device only: the fix is keyed by the
+   transaction's Hash_ID in localStorage, applied to the USD shown here, and
+   exportable to send to the bank. It does not (yet) flow into the reports. */
+const FXC_KEY = 'itrs-fxcorr';
+function fxCorrections(){
+  try { return JSON.parse(localStorage.getItem(FXC_KEY) || '{}'); } catch (e) { return {}; }
+}
+function setFxCorrection(id, rate){
+  const all = fxCorrections();
+  if (rate == null || !isFinite(rate) || rate <= 0) delete all[id];
+  else all[id] = rate;
+  try { localStorage.setItem(FXC_KEY, JSON.stringify(all)); } catch (e) {}
+}
+/** The currency whose typical rate for that year is closest to `rate`, so a
+    misapplied rate can be named ("this looks like the THB rate"). */
+function looksLikeCurrency(rate, year){
+  if (!rate || !exceptions.ccyRates) return null;
+  let best = null, bestRatio = 1.6;   // must be within ~1.6x to claim a match
+  for (const [ci, byYear] of Object.entries(exceptions.ccyRates)){
+    const yrs = Object.keys(byYear).map(Number);
+    const yr = yrs.includes(year) ? year : yrs.reduce((a,b)=>Math.abs(b-year)<Math.abs(a-year)?b:a, yrs[0]);
+    const m = byYear[yr];
+    if (!m) continue;
+    const ratio = m > rate ? m/rate : rate/m;
+    if (ratio < bestRatio){ bestRatio = ratio; best = dims.currencies[+ci]; }
+  }
+  return best;
 }
 /** Exchange rates and duplicates are separate checks with separate owners, so
     they are separate tabs. fxExceptions() is shared with the officer tab. */
@@ -2744,42 +2847,100 @@ function fxExceptions(){
     return y>=state.yFrom && y<=state.yTo && (state.bank<0 || r.b===state.bank);
   });
 }
+/** Everything the tab needs to know about one flagged transaction, including
+    any correction the user has already saved. */
+function fxDetail(r){
+  const corr = fxCorrections();
+  const year = +r.d.slice(0,4);
+  const looks = r.kind === 'wrongrate' ? looksLikeCurrency(r.rate, year) : null;
+  const edited = corr[r.id];                                   // user-entered rate
+  const suggest = r.exp;                                       // build-computed expected
+  const eff = edited != null ? edited : null;                  // applied rate, if any
+  // USD scales linearly with the rate, so a corrected USD is the current USD
+  // times how much the rate changed. Missing USD cannot be scaled.
+  const scaled = (rate) => (r.usd != null && r.rate) ? r.usd * (rate / r.rate) : null;
+  return {looks, suggest, edited, eff,
+          suggestUsd: suggest ? scaled(suggest) : null,
+          correctedUsd: eff ? scaled(eff) : null};
+}
 function renderFx(){
-  const c = chkTotals();
+  const c = chkTotals(), fc = c.fc;
+  const corr = fxCorrections();
+  const nCorr = Object.keys(corr).length;
   $('#fxKpis').innerHTML =
-    kpiCard(t('chkFx'), int(c.fxTotal), c.fxTotal?'neg':'',
-      `<span class="muted">${int(c.fxNull)} ${esc(t('fxNull'))} · ${int(c.fxLow)} ${esc(t('fxLow'))} · ${int(c.fxHigh)} ${esc(t('fxHigh'))}</span>`) +
-    kpiCard(t('fxNull'), int(c.fxNull), c.fxNull?'neg':'', '') +
-    kpiCard(t('fxLow'), int(c.fxLow), c.fxLow?'neg':'', '') +
-    kpiCard(t('fxHigh'), int(c.fxHigh), c.fxHigh?'neg':'', '');
+    kpiCard(t('fxWrong'), int(fc.wrongrate), fc.wrongrate?'neg':'',
+      `<span class="muted">${esc(t('fxWrongSub'))}</span>`) +
+    kpiCard(t('fxBand'), int(fc.band), fc.band?'neg':'',
+      `<span class="muted">${esc(t('fxBandSub'))}</span>`) +
+    kpiCard(t('fxNull'), int(fc.missing), fc.missing?'neg':'',
+      `<span class="muted">${esc(t('fxNullSub'))}</span>`) +
+    kpiCard(t('fxFixed'), int(nCorr), nCorr?'pos':'',
+      `<span class="muted">${esc(t('fxFixedSub'))}</span>`);
 
-  $('#fxSub').textContent = isLo()
-    ? `ອັດຕາທີ່ຖືກຕ້ອງຄວນຢູ່ລະຫວ່າງ ${int(meta.fxBand[0])}–${int(meta.fxBand[1])} ກີບ/ໂດລາ. ສະແດງ ${exceptions.fxRows.length} ລາຍການທີ່ມີມູນຄ່າສູງສຸດ.`
-    : `A valid rate sits between ${int(meta.fxBand[0])} and ${int(meta.fxBand[1])} LAK/USD. Showing the ${exceptions.fxRows.length} largest exceptions.`;
-  const fxRows = exceptions.fxRows.filter(r => {
-    const y = YEARS.indexOf(+r.d.slice(0,4));
-    return y>=state.yFrom && y<=state.yTo && (state.bank<0 || r.b===state.bank);
-  });
-  const issue = r => r.fx == null ? t('fxNull') : r.fx < meta.fxBand[0] ? t('fxLow') : t('fxHigh');
+  $('#fxSub').innerHTML = isLo()
+    ? `ລາຍການທີ່ອັດຕາແລກປ່ຽນເບິ່ງຄືຜິດ — ສ່ວນຫຼາຍແມ່ນທະນາຄານໃສ່ອັດຕາຂອງສະກຸນເງິນອື່ນ (ເຊັ່ນ ໂອນ USD ແຕ່ໃຊ້ອັດຕາ THB). ສະແດງ ${exceptions.fxRows.length} ລາຍການທີ່ບິດເບືອນມູນຄ່າ USD ຫຼາຍສຸດ. ພິມອັດຕາທີ່ຖືກຕ້ອງເພື່ອແກ້ໄຂ (ບັນທຶກໄວ້ໃນອຸປະກອນນີ້).`
+    : `Transactions whose exchange rate looks wrong — usually a bank applying another currency's rate (a USD transfer that used the THB rate). Showing the ${exceptions.fxRows.length} that distort USD the most. Type the correct rate to fix one (saved on this device).`;
+
+  const fxRows = fxExceptions();
+  const kindPill = r => {
+    if (r.kind === 'wrongrate'){ const l = looksLikeCurrency(r.rate, +r.d.slice(0,4));
+      return `<span class="pill bad">${esc(l ? t('fxLooks').replace('{c}', l) : t('fxWrong'))}</span>`; }
+    if (r.kind === 'missing') return `<span class="pill bad">${esc(t('fxNull'))}</span>`;
+    if (r.kind === 'nonpos') return `<span class="pill bad">${esc(t('fxNonpos'))}</span>`;
+    return `<span class="pill warn">${esc(t('fxBand'))}</span>`;
+  };
   sortableTable($('#fxTable'), {
     cols:[
       {k:'d', t:t('date'), align:'left'},
       {k:'b', t:t('bank'), align:'left', fmt:v=>esc(BANKS[v]||'—')},
-      {k:'f', t:t('net'), align:'left', fmt:v=>`<span class="pill ${v===REC?'ok':'bad'}">${esc(v===REC?t('inflow'):t('outflow'))}</span>`},
       {k:'amt', t:t('amount'), fmt:(v,r)=>num2(v)+' '+(dims.currencies[r.c]||'')},
-      {k:'fx', t:t('fxRate'), fmt:v=>v==null?`<span class="neg">null</span>`:`<span class="neg">${num2(v)}</span>`},
-      {k:'exp', t:t('fxExpected'), fmt:v=>`<span class="muted">${v?int(v):'—'}</span>`},
-      {k:'usd', t:'USD', fmt:v=>fmtM(v,2)},
-      {k:'d', t:t('fxIssue'), align:'left', fmt:(v,r)=>`<span class="pill bad">${esc(issue(r))}</span>`},
+      {k:'rate', t:t('fxRateUsed'), fmt:(v,r)=>v==null?`<span class="neg">null</span>`
+          :`<span class="neg">${num2(v)}</span>`},
+      {k:'kind', t:t('fxIssue'), align:'left', fmt:(v,r)=>kindPill(r)},
+      {k:'exp', t:t('fxSuggest'), fmt:(v,r)=>v?`<span class="pos">${num2(v)}</span>`:'—'},
+      {k:'usd', t:t('fxUsdNow'), fmt:v=>v==null?'—':fmtM(v/1e6,2)},
+      {k:'id', t:t('fxCorrect'), align:'left', sort:false, fmt:(v,r)=>{
+        const dt = fxDetail(r);
+        const val = dt.edited != null ? num2(dt.edited) : '';
+        const done = dt.edited != null;
+        return `<span class="fxedit">
+          <input type="number" step="any" class="fxrate" data-id="${esc(r.id)}"
+                 value="${val}" placeholder="${r.exp?num2(r.exp):'—'}" aria-label="rate">
+          ${done ? `<span class="pill ok" title="${esc(t('fxUsdNew'))}">${fmtM(dt.correctedUsd/1e6,2)}</span>
+                    <button class="xbtn fxclear" data-id="${esc(r.id)}" title="${esc(t('clear'))}">×</button>`
+                 : `<button class="btn fxuse" data-id="${esc(r.id)}" data-exp="${r.exp||''}">${esc(t('fxApply'))}</button>`}
+        </span>`;
+      }},
     ], rows:fxRows, sort:'usd', maxRows:150});
+
+  const bind = () => {
+    $$('#fxTable .fxrate').forEach(inp => inp.addEventListener('change', () => {
+      setFxCorrection(inp.dataset.id, parseFloat(inp.value));
+      renderFx();
+    }));
+    $$('#fxTable .fxuse').forEach(b => b.addEventListener('click', () => {
+      const exp = parseFloat(b.dataset.exp);
+      if (isFinite(exp)) { setFxCorrection(b.dataset.id, exp); renderFx(); }
+    }));
+    $$('#fxTable .fxclear').forEach(b => b.addEventListener('click', () => {
+      setFxCorrection(b.dataset.id, null); renderFx();
+    }));
+  };
+  bind();
+
   $('#fxNote').innerHTML = isLo()
-    ? `ມູນຄ່າ USD ຄິດໄລ່ຈາກ <code>Amount_Kip ÷ Exchange_Rates_USD</code>. ເມື່ອອັດຕາຜິດ ມູນຄ່າ USD ກໍຜິດຕາມ — ຈຶ່ງຄວນແກ້ໄຂກ່ອນນຳໃຊ້ໃນການລວບລວມ.`
-    : `USD amounts are derived as <code>Amount_Kip ÷ Exchange_Rates_USD</code>. When the rate is wrong the USD amount is wrong too, so these should be corrected before the records feed compilation.`;
+    ? `ວິທີກວດ: ອັດຕາຂອງແຕ່ລະລາຍການຖືກທຽບກັບຄ່າກາງຂອງສະກຸນເງິນນັ້ນໃນປີດຽວກັນ. ຖ້າຫ່າງກັນເກີນ 3 ເທົ່າ ຖືວ່າໜ້າສົງໄສ. ການແກ້ໄຂບັນທຶກໄວ້ໃນອຸປະກອນນີ້ເທົ່ານັ້ນ ແລະ ຍັງບໍ່ທັນເຂົ້າໃນລາຍງານ — ສົ່ງອອກເພື່ອແຈ້ງທະນາຄານ.`
+    : `Method: each rate is compared with the median for that currency in the same year; more than 3× off is flagged. Corrections are saved on this device only and do not yet feed the reports — export them to inform the bank.`;
 
   $('#fxTable')._csv = () => downloadCsv('ITRS_fx_exceptions.csv',
-    [['Date','Bank','Flow','Amount','Currency','Rate','Expected','USD_m','Issue'],
-     ...fxRows.map(r=>[r.d, BANKS[r.b]||'', r.f===REC?'Receive':'Payment', r.amt,
-       dims.currencies[r.c]||'', r.fx==null?'':r.fx, r.exp||'', r.usd, issue(r)])]);
+    [['Date','Bank','Flow','Amount','Currency','Rate_used','Suggested_rate','Corrected_rate',
+      'USD_now','USD_corrected','Issue','LooksLike','Reference'],
+     ...fxRows.map(r=>{ const dt = fxDetail(r);
+       return [r.d, BANKS[r.b]||'', r.f===REC?'Receive':'Payment', r.amt,
+         dims.currencies[r.c]||'', r.rate==null?'':r.rate, r.exp||'',
+         dt.edited!=null?dt.edited:'', r.usd==null?'':r.usd,
+         dt.correctedUsd!=null?dt.correctedUsd:'', r.kind,
+         dt.looks||'', r.ref||''];})]);
 
   const yrs = yearsInRange();
   const agg = k => yrs.map(y => exceptions.fxByYearBank
