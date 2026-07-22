@@ -2218,6 +2218,50 @@ function weekCurrency(fromISO, toISO_){
 }
 const CCY_LO = {USD:'ໂດລາສະຫະລັດ', CNY:'ຢວນ', THB:'ບາດ', LAK:'ກີບ', EUR:'ເອີໂຣ',
   VND:'ດົ່ງ', JPY:'ເຢນ', GBP:'ປອນ', AUD:'ໂດລາອົດສະຕຣາລີ', HKD:'ໂດລາຮົງກົງ', SGD:'ໂດລາສິງກະໂປ'};
+/* ---- counterparty names --------------------------------------------------
+   Banks file names in capitals. Title-case the words; leave initialisms alone.
+   NAME_SHORT_WORDS holds the genuinely short WORDS that appear in the data,
+   taken from a token census of every indexed name. Any other short token is
+   treated as an initialism, which is why EDL, RTL, APK and AIDE keep their
+   capitals while SOLE, LAOS and BANK do not. */
+const NAME_KEEP_UPPER = new Set([
+  // Legal forms and initialisms that are read as letters, not words. Nothing
+  // structural separates EDL from PAK, so this is a list, not a rule; extend it
+  // in config/name_acronyms.json rather than guessing in code.
+  'LTD','PTE','JSC','INC','PCL','PLC','LLC','LLP','TNHH','JSCO','CJSC','PJSC',
+  'HK','UK','USA','UAE','JV','MTV','SA','NV','AG','GMBH','BV','SARL','SDN','BHD',
+  'EDL','RTL','APK','AIDE','EDC','ADB','IMF','BOL','BCEL','ICBC','ANZ','RHB','CIMB',
+  'II','III','IV','VI','VII','VIII','IX','XI','XII',
+].concat(DATA.nameAcronyms || []));
+/* Connectives read badly in title case: "Corporation Of America" is wrong. */
+const NAME_LOWER_WORDS = new Set(['OF','AND','THE','FOR','DE','DU','DA','LA','LE',
+  'VON','DER','DEN','EL','AL','BIN']);   // not DI or VAN - Vietnamese names use both
+/** True when a token is read as letters rather than as a word. Positive
+    evidence only - an unknown short token is far more likely to be a word
+    (PAK, LAY, NAM, PHAN) than an initialism. */
+function isInitialism(tok){
+  if (NAME_KEEP_UPPER.has(tok)) return true;
+  if (/[0-9]/.test(tok)) return true;                        // K2, A1 - as filed
+  if (tok.length === 1) return true;                         // an initial
+  // Y counts as a vowel here: TY is the Vietnamese word, not an initialism.
+  return tok.length <= 4 && !/[AEIOUY]/.test(tok);           // TP, RTL, GRP, BCL
+}
+/** "PAK LAY POWER COMPANY LIMITED" -> "Pak Lay Power Company Limited"
+    "TP POWER TOTHO SOLE CO.,LTD"   -> "TP Power Totho Sole Co., LTD" */
+function titleName(raw){
+  if (!raw) return '';
+  const str = String(raw);
+  // Anything already mixed-case was written deliberately - leave it.
+  if (/[a-z]/.test(str)) return str;
+  let first = true;
+  return str.replace(/\s*,\s*/g, ', ').replace(/\s+/g, ' ').trim()
+    .replace(/[A-Z]+/g, w => {
+      const lead = first; first = false;
+      if (isInitialism(w)) return w;
+      if (!lead && NAME_LOWER_WORDS.has(w)) return w.toLowerCase();
+      return w[0] + w.slice(1).toLowerCase();
+    });
+}
 const ccyName = c => isLo() ? (CCY_LO[c] || c) : c;
 
 function renderWeekly(){
@@ -2314,7 +2358,9 @@ function narrative(range, A, B, mode){
 
   // --- named contributors -------------------------------------------------
   const ents = rangeEntities(range.from, range.to);
-  const named = list => list.slice(0,6).map(x => `${x.name} ${f2(x.v)}`)
+  const named = list => list.slice(0,6)
+      .map(x => lo ? `${titleName(x.name)} ຈໍານວນ ${f2(x.v)}`
+                   : `${titleName(x.name)} ${f2(x.v)}`)
       .join(lo ? ' ລ້ານໂດລາທຽບເທົ່າ, ' : ' m, ');
   if (ents.inn.length)
     txt += lo ? `

@@ -1,0 +1,24 @@
+{
+ "_README": [
+  "Extra initialisms in counterparty names that must keep their capitals.",
+  "The report title-cases company names, because banks file them in capitals",
+  "and 'PAK LAY POWER COMPANY LIMITED' is hard to read. Tokens listed here are",
+  "left alone, so EDL stays EDL rather than becoming Edl.",
+  "",
+  "Nothing structural separates EDL from PAK, so this has to be a list.",
+  "Add any acronym the report is rendering wrongly. Case does not matter."
+ ],
+ "acronyms": [
+  "AIF",
+  "PMS",
+  "TP",
+  "EDL",
+  "RTL",
+  "APK",
+  "AIDE",
+  "EDC",
+  "NBB",
+  "LCB",
+  "OPD"
+ ]
+}

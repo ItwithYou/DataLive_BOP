@@ -1240,10 +1240,20 @@ def main():
 
     meta = build_meta(con, files, ent_meta, cfg)
     _bank_officers, _bank_names = load_bank_officers()
+    _acronyms = []
+    _ap = CONFIG / "name_acronyms.json"
+    if _ap.exists():
+        try:
+            _acronyms = [str(a).strip().upper() for a
+                         in json.loads(_ap.read_text(encoding="utf-8")).get("acronyms", [])
+                         if str(a).strip()]
+        except Exception as e:
+            print(f"  WARNING: name_acronyms.json unreadable ({e}); ignoring")
     payload = {"meta": meta, "dims": dims, "cubes": cubes,
                "exceptions": exceptions, "entities": entities,
                "rules": load_bop_rules(),
-               "officers": _bank_officers, "bankNames": _bank_names}
+               "officers": _bank_officers, "bankNames": _bank_names,
+               "nameAcronyms": _acronyms}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
