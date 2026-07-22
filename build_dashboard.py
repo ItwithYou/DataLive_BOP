@@ -305,6 +305,18 @@ def create_clean_view(con):
 # Dimensions
 # --------------------------------------------------------------------------
 
+def load_purpose_names():
+    """Official ITRS purpose names, Lao and English, from Purpose_manual.
+
+    The reporting banks' own wording is kept as a fallback for codes the
+    official list does not cover."""
+    path = CONFIG / "purpose_names.json"
+    if not path.exists():
+        print(f"  ! {path.name} not found; purposes stay in the banks' wording")
+        return {}
+    return json.loads(path.read_text(encoding="utf-8")).get("names", {})
+
+
 def load_country_names_lo():
     """Lao country names, taken from the existing BOL time-series workbook so the
     dashboard reads the same way as the reports people already know."""
@@ -352,6 +364,7 @@ def build_dimensions(con, lines):
             WHERE pur5 <> '' AND purpose_name IS NOT NULL GROUP BY 1, 2""").fetchall():
         votes[code][norm_text(fix_mojibake(name))] += c
 
+    official = load_purpose_names()
     codes = [r[0] for r in con.execute(
         "SELECT pur5 FROM tx WHERE pur5 <> '' GROUP BY 1 ORDER BY 1").fetchall()]
     seen, purposes = set(), []
@@ -363,9 +376,15 @@ def build_dimensions(con, lines):
             continue
         seen.add(code)
         best = votes.get(code)
+        off = official.get(code, {})
+        # Purpose_manual does not list every 2-digit heading (05 is missing),
+        # so fall back to the BOP category name for those.
+        if not off.get("en") and code in PUR2_META:
+            off = dict(off, en=PUR2_META[code][0])
         purposes.append({
             "code": code,
-            "name": (best.most_common(1)[0][0] if best else None) or code,
+            "en": off.get("en"),
+            "name": off.get("lo") or (best.most_common(1)[0][0] if best else None) or code,
             "parent": code[:-2] if len(code) > 2 else None,
             "pur2": code[:2] if code[:2] in PUR2_META else "99",
             "line": report_line_for(code, lines),

@@ -1,0 +1,681 @@
+{
+ "_README": [
+  "Official ITRS purpose codes with Lao and English names.",
+  "Extracted from ITRS_DataBaseV.11.1.xlsm, sheet 'Purpose_manual'.",
+  "Codes not listed here fall back to the name recorded by the reporting bank."
+ ],
+ "names": {
+  "01": {
+   "en": "Import and Export",
+   "lo": "ການນຳເຂົ້າ ແລະ ສົ່ງອອກ"
+  },
+  "0101": {
+   "en": "Import or Export for goods",
+   "lo": "ການນຳເຂົ້າ ແລະ ສົ່ງອອກສິນຄ້າ"
+  },
+  "010101": {
+   "en": "Wood Products",
+   "lo": "ຜະລິດຕະພັນໄມ້"
+  },
+  "010102": {
+   "en": "Electricity",
+   "lo": "ໄຟຟ້າ"
+  },
+  "010103": {
+   "en": "Coffee & Tea",
+   "lo": "ກາແຟ ແລະ ຊາ"
+  },
+  "010104": {
+   "en": "Garments & Textiles",
+   "lo": "ເສື້ອຜ້າ ແລະ ແຜ່ນແພ"
+  },
+  "010105": {
+   "en": "Agriculture & Forest Products",
+   "lo": "ຜະລິດຕະພັນກະສິກຳ ແລະ ເຄື່ອງປ່າຂອງດົງ"
+  },
+  "010106": {
+   "en": "Industrial Goods and Others",
+   "lo": "ສິນຄ້າອຸດສາຫະກຳ"
+  },
+  "010107": {
+   "en": "Mineral Products",
+   "lo": "ຜະລິດຕະພັນບໍ່ແຮ່"
+  },
+  "010108": {
+   "en": "Foodstuff",
+   "lo": "ສິນຄ້າທີ່ເປັນອາຫານຂອງກິນ"
+  },
+  "010109": {
+   "en": "Fuel",
+   "lo": "ຄ່ານ້ຳມັນເຊື້ອໄຟ"
+  },
+  "010110": {
+   "en": "Vehicles & Equipments",
+   "lo": "ຍານພາຫະນະທຸກຊະນິດ ແລະ ເຄື່ອງອະໄລ່"
+  },
+  "010111": {
+   "en": "Raw materials/assembly parts",
+   "lo": "ຄ່າວັດຖຸດິບ/ສ່ວນປະກອບເຂົ້າໃນການຜະລິດ"
+  },
+  "010112": {
+   "en": "Capital Goods",
+   "lo": "ສິນຄ້າປະເພດທຶນ"
+  },
+  "0102": {
+   "en": "Goods under merchanting",
+   "lo": "ຮັບ/ຈ່າຍຄ່າສິນຄ້າທີ່ບໍ່ມີການສົ່ງອອກ"
+  },
+  "0103": {
+   "en": "Precious metals",
+   "lo": "ວັດຖຸມີຄ່າ"
+  },
+  "010301": {
+   "en": "Gold",
+   "lo": "ຄຳ"
+  },
+  "010302": {
+   "en": "Silver",
+   "lo": "ເງິນ"
+  },
+  "010303": {
+   "en": "Diamond",
+   "lo": "ເພັດ"
+  },
+  "010304": {
+   "en": "Other precious metals (Note Detial)",
+   "lo": "ວັດຖຸມີຄ່າອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0104": {
+   "en": "Received/Prepayments for Goods",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ການນໍາເຂົ້າ ແລະ ສົ່ງອອກສິນຄ້າ"
+  },
+  "010401": {
+   "en": "Received/Prepayments Wood Products",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຜະລິດຕະພັນໄມ້"
+  },
+  "010402": {
+   "en": "Received/Prepayments Electricity",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ໄຟຟ້າ"
+  },
+  "010403": {
+   "en": "Received/Prepayments Coffee & Tea",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ກາແຟ ແລະ ຊາ"
+  },
+  "010404": {
+   "en": "Received/Prepayments Garments & Textiles",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ເສື້ອຜ້າ ແລະ ແຜ່ນແພ"
+  },
+  "010405": {
+   "en": "Received/Prepayments Agriculture & Forest Products",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຜະລິດຕະພັນກະສິກຳ ແລະ ເຄື່ອງປ່າຂອງດົງ"
+  },
+  "010406": {
+   "en": "Received/Prepayments Industrial Goods and Others",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ສິນຄ້າອຸດສາຫະກຳ"
+  },
+  "010407": {
+   "en": "Received/Prepayments Mineral Products",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຜະລິດຕະພັນບໍ່ແຮ່"
+  },
+  "010409": {
+   "en": "Received/Prepayments Foodstuff",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ສິນຄ້າທີ່ເປັນອາຫານຂອງກິນ"
+  },
+  "010410": {
+   "en": "Received/Prepayments Fuel",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຄ່ານ້ຳມັນເຊື້ອໄຟ"
+  },
+  "010411": {
+   "en": "Received/Prepayments Vehicles & Equipments",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຍານພາຫະນະທຸກຊະນິດ ແລະ ເຄື່ອງອະໄລ່"
+  },
+  "010412": {
+   "en": "Received/Prepayments Raw materials/assembly parts",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ຄ່າວັດຖຸດິບ/ສ່ວນປະກອບເຂົ້າໃນການຜະລິດ"
+  },
+  "010413": {
+   "en": "Received/Prepayments Capital Goods",
+   "lo": "ຮັບ/ຈ່າຍລ່ວງໜ້າ ສິນຄ້າປະເພດທຶນ"
+  },
+  "0105": {
+   "en": "Other goods (Note Detial)",
+   "lo": "ຄ່າສິນຄ້າອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "02": {
+   "en": "Services",
+   "lo": "ບໍລິການ"
+  },
+  "0201": {
+   "en": "Manufacturing services on physical inputs owned by others",
+   "lo": "ຄ່າຮັບຈ້າງຜະລິດ ຫຼື ແປຮູບ"
+  },
+  "0202": {
+   "en": "Maintenance and repair services n.i.e.",
+   "lo": "ຄ່າບໍລິການຊ້ອມແປງ ແລະ ບໍາລຸງຮັກສາ"
+  },
+  "0203": {
+   "en": "Transportation Services",
+   "lo": "ຄ່າບໍລິການທີ່ກ່ຽວກັບການຂົນສົ່ງ"
+  },
+  "020301": {
+   "en": "Freight : sea transport",
+   "lo": "ຄ່າຂົນສົ່ງສິນຄ້າ ທາງທະເລ"
+  },
+  "020302": {
+   "en": "Freight : air transport",
+   "lo": "ຄ່າຂົນສົ່ງສິນຄ້າ ທາງອາກາດ"
+  },
+  "020303": {
+   "en": "Freight : other transport",
+   "lo": "ຄ່າຂົນສົ່ງສິນຄ້າອື່ນໆ"
+  },
+  "020304": {
+   "en": "Insurance for goods transportation",
+   "lo": "ຄ່າປະກັນໄພສຳລັບສິນຄ້າ"
+  },
+  "020305": {
+   "en": "Passenger: sea transport",
+   "lo": "ຄ່າໂດຍສານ ທາງທະເລ"
+  },
+  "020306": {
+   "en": "Passenger: air transport",
+   "lo": "ຄ່າໂດຍສານ ທາງອາກາດ"
+  },
+  "020307": {
+   "en": "Passenger: other transport (Note Detial)",
+   "lo": "ຄ່າໂດຍສານອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "020308": {
+   "en": "Postal and courier services",
+   "lo": "ຄ່າຈັດສົ່ງຜ່ານທາງໄປສະນີ"
+  },
+  "020309": {
+   "en": "Other transportation services (Note Detial)",
+   "lo": "ຄ່າຂົນສົ່ງອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "02030901": {
+   "en": "Vehical for transportation Charge",
+   "lo": "ຄ່າບໍລິການຕ່າງໆ ໃຫ້ແກ່ພາຫະນະຂົນສົ່ງລະຫວ່າງປະເທດ"
+  },
+  "0204": {
+   "en": "Travel",
+   "lo": "ການທ່ອງທ່ຽວ"
+  },
+  "020401": {
+   "en": "Business travel",
+   "lo": "ຄ່າໃຊ້ຈ່າຍເດີນທາງທ່ອງທ່ຽວທີ່ກ່ຽວກັບເຮັດທຸລະກິດ"
+  },
+  "020402": {
+   "en": "Personal travel",
+   "lo": "ຄ່າໃຊ້ຈ່າຍເດີນທາງຂອງນັກທ່ອງທຽວສ່ວນບຸກຄົນ"
+  },
+  "020403": {
+   "en": "Health-related travel",
+   "lo": "ຄ່າໃຊ້ຈ່າຍເດີນທາງດ້ານສຸຂະພາບ"
+  },
+  "020404": {
+   "en": "Education-related travel",
+   "lo": "ຄ່າໃຊ້ຈ່າຍເດີນທາງຂອງນັກຮຽນ ແລະ ນັກສຶກສາ"
+  },
+  "020405": {
+   "en": "Other travel (Note Detial)",
+   "lo": "ຄ່າໃຊ້ຈ່າຍເດີນທາງທ່ອງທ່ຽວອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0205": {
+   "en": "Construction services",
+   "lo": "ຄ່າຮັບເໝົາກໍ່ສ້າງ"
+  },
+  "020501": {
+   "en": "construction services in abroad",
+   "lo": "ບໍລິການກໍ່ສ້າງຢູ່ຕ່າງປະເທດ"
+  },
+  "020502": {
+   "en": "consturction service in Lao",
+   "lo": "ບໍລິການກໍ່ສ້າງຢູ່ລາວ"
+  },
+  "0206": {
+   "en": "Insurance and pension services",
+   "lo": "ຄ່າປະກັນໄພ ແລະ ເງິນບຳນານ"
+  },
+  "020601": {
+   "en": "Insurance: Premiums",
+   "lo": "ຄ່າປະກັນໄພ"
+  },
+  "020602": {
+   "en": "Insurance: Claims",
+   "lo": "ຄ່າທົດແທນເສຍຫາຍຈາກປະກັນໄພ"
+  },
+  "020603": {
+   "en": "Other insurance service  (Note Detial)",
+   "lo": "ປະກັນໄພອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0207": {
+   "en": "Financial services",
+   "lo": "ຄ່າທຳນຽມ ແລະ ຄ່ານາຍໜ້າບໍລິການດ້ານການເງິນ"
+  },
+  "0208": {
+   "en": "Charges for the use of intellectual property n.i.e.",
+   "lo": "ຄ່າທຳນຽມການນຳໃຊ້ຊັບສິນທາງປັນຍາ"
+  },
+  "0209": {
+   "en": "Telecommunications, computer, and information services",
+   "lo": "ຄ່າບໍລິການດ້ານໂທລະຄົມ, ຄອມພິວເຕີ້ ແລະ ຂໍ້ມູນຂ່າວສານ"
+  },
+  "020901": {
+   "en": "Telecommunications services",
+   "lo": "ຄ່າບໍລິການດ້ານໂທລະຄົມ"
+  },
+  "020902": {
+   "en": "Computer services",
+   "lo": "ຄ່າບໍລິການດ້ານຄອມພິວເຕີ້"
+  },
+  "020903": {
+   "en": "Information services",
+   "lo": "ຄ່າບໍລິການດ້ານຂໍ້ມູນຂ່າວສານ"
+  },
+  "020904": {
+   "en": "Other communication services (Note Detial)",
+   "lo": "ຄ່າບໍລິການສື່ສານອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0210": {
+   "en": "Other business services",
+   "lo": "ຄ່າບໍລິການທຸລະກິດອື່ນໆ"
+  },
+  "021001": {
+   "en": "Research and development services",
+   "lo": "ຄ່າບໍລິການດ້ານການຄົ້ນຄວ້າ ແລະ ການພັດທະນາ"
+  },
+  "021002": {
+   "en": "Professional and management consulting services",
+   "lo": "ຄ່າທີ່ປຶກສາ"
+  },
+  "021003": {
+   "en": "Technical, trade-related, and other business services",
+   "lo": "ຄ່າບໍລິການດ້ານເຕັກນິກ, ການຄ້າ ແລະ ທຸລະກິດອື່ນໆ"
+  },
+  "0211": {
+   "en": "Personal, cultural, and recreational services",
+   "lo": "ຄ່າບໍລິການດ້ານວັດທະນາທຳ, ການບັນເທິງ ແລະ ການພັກຜ່ອນສ່ວນບຸກຄົນ"
+  },
+  "021101": {
+   "en": "Audiovisual and related services",
+   "lo": "ຄ່າບໍລິການທີ່ກ່ຽວກັບສຽງ, ພາບ ແລະ ການສະແດງອື່ນໆ"
+  },
+  "021102": {
+   "en": "Other personal, cultural, and recreational services",
+   "lo": "ຄ່າບໍລິການດ້ານວັດທະນາທຳ, ການບັນເທິງ ແລະ ການພັກຜ່ອນສ່ວນບຸກຄົນອື່ນໆ"
+  },
+  "0212": {
+   "en": "Government goods and services n.i.e.",
+   "lo": "ຄ່າບໍລິການພາກລັດຖະບານ"
+  },
+  "0213": {
+   "en": "Administrative and operating expenses service",
+   "lo": "ຄ່າໃຊ້ຈ່າຍບໍລິຫານ"
+  },
+  "0214": {
+   "en": "Other Service  (Note Detial)",
+   "lo": "ຄ່າບໍລິການອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "03": {
+   "en": "Primary Income",
+   "lo": "ລາຍໄດຂັ້ນໜຶ່ງ"
+  },
+  "0301": {
+   "en": "Compensation of employees (e.g. salaries, allowances, bonuses)",
+   "lo": "ລາຍໄດ້ຈາກການຈ້າງງານ"
+  },
+  "0302": {
+   "en": "Investment income",
+   "lo": "ລາຍໄດ້ຈາກການລົງທຶນ"
+  },
+  "030201": {
+   "en": "Direct investment",
+   "lo": "ລາຍໄດ້ຈາກການລົງທຶນໂດຍກົງ"
+  },
+  "03020101": {
+   "en": "Dividends",
+   "lo": "ເງິນປັນຜົນ"
+  },
+  "03020102": {
+   "en": "profits",
+   "lo": "ກຳໄລ"
+  },
+  "03020103": {
+   "en": "Interest",
+   "lo": "ດອກເບ້ຍ"
+  },
+  "0302010301": {
+   "en": "Interest on deposits",
+   "lo": "ດອກເບ້ຍເງິນຝາກ"
+  },
+  "0302010302": {
+   "en": "Interest on credits and loans",
+   "lo": "ດອກເບ້ຍເງິນກູ້"
+  },
+  "030202": {
+   "en": "Portfolio investment",
+   "lo": "ລາຍໄດ້ຈາກການລົງທຶນໃນຫຼັກຊັບ"
+  },
+  "03020201": {
+   "en": "Dividends (Income on equity)",
+   "lo": "ເງິນປັນຜົນຈາກຫຼັກຊັບປະເພດທຶນ ເຊັ່ນ: ຮຸ້ນສາມັນ, ຮຸ້ນບູລິມະສິດ"
+  },
+  "0302020101": {
+   "en": "Interest (long-term)",
+   "lo": "ອັດຕາດອກເບ້ຍໄລຍະຍາວ"
+  },
+  "0302020102": {
+   "en": "Interest (short-term)",
+   "lo": "ອັດຕາດອກເບ້ຍໄລຍະສັ້ນ"
+  },
+  "03020202": {
+   "en": "Interest (Income on debt)",
+   "lo": "ດອກເບ້ຍຈາກຫຼັກຊັບປະເພດໜີ້ ເຊັ່ນ: ຮຸ້ນກູ້, ພັນທະບັດ"
+  },
+  "0302020201": {
+   "en": "Interest (long-term)",
+   "lo": "ອັດຕາດອກເບ້ຍໄລຍະຍາວ"
+  },
+  "0302020202": {
+   "en": "Interest (short-term)",
+   "lo": "ອັດຕາດອກເບ້ຍໄລຍະສັ້ນ"
+  },
+  "0303": {
+   "en": "Other income",
+   "lo": "ລາຍໄດ້ອື່ນໆ"
+  },
+  "030301": {
+   "en": "Taxes on production and on import",
+   "lo": "ຄ່າ​ພາສີ​ການ​ຜະລິດ ​ແລະ ພາສີ​ນຳ​ເຂົ້າ"
+  },
+  "030302": {
+   "en": "Subsidies",
+   "lo": "ເງິນ​ອຸດ​ໜູນ"
+  },
+  "030303": {
+   "en": "Rent",
+   "lo": "ຄ່າ​ເຊົ່າ"
+  },
+  "03030301": {
+   "en": "Overflight",
+   "lo": "ຄ່າບິນຜ່ານນ່ານຟ້າ"
+  },
+  "03030302": {
+   "en": "Royalty",
+   "lo": "ຄ່າພາກຫຼວງ"
+  },
+  "04": {
+   "en": "",
+   "lo": "ລາຍໄດ້ຂັ້ນສອງ"
+  },
+  "0401": {
+   "en": "General government",
+   "lo": "ເງິນໂອນຊ່ວຍເຫຼືອພາກລັດຖະບານ"
+  },
+  "040101": {
+   "en": "Official grants/development assistance from Foreign Private sectors",
+   "lo": "ເງິນໂອນຊ່ວຍເຫຼືອພາກລັດຖະບານຈາກພາກເອກະຊົນຕ່າງປະເທດ"
+  },
+  "040102": {
+   "en": "Official grants/development assistance from Foreign Government",
+   "lo": "ເງິນໂອນຊ່ວຍເຫຼືອພາກລັດຖະບານຈາກລັດຖະບານຕ່າງປະເທດ"
+  },
+  "0402": {
+   "en": "Financial corporations, nonfinancial corporation , household and NPISHs",
+   "lo": "ສະ​ຖາ​ບັນ​ການ​ເງິນ​, ບໍ່​ແມ່ນ​ສະ​ຖາ​ບັນ​ການ​ເງິນ, ພາກ​ຄົວ​ເຮືອນ ​ແລະ ອົງ​ກອນ​ທີ່​ບໍ່​ຫວັງ​ກຳ​ໄລ"
+  },
+  "040201": {
+   "en": "Workers’ remittances",
+   "lo": "ລາຍ​ຮັບ​ຈາກ​ການ​ເຮັດ​ວຽກ"
+  },
+  "040202": {
+   "en": "Pension",
+   "lo": "ເງິນບໍານານ"
+  },
+  "040203": {
+   "en": "Grants and Grifts",
+   "lo": "ເງິນຊ່ວຍເຫຼືອລ້າ"
+  },
+  "0403": {
+   "en": "Migrants transfers on immigration or emigration",
+   "lo": "ເງິນໂອນອົບພະຍົກຍ້າຍຖິ່ນຖານໄປຕ່າງປະເທດ ລວມທັງເງິນມໍລະດົກ"
+  },
+  "0404": {
+   "en": "Other transfers (Note Detial)",
+   "lo": "ເງິນໂອນອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0501": {
+   "en": "Assets/claims on nonresidents",
+   "lo": "ຊັບ​ສິນ ຫຼື ການ​ຮຽກ​ເກັບ​ຂອງ​ຜູ້​ມີ​ຖິ່ນຖານຢູ່ ສປປ ລາວ ຕໍ່ຜູ້​ມີ​ຖິ່ນ​ຖານ​ຢູ່​ຕ່າງປະເທດ"
+  },
+  "050101": {
+   "en": "Direct or withdrawal investment by resident in aboard (at least 10% of the voting power of a enterprise)",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນ​ໄປລົງທຶນໂດຍກົງຢູ່​ຕ່າງປະ​ເທດ ຫຼື ຖອນ​ເງິນ​ຈາກ​ການ​ລົງທຶນ​ໂດຍ​ກົງຢູ່​ຕ່າງປະ​ເທດກັບ​ຄືນ​ມາລາ​ວ (ນັກລົງທຶນລາວມີສັດສ່ວນການລົງທຶນຕັ້ງແຕ່ 10 ສ່ວນຮ້ອຍຂຶ້ນໄປ ຂອງເງິນທຶນທັງໝົດ"
+  },
+  "05010101": {
+   "en": "Investment abroad on equity and investment fund shares",
+   "lo": "ນັກລົງທຶນລາວໂອນເງິນໄປລົງທຶນໃນຮຸ້ນ ຫຼື ຮວ່ມຮຸ້ນ ຢູ່ຕ່າງປະເທດ"
+  },
+  "05010102": {
+   "en": "Withdrawal of investment abroad on equity and investment fund shares",
+   "lo": "ນັກລົງທຶນລາວຖອນເງິນລົງທຶນໃນຮຸ້ນ ຫຼື ຮວ່ມຮຸ້ນ ຈາກຕ່າງປະເທດກັບ​ຄືນ​ມາລາ​ວ"
+  },
+  "05010103": {
+   "en": "real estate Investment abroad by  residents",
+   "lo": "ນັກລົງທຶນລາວໂອນເງິນໄປລົງທຶນໃນອະສັງຫາລິມມະຊັບຢູ່ຕ່າງປະເທດ"
+  },
+  "05010104": {
+   "en": "Withdrawal of real estate Investment abroad by residents",
+   "lo": "ນັກລົງທຶນລາວຖອນເງິນລົງທຶນໃນອະສັງຫາລິມມະຊັບຈາກຕ່າງປະເທດກັບ​ຄືນ​ມາລາ​ວ"
+  },
+  "050102": {
+   "en": "Portfolio investment by resident (No more than 10% of the voting power of a enterprise)",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນ​ໄປລົງທຶນໃນຫຼັກຊັບຢູ່ຕ່າງປະເທດ ຫຼື ຖອນເງິນການລົງທຶນໃນຫຼັກຊັບຈາກ​ຕ່າງປະເທດກັບ​ຄືນ​ມາລາ​ວ(ນັກລົງທຶນລາວມີສັດສ່ວນການລົງທຶນ ຕໍ່າກວ່າ 10 ສ່ວນຮ້ອຍລົງມາ ຂອງເງິນທຶນທັງໝົດ"
+  },
+  "05010201": {
+   "en": "Equity Securities investment Abroad (Common Stock, Preferred Stock, etc)",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນໄປລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນ ຢູ່ຕ່າງປະເທດ"
+  },
+  "05010202": {
+   "en": "Withdrawal of Equity Securities investment Abroad (Common Stock, Preferred Stock, etc)",
+   "lo": "ນັກລົງທຶນລາວ​ຖອນເງິນໄປລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນ ຢູ່ຕ່າງປະເທດ​ຄືນ​ມາລາ​ວ"
+  },
+  "05010203": {
+   "en": "Debt Securities  investment Abroad (Bond, Note, etc)",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນໄປລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນໜີ້ ຢູ່ຕ່າງປະເທດ"
+  },
+  "05010204": {
+   "en": "Withdrawal of Debt Securities  investment Abroad (Bond, Note, etc)",
+   "lo": "ນັກລົງທຶນລາວ​ຖອນເງິນລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນໜີ້ ຢູ່ຕ່າງປະເທດຄືນ​ມາລາ​ວ"
+  },
+  "05010205": {
+   "en": "Other Securities investment Abroad",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນໄປລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນອື່ນໆ ຢູ່ຕ່າງປະເທດ"
+  },
+  "05010206": {
+   "en": "Withdrawal of Other Securities investment Abroad",
+   "lo": "ນັກລົງທຶນລາວ​ຖອນເງິນໄປລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນອື່ນໆອື່ນໆ ຢູ່ຕ່າງປະເທດ​ຄືນ​ມາລາ​ວ"
+  },
+  "050103": {
+   "en": "Investment abroad or Withdrawal of investment abroad on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນລາວ​ໂອນເງິນ​ໄປລົງທຶນໃນອະນຸພັນທາງການເງິນຢູ່ຕ່າງປະເທດ ຫຼື ຖອນເງິນລົງທຶນໃນອະນຸພັນທາງການເງິນຈາກຕ່າງປະເທດກັບ​ຄືນ​ມາລາ​ວ"
+  },
+  "05010301": {
+   "en": "Investment abroad on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນລາວໂອນເງິນໄປລົງທຶນໃນອະນຸພັນທາງການເງິນຢູ່ຕ່າງປະເທດ"
+  },
+  "05010302": {
+   "en": "Withdrawal of investment abroad on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນລາວຖອນເງິນລົງທຶນໃນອະນຸພັນທາງການເງິນຈາກຕ່າງປະເທດກັບ​ຄືນ​ມາລາ​ວ"
+  },
+  "050104": {
+   "en": "Deposits with nonresident banks:",
+   "lo": "ຝາກເງິນກັບທະນາຄານຢູ່ຕ່າງປະເທດ"
+  },
+  "05010401": {
+   "en": "Deposite with nonresident banks",
+   "lo": "ໂອນເງິນໄປຝາກກັບທະນາຄານຢູ່ຕ່າງປະເທດ"
+  },
+  "05010402": {
+   "en": "Withdrawal of deposite with nonresident banks",
+   "lo": "ຖອນເງິນຝາກອອກຈາກທະນາຄານຢູ່ຕ່າງປະເທດ"
+  },
+  "050105": {
+   "en": "Lending by resident",
+   "lo": "ການໃຫ້ເງິນກູ້ຢືມແກ່ຕ່າງປະເທດ"
+  },
+  "05010501": {
+   "en": "Loans (long-term): extended to non-residents",
+   "lo": "ໃຫ້ເງິນກູ້ໄລຍະຍາວແກ່ຕ່າງປະເທດ"
+  },
+  "05010502": {
+   "en": "Loans (long-term): repaid by non-residents",
+   "lo": "ຮັບການຊຳລເງິນກູ້ໄລຍະຍາວຈາກຕ່າງປະເທດ"
+  },
+  "05010503": {
+   "en": "Loans (short-term): extended to non-residents",
+   "lo": "ໃຫ້ເງິນກູ້ໄລຍະສັ້ນແກ່ຕ່າງປະເທດ"
+  },
+  "05010504": {
+   "en": "Loans (short-term): repaid by non-residents",
+   "lo": "ຮັບການຊຳລະເງິນກູ້ໄລຍະສັ້ນຈາກຕ່າງປະເທດ"
+  },
+  "050106": {
+   "en": "Trade credit and advances",
+   "lo": "ສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າ"
+  },
+  "05010601": {
+   "en": "Trade credit and advances: extended to non-residents",
+   "lo": "ໃຫ້ສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າແກ່ຕ່າງປະເທດ"
+  },
+  "05010602": {
+   "en": "Trade credit and advances: repaid by non-residents",
+   "lo": "ຮັບການຊຳລະສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າຈາກຕ່າງປະເທດ"
+  },
+  "050107": {
+   "en": "Other accounts receivable/payable (Note Detial)",
+   "lo": "ຮັບ/ຈ່າຍຊຳລະບັນຊີອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "050108": {
+   "en": "Other assets/claims (Note Detial)",
+   "lo": "ຊັບສິນ/ການຮຽກເກັບອື່ນໆຂອງຜູ້ທີມີຖິ່ນຖານຢູ່ ສປປ ລາວ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "0502": {
+   "en": "Liabilities to nonresidents",
+   "lo": "ໜີ້​ສິນຂອງ​ຜູ້​ມີ​ຖິ່ນຖານຢູ່ ສປປ ລາວ ຕໍ່ຜູ້​ມີ​ຖິ່ນ​ຖານ​ຢູ່​ຕ່າງປະເທດ"
+  },
+  "050201": {
+   "en": "Foreign direct investment by Nonresident (at least 10% of the voting power of a enterprise)",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດ​ໂອນເງິນມາລົງທຶນໂດຍກົງຢູ່​ລາວ ຫຼື ຖອນ​ເງິນຈາກ​ການລົງທຶນໂດຍກົງຢູ່​ລາວກັບຄືນໄປຕ່າງປະເທດ (ນັກລົງທຶນຕ່າງປະເທດມີສັດສ່ວນການລົງທຶນຕັ້ງແຕ່ 10 ສ່ວນຮ້ອຍຂຶ້ນໄປ ຂອງເງິນທຶນທັງໝົດ)"
+  },
+  "05020101": {
+   "en": "Foreign direct investment on equity and investment fund shares",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດໂອນເງິນທຶນຈາກຕ່າງປະເທດມາລົງທຶນໃນທຸລະກິດຢູ່ລາວ"
+  },
+  "05020102": {
+   "en": "Withdrawal of Foreign direct investment on equity and investment fund shares",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດຖອນເງິນລົງທຶນໃນທຸລະກິດຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ"
+  },
+  "05020103": {
+   "en": "real estate Investment by nonresident",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດໂອນເງິນທຶນມາລົງທຶນໃນອະສັງຫາລິມມະຊັບຢູ່ລາວ"
+  },
+  "05020104": {
+   "en": "Withdrawal of real estate investment by nonresidents",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດຖອນເງິນລົງທຶນໃນອະສັງຫາລິມມະຊັບຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ"
+  },
+  "050202": {
+   "en": "Portfolio investment by nonresident (No more than 10% of the voting power of a enterprise)",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດ​ໂອນເງິນມາລົງທຶນໃນຫຼັກຊັບຢູ່​ລາວ ຫຼື ຖອນ​ເງິນຈາກ​ການ​ລົງທຶນຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ (ນັກລົງທຶນຕ່າງປະເທດມີສັດສ່ວນການລົງທຶນ ຕໍ່າກວ່າ 10 ສ່ວນຮ້ອຍລົງມາ ຂອງເງິນທຶນທັງໝົດ"
+  },
+  "05020201": {
+   "en": "Foreign investment  Equity Securities (Common Stock, Preferred Stock, etc)",
+   "lo": "ນັກລົງທຶນຕ່າງປະເທດມາ​ລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນ ຢູ່ລາວ"
+  },
+  "05020202": {
+   "en": "Withdrawal of Foreign investment  Equity Securities (Common Stock, Preferred Stock, etc)",
+   "lo": "ນັກລົງທຶນຕ່າງປະເທດ​ຖອນເງິນລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນ ຢູ່ລາວ​ຄືນໄປຕ່າງປະເທດ"
+  },
+  "05020203": {
+   "en": "Foreign investment  Debt Securities  (Bond, Note, etc)",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດໂອນເງິນມາ​ລົງທຶນໃນປະເພດຮຸ້ນໜີ້ ຢູ່ລາວ"
+  },
+  "05020204": {
+   "en": "Withdrawal of Foreign investment Foreign investment  Debt Securities  (Bond, Note, etc)",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດຖອນເງິນຈາກ​ການລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນໜີ້ ຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ"
+  },
+  "05020205": {
+   "en": "Foreign investment Other Securities",
+   "lo": "ນັກລົງທຶນຕ່າງປະເທດ​ໂອນເງິນມາລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນອື່ນໆ ຢູ່ລາວ"
+  },
+  "05020206": {
+   "en": "Withdrawal of Foreign investment Other Securities",
+   "lo": "ນັກລົງທຶນຕ່າງປະເທດ​ຖອນເງິນລົງທຶນໃນຫຼັກຊັບປະເພດຮຸ້ນທຶນອື່ນໆ ຢູ່ລາວຄືນໄປຕ່າງປະເທດ"
+  },
+  "050203": {
+   "en": "Investment or Withdrawal of investment on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດ​ໂອນເງິນມາລົງທຶນ ຫຼື ຖອນ​ເງິນໃນອະນຸພັນທາງການເງິນຢູ່​ລາວຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ"
+  },
+  "05020301": {
+   "en": "Investment on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດ​ໂອນເງິນທຶນຈາກຕ່າງປະເທດມາລົງທຶນໃນອະນຸພັນທາງການເງິນຢູ່ລາວ"
+  },
+  "05020302": {
+   "en": "Withdrawal of investment on Financial derivatives (Options, futures, warrants, swaps, etc.) and employee stock options",
+   "lo": "ນັກລົງທຶນຕ່າງປະ​ເທດ​ຖອນເງິນຈາກ​ການລົງທຶນໃນໃນອະນຸພັນທາງການເງິນຢູ່ລາວກັບຄືນໄປຕ່າງປະເທດ"
+  },
+  "050204": {
+   "en": "Deposits with resident banks:",
+   "lo": "ຝາກເງິນກັບທະນາຄານທີ່ຕັ້ງຢູ່ລາວ"
+  },
+  "05020401": {
+   "en": "Deposite with resident banks",
+   "lo": "ໂອນເງິນມາຝາກກັບທະນາຄານທີ່ຕັ້ງຢູ່ລາວ"
+  },
+  "05020402": {
+   "en": "Withdrawal of deposite with resident banks",
+   "lo": "ຖອນເງິນຝາກອອກຈາກທະນາຄານທີ່ຕັ້ງຢູ່ລາວ"
+  },
+  "050205": {
+   "en": "Borrowing by resident",
+   "lo": "ເງິນກູ້ຢືມຈາກຕ່າງປະເທດ"
+  },
+  "05020501": {
+   "en": "Loans (long-term): extended to non-residents",
+   "lo": "ຮັບເງິນກູ້ໄລຍະຍາວຈາກຕ່າງປະເທດ"
+  },
+  "05020502": {
+   "en": "Loans (long-term): repaid by non-residents",
+   "lo": "ຊຳລະຄືນເງິນກູ້ໄລຍະຍາວໃຫ້ແກ່ຕ່າງປະເທດ"
+  },
+  "05020503": {
+   "en": "Loans (short-term): extended to non-residents",
+   "lo": "ຮັບເງິນກູ້ໄລຍະສັ້ນຈາກຕ່າງປະເທດ"
+  },
+  "05020504": {
+   "en": "Loans (short-term): repaid by non-residents",
+   "lo": "ຊຳລະຄືນເງິນກູ້ໄລຍະສັ້ນໃຫ້ແກ່ຕ່າງປະເທດ"
+  },
+  "050206": {
+   "en": "Trade credit and advances",
+   "lo": "ສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າ"
+  },
+  "05020601": {
+   "en": "Trade credit and advances: extended to non-residents",
+   "lo": "ຮັບສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າຈາກຕ່າງປະເທດ"
+  },
+  "05020602": {
+   "en": "Trade credit and advances: repaid by non-residents",
+   "lo": "ຊຳລະຄືນສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າໃຫ້ຕ່າງປະເທດ"
+  },
+  "050207": {
+   "en": "Other accounts receivable/payable (Note Detial)",
+   "lo": "ຮັບ/ຈ່າຍຊຳລະບັນຊີອື່ນໆ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  },
+  "050208": {
+   "en": "Others Liabilities to nonresident (Note Detial)",
+   "lo": "ໜີ້ສິນອື່ນໆຕໍ່ຜູ້ທີ່ມີຖິ່ນຖານຢູ່ຕ່າງປະເທດ (ກະລຸນາລະບຸລາຍລະອຽດ)"
+  }
+ }
+}

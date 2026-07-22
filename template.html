@@ -1570,7 +1570,9 @@ function deltaHtml(cur, prev, invert){
 /** Lao names come from the BOL time-series workbook; fall back to English. */
 const countryLabel = c => (isLo() && c.lo) ? c.lo : c.name;
 const countryFull = c => `${countryLabel(c)} (${c.code})`;
-const purposeLabel = p => p.name;
+/** Official English name where the ITRS code list has one, otherwise the
+    wording the reporting bank used -- which is always Lao. */
+const purposeLabel = p => (isLo() ? p.name : (p.en || p.name)) || p.code;
 
 /* ===================== Overview ===================== */
 function renderOverview(){
@@ -1625,7 +1627,7 @@ function renderOverview(){
 
   const pr = purposeTotals();
   const leaves = PURPOSES.map((p,i)=>({p,i})).filter(x => !(purposeChildren[x.p.code]||[]).length);
-  const mk = dir => leaves.map(({p,i}) => ({label:purposeLabel(p), full:p.name+'  ['+p.code+']',
+  const mk = dir => leaves.map(({p,i}) => ({label:purposeLabel(p), full:purposeLabel(p)+'  ['+p.code+']',
       value:(pr.get(i)||{})[dir]||0})).filter(d=>d.value>0).sort((a,b)=>b.value-a.value).slice(0,10);
   rankBars($('#ovPurposeIn'), mk('in').map(d=>({...d,color:cssv('--in')})),
     {labelW:240, w:620, maxLabel:36, lao:true});
@@ -1766,8 +1768,8 @@ function renderPurposeTable(){
     for (let k = 2; k <= parent.length; k += 2){
       const acc = parent.slice(0,k), p = PURPOSES[purposeByCode[acc]];
       cb += `<span class="muted">›</span>` + (acc === parent
-        ? `<span class="cur lao">${esc(p?p.name:acc)} <span class="muted">${acc}</span></span>`
-        : `<button data-c="${acc}" class="lao">${esc(p?p.name:acc)}</button>`);
+        ? `<span class="cur lao">${esc(p?purposeLabel(p):acc)} <span class="muted">${acc}</span></span>`
+        : `<button data-c="${acc}" class="lao">${esc(p?purposeLabel(p):acc)}</button>`);
     }
   }
   $('#purpCrumb').innerHTML = cb;
@@ -1786,7 +1788,7 @@ function renderPurposeTable(){
   if (!rows.length) h += `<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">${esc(t('noData'))}</td></tr>`;
   rows.forEach(r => {
     h += `<tr class="drill-row ${r.hasKids?'':'leaf'}" data-c="${esc(r.code)}" data-k="${r.hasKids?1:0}">
-      <td class="name lao">${esc(r.name)}</td><td class="num muted">${esc(r.code)}</td>
+      <td class="name ${isLo()||!PURPOSES[purposeByCode[r.code]]?.en?'lao':''}">${esc(purposeLabel({name:r.name, en:PURPOSES[purposeByCode[r.code]]?.en, code:r.code}))}</td><td class="num muted">${esc(r.code)}</td>
       <td class="num">${fmtV(r.in)}</td><td class="num">${fmtV(r.out)}</td>
       <td class="num ${r.net>=0?'pos':'neg'}">${fmtV(r.net)}</td>
       <td class="num bar-cell"><span class="fill" style="width:${(100*r.gross/maxG).toFixed(1)}%;background:var(--accent)"></span>
@@ -1801,7 +1803,7 @@ const TS_META = {
   tsBank:    {items:()=>BANKS.map((b,i)=>({i,label:b})), key:'dimBank'},
   tsCountry: {items:()=>dims.countries.map((c,i)=>({i,label:countryLabel(c), full:countryFull(c), lao:isLo()})), key:'dimCountry'},
   tsCurrency:{items:()=>dims.currencies.map((c,i)=>({i,label:c})), key:'dimCurrency'},
-  tsPurpose: {items:()=>PURPOSES.map((p,i)=>({i,label:p.name+' ['+p.code+']', lao:true}))
+  tsPurpose: {items:()=>PURPOSES.map((p,i)=>({i,label:purposeLabel(p)+' ['+p.code+']', lao:isLo()}))
                         .filter(x=>x.label.length), key:'dimPurpose'},
 };
 /** Collapse the month axis to the chosen frequency, returning bucket labels. */
@@ -2381,7 +2383,7 @@ function renderSelection(){
       <td class="num">${fmtM(usd,2)}</td>
       <td>${esc(BANKS[b]||'—')}</td>
       <td>${esc(ct>=0?countryLabel(dims.countries[ct]):'—')}</td>
-      <td class="name lao">${esc(pu>=0?PURPOSES[pu].name:'—')}</td>
+      <td class="name lao">${esc(pu>=0?purposeLabel(PURPOSES[pu]):'—')}</td>
       <td class="name">${esc(other||'—')}</td></tr>`).join('');
 
   host.innerHTML = `
@@ -2396,7 +2398,7 @@ function renderSelection(){
      <p class="sub">${esc(t('seProfileSub'))}</p>
      <div class="mini">
        <div><div class="k">${esc(t('seTopCtry'))}</div>${topList(a.ctry, i=>dims.countries[i]?countryLabel(dims.countries[i]):'—', isLo())}</div>
-       <div><div class="k">${esc(t('seTopPur'))}</div>${topList(a.pur, i=>PURPOSES[i]?PURPOSES[i].name:'—', true)}</div>
+       <div><div class="k">${esc(t('seTopPur'))}</div>${topList(a.pur, i=>PURPOSES[i]?purposeLabel(PURPOSES[i]):'—', isLo())}</div>
        <div><div class="k">${esc(t('seTopBank'))}</div>${topList(a.bank, i=>BANKS[i]||'—')}</div>
        <div><div class="k">${esc(t('currency'))}</div>${topList(a.curr, i=>dims.currencies[i]||'—')}</div>
      </div></div>
