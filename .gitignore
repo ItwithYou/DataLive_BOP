@@ -22,6 +22,9 @@ ITRS_Dashboard.html
 .env
 *.secret
 password.txt
+passphrase.txt
+*passphrase*.txt
+*.key
 
 # Python
 __pycache__/
