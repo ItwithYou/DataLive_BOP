@@ -357,12 +357,16 @@ def load_bank_aliases():
 
 
 def load_bank_officers():
-    """Which officer is responsible for which reporting bank, so exceptions can
-    be routed to the person who has to chase them."""
+    """Who checks which reporting bank, and each bank's full Lao name.
+
+    Supplied by the BOP team and treated as the authority: a code missing here
+    is shown as unassigned rather than guessed at.
+    """
     path = CONFIG / "bank_officers.json"
     if not path.exists():
-        return {}
-    return json.loads(path.read_text(encoding="utf-8")).get("officers", {})
+        return {}, {}
+    cfg = json.loads(path.read_text(encoding="utf-8"))
+    return cfg.get("officers", {}), cfg.get("names_lo", {})
 
 
 def load_bop_rules():
@@ -1235,9 +1239,11 @@ def main():
     entities, ent_meta = build_entities(con, dims)
 
     meta = build_meta(con, files, ent_meta, cfg)
+    _bank_officers, _bank_names = load_bank_officers()
     payload = {"meta": meta, "dims": dims, "cubes": cubes,
                "exceptions": exceptions, "entities": entities,
-               "rules": load_bop_rules(), "officers": load_bank_officers()}
+               "rules": load_bop_rules(),
+               "officers": _bank_officers, "bankNames": _bank_names}
 
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 

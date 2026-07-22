@@ -104,9 +104,16 @@ header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1p
   -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%)}
 .hdr{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;align-items:center;gap:10px}
 @media(min-width:760px){.hdr{padding:12px 20px 0}}
-.brand h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.2px;white-space:nowrap}
-.brand p{margin:1px 0 0;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
-.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* The title is the name of the system, so it sits in the middle of the bar
+   rather than crowding the left edge. The controls keep the right; an equal
+   spacer on the left is what actually centres it. */
+.hdr-spacer{flex:1 1 0;min-width:0}
+.brand{flex:0 1 auto;text-align:center;min-width:0}
+.brand h1{margin:0;font-size:16px;font-weight:680;letter-spacing:-.2px;white-space:nowrap}
+.brand p{margin:2px 0 0;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
+/* On a phone there is no room to centre anything: the title takes the row. */
+@media(max-width:759px){.hdr-spacer{display:none}.brand{text-align:left;flex:1 1 auto}}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex:1 1 0;justify-content:flex-end}
 .hdr-meta{display:none;text-align:right;font-size:11px;color:var(--ink-3);line-height:1.5}
 @media(min-width:1000px){.hdr-meta{display:block}}
 /* Single flip buttons: one for theme, one for language. Each shows what you
@@ -637,6 +644,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 <div id="app" class="locked">
 <header>
   <div class="hdr">
+    <div class="hdr-spacer"></div>
     <div class="brand">
       <h1 data-t="appTitle">ITRS Live Report</h1>
       <p data-t="appSub">Lao PDR — International Transactions Reporting System</p>
@@ -2763,6 +2771,17 @@ function renderDups(){
 }
 
 /* ===================== Responsible officers ===================== */
+/** A bank's full Lao name from the BOP team's list. Codes are matched loosely
+    for the same reason as the officer lookup below. Falls back to the code,
+    which is what the analysts say out loud anyway. */
+const BANK_FULL = (() => {
+  const raw = DATA.bankNames || {}, m = new Map();
+  const key = x => String(x).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (const [code, nm] of Object.entries(raw)) m.set(key(code), nm);
+  return code => m.get(key(code)) || '';
+})();
+const bankFull = code => BANK_FULL(code) || code;
+
 /* The officer list was typed by hand in a spreadsheet, so its bank codes vary
    in case and spacing from the codes in the data (KBANK / Kbank / kbank all
    appear). Matching loosely is what makes the assignment actually land. */
@@ -2846,7 +2865,8 @@ function renderOfficers(){
     cols:[
       {k:'nm', t:t('ofOfficer'), align:'left', fmt:v=>`<b>${esc(v)}</b>`},
       {k:'banks', t:t('ofBanks'), align:'left',
-       fmt:v=>`<span class="muted">${esc(v.length)}</span> ${esc(v.slice(0,6).join(', '))}${v.length>6?' …':''}`},
+       fmt:v=>`<span class="muted">${esc(v.length)}</span> `
+             + v.map(c=>`<span title="${esc(bankFull(c))}">${esc(c)}</span>`).join(', ')},
       {k:'fx', t:t('ofFxErr'), fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
       {k:'dup', t:t('ofDupEx'), fmt:v=>v?`<span class="neg">${int(v)}</span>`:'—'},
       {k:'total', t:t('ofTotal'), fmt:v=>`<b>${int(v)}</b>`},
@@ -2939,7 +2959,11 @@ function renderBanks(){
 
   sortableTable($('#bankTable'), {
     cols:[
-      {k:'name', t:t('bank'), align:'left'},
+      {k:'name', t:t('bank'), align:'left', fmt:v => {
+        const full = BANK_FULL(v);
+        return full ? `<b>${esc(v)}</b><div class="muted" style="font-size:11px;line-height:1.3">${esc(full)}</div>`
+                    : `<b>${esc(v)}</b>`;
+      }},
       {k:'cnt', t:t('records'), fmt:int},
       {k:'gross', t:t('gross'), fmt:fmtV},
       {k:'net', t:t('net'), fmt:v=>`<span class="${v>=0?'pos':'neg'}">${fmtV(v)}</span>`},
