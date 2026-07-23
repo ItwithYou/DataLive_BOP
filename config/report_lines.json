@@ -1,63 +1,189 @@
 {
-  "_README": [
-    "Weekly report line definitions. EDIT THIS FILE to match the official BOL report layout.",
-    "",
-    "Each line matches transactions by Pur_5 prefix. Matching is longest-prefix-wins, so a",
-    "6-digit code overrides the 2-digit code it sits under. Anything unmatched falls into",
-    "the line with \"catchAll\": true.",
-    "",
-    "  id      - stable key, do not reuse across lines",
-    "  lo/en   - labels shown in the report (Lao / English)",
-    "  codes   - list of Pur_5 prefixes, e.g. \"01\" matches 01, 0101, 010105 ...",
-    "  group   - \"current\" | \"financial\"  (drives the summary split)",
-    "  bankOwn - true if this line is a commercial bank's own-account business. The report's",
-    "            second section (bo lolm thurakam khong thanakhan thurakit) excludes these.",
-    "  order   - display order within the inflow / outflow block",
-    "",
-    "VERIFY BEFORE OFFICIAL USE: the sector split between government / state enterprise /",
-    "business / commercial bank borrowing is NOT derivable from Pur_5 alone. The default",
-    "below splits loans by counterparty sector using bankOwnRule. Check it against a known",
-    "week before publishing."
-  ],
-
-  "bankOwnRule": {
-    "_note": "A transaction is treated as commercial-bank own-account when the Lao-side entity name matches one of these patterns (case-insensitive substring), OR the line is flagged bankOwn.",
-    "namePatterns": ["BANK", "BANQUE", "ທະນາຄານ", "ICBC", "BOC ", "BCEL", "LDB", "APB", "JDB", "BFL", "LVB", "STB", "PSVB", "ACL", "MJB", "IDB", "KBANK", "SCB", "BBL", "VTB", "ANZ", "MARUHAN", "PHONGSAVANH", "SACOM", "INDOCHINA", "LAO CHINA", "LAO VIET", "LAO FRANCE", "LAO DEVELOPMENT", "LAO CONSTRUCTION"]
-  },
-
-  "lines": [
-    { "id": "goods",      "order": 1,  "group": "current",   "bankOwn": false, "codes": ["01", "07"],
-      "lo": "ຄ່າສິນຄ້າ", "en": "Goods" },
-
-    { "id": "services",   "order": 2,  "group": "current",   "bankOwn": false, "codes": ["02"],
-      "lo": "ຄ່າການບໍລິການ", "en": "Services" },
-
-    { "id": "income",     "order": 3,  "group": "current",   "bankOwn": false, "codes": ["03", "04"],
-      "lo": "ຄ່າດອກເບ້ຍ ແລະ ເງິນໂອນ", "en": "Interest and transfers" },
-
-    { "id": "dia_out",    "order": 4,  "group": "financial", "bankOwn": false, "codes": ["050101"],
-      "lo": "ການລົງທຶນໂດຍກົງຢູ່ຕ່າງປະເທດ / ຖອນກັບຄືນມາລາວ", "en": "Lao direct investment abroad / repatriation" },
-
-    { "id": "fdi",        "order": 5,  "group": "financial", "bankOwn": false, "codes": ["050201"],
-      "lo": "ການລົງທຶນໂດຍກົງຈາກຕ່າງປະເທດ", "en": "Foreign direct investment" },
-
-    { "id": "portfolio",  "order": 6,  "group": "financial", "bankOwn": false, "codes": ["050102", "050202"],
-      "lo": "ການລົງທຶນໃນຫຼັກຊັບ", "en": "Portfolio investment" },
-
-    { "id": "derivative", "order": 7,  "group": "financial", "bankOwn": true,  "codes": ["050103", "050203"],
-      "lo": "ເງິນລົງທຶນອະນຸພັນທາງການເງິນ", "en": "Financial derivatives" },
-
-    { "id": "deposit",    "order": 8,  "group": "financial", "bankOwn": true,  "codes": ["050104", "050204", "050209"],
-      "lo": "ເງິນຝາກກັບທະນາຄານ", "en": "Deposits with banks" },
-
-    { "id": "loan",       "order": 9,  "group": "financial", "bankOwn": false, "codes": ["050105", "050205"],
-      "lo": "ເງິນກູ້ຢືມ", "en": "Loans" },
-
-    { "id": "tradecredit","order": 10, "group": "financial", "bankOwn": false, "codes": ["050206"],
-      "lo": "ສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າ", "en": "Trade credit and advances" },
-
-    { "id": "other",      "order": 11, "group": "financial", "bankOwn": false, "codes": ["05", "06"],
-      "catchAll": true,
-      "lo": "ອື່ນໆ", "en": "Other" }
+ "_README": [
+  "Weekly report line definitions. EDIT THIS FILE to match the official BOL report layout.",
+  "",
+  "Each line matches transactions by Pur_5 prefix. Matching is longest-prefix-wins, so a",
+  "6-digit code overrides the 2-digit code it sits under. Anything unmatched falls into",
+  "the line with \"catchAll\": true.",
+  "",
+  "  id      - stable key, do not reuse across lines",
+  "  lo/en   - labels shown in the report (Lao / English)",
+  "  codes   - list of Pur_5 prefixes, e.g. \"01\" matches 01, 0101, 010105 ...",
+  "  group   - \"current\" | \"financial\"  (drives the summary split)",
+  "  bankOwn - true if this line is a commercial bank's own-account business. The report's",
+  "            second section (bo lolm thurakam khong thanakhan thurakit) excludes these.",
+  "  order   - display order within the inflow / outflow block",
+  "",
+  "VERIFY BEFORE OFFICIAL USE: the sector split between government / state enterprise /",
+  "business / commercial bank borrowing is NOT derivable from Pur_5 alone. The default",
+  "below splits loans by counterparty sector using bankOwnRule. Check it against a known",
+  "week before publishing."
+ ],
+ "bankOwnRule": {
+  "_note": "A transaction is treated as commercial-bank own-account when the Lao-side entity name matches one of these patterns (case-insensitive substring), OR the line is flagged bankOwn.",
+  "namePatterns": [
+   "BANK",
+   "BANQUE",
+   "ທະນາຄານ",
+   "ICBC",
+   "BOC ",
+   "BCEL",
+   "LDB",
+   "APB",
+   "JDB",
+   "BFL",
+   "LVB",
+   "STB",
+   "PSVB",
+   "ACL",
+   "MJB",
+   "IDB",
+   "KBANK",
+   "SCB",
+   "BBL",
+   "VTB",
+   "ANZ",
+   "MARUHAN",
+   "PHONGSAVANH",
+   "SACOM",
+   "INDOCHINA",
+   "LAO CHINA",
+   "LAO VIET",
+   "LAO FRANCE",
+   "LAO DEVELOPMENT",
+   "LAO CONSTRUCTION"
   ]
+ },
+ "lines": [
+  {
+   "id": "goods",
+   "order": 1,
+   "group": "current",
+   "bankOwn": false,
+   "codes": [
+    "01",
+    "07"
+   ],
+   "lo": "ຄ່າສິນຄ້າ",
+   "en": "Goods"
+  },
+  {
+   "id": "services",
+   "order": 2,
+   "group": "current",
+   "bankOwn": false,
+   "codes": [
+    "02"
+   ],
+   "lo": "ຄ່າການບໍລິການ",
+   "en": "Services"
+  },
+  {
+   "id": "income",
+   "order": 3,
+   "group": "current",
+   "bankOwn": false,
+   "codes": [
+    "03",
+    "04"
+   ],
+   "lo": "ຄ່າດອກເບ້ຍ ແລະ ເງິນໂອນ",
+   "en": "Interest and transfers"
+  },
+  {
+   "id": "dia_out",
+   "order": 4,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "050101"
+   ],
+   "lo": "ການລົງທຶນໂດຍກົງຢູ່ຕ່າງປະເທດ",
+   "en": "Lao direct investment abroad"
+  },
+  {
+   "id": "fdi",
+   "order": 5,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "050201"
+   ],
+   "lo": "ການລົງທຶນໂດຍກົງຈາກຕ່າງປະເທດ",
+   "en": "Foreign direct investment"
+  },
+  {
+   "id": "portfolio",
+   "order": 6,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "050102",
+    "050202"
+   ],
+   "lo": "ການລົງທຶນໃນຫຼັກຊັບ",
+   "en": "Portfolio investment"
+  },
+  {
+   "id": "derivative",
+   "order": 7,
+   "group": "financial",
+   "bankOwn": true,
+   "codes": [
+    "050103",
+    "050203"
+   ],
+   "lo": "ເງິນລົງທຶນອະນຸພັນທາງການເງິນ",
+   "en": "Financial derivatives"
+  },
+  {
+   "id": "deposit",
+   "order": 8,
+   "group": "financial",
+   "bankOwn": true,
+   "codes": [
+    "050104",
+    "050204",
+    "050209"
+   ],
+   "lo": "ເງິນຝາກກັບທະນາຄານ",
+   "en": "Deposits with banks"
+  },
+  {
+   "id": "loan",
+   "order": 9,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "050105",
+    "050205"
+   ],
+   "lo": "ເງິນກູ້ຢືມ",
+   "en": "Loans"
+  },
+  {
+   "id": "tradecredit",
+   "order": 10,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "050206"
+   ],
+   "lo": "ສິນເຊື່ອການຄ້າ ແລະ ເງິນຈ່າຍລ່ວງໜ້າ",
+   "en": "Trade credit and advances"
+  },
+  {
+   "id": "other",
+   "order": 11,
+   "group": "financial",
+   "bankOwn": false,
+   "codes": [
+    "05",
+    "06"
+   ],
+   "catchAll": true,
+   "lo": "ອື່ນໆ",
+   "en": "Other"
+  }
+ ]
 }
