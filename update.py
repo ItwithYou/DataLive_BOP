@@ -7,9 +7,11 @@ Daily update: import new data, rebuild, publish, push. One command.
     python update.py --no-push           build and commit, do not push
     python update.py --local             rebuild the local file only, no publish
 
-Passphrases come from files named in ITRS_ADMIN_PASS_FILE / ITRS_TEAM_PASS_FILE,
-or from admin.txt / team.txt on the Desktop. They are never passed as arguments,
-which would put them in shell history and the process list.
+The encrypted build wraps the data key once per role, so it needs one passphrase
+for EVERY role (superyang, admin, team/viewer, mpd, epitrs). Each is read from
+its env var, then <name>.txt on the Desktop, then this folder — see ROLE_FILES.
+They are never passed as arguments, which would put them in shell history and the
+process list.
 
 Every step is checked before the next runs, so a failure stops rather than
 publishing a half-built report. The service-worker cache is bumped
@@ -28,6 +30,19 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SW = HERE / "docs" / "sw.js"
 OUT = HERE / "docs" / "index.html"
+
+# One entry per role the encrypted build wraps a key for. Each passphrase is
+# looked up in its env var, then <name>.txt on the Desktop, then this folder.
+# Keep this list in sync with ROLES in build_dashboard.py — a missing file here
+# means build_dashboard would stop and wait for that passphrase at a prompt.
+# (flag, env var, Desktop/here filename, human label)
+ROLE_FILES = [
+    ("--superyang-password-file", "ITRS_SUPERYANG_PASS_FILE", "superyang.txt", "superyang (super-admin)"),
+    ("--admin-password-file",     "ITRS_ADMIN_PASS_FILE",     "admin.txt",     "admin"),
+    ("--viewer-password-file",    "ITRS_TEAM_PASS_FILE",      "team.txt",      "team / viewer"),
+    ("--mpd-password-file",       "ITRS_MPD_PASS_FILE",       "mpd.txt",       "mpd"),
+    ("--epitrs-password-file",    "ITRS_EPITRS_PASS_FILE",    "epitrs.txt",    "epitrs (Period Report)"),
+]
 
 
 def run(cmd, why, capture=False):
@@ -93,19 +108,26 @@ def main():
         return
 
     desktop = Path.home() / "Desktop"
-    admin = find_pass("ITRS_ADMIN_PASS_FILE", desktop / "admin.txt", HERE / "admin.txt")
-    team = find_pass("ITRS_TEAM_PASS_FILE", desktop / "team.txt", HERE / "team.txt")
-    if not admin or not team:
-        sys.exit(
-            "Passphrase files not found.\n"
-            "Create admin.txt and team.txt on your Desktop, one line each,\n"
-            "or point ITRS_ADMIN_PASS_FILE / ITRS_TEAM_PASS_FILE at them.\n"
-            "Delete them once the run finishes.")
+    pass_args, missing = [], []
+    for flag, env_var, fname, label in ROLE_FILES:
+        p = find_pass(env_var, desktop / fname, HERE / fname)
+        if p:
+            pass_args += [flag, str(p)]
+        else:
+            missing.append((label, fname, env_var))
+    if missing:
+        lines = ["Passphrase files not found for these roles:", ""]
+        for label, fname, env_var in missing:
+            lines.append(f"  - {label}: create {fname} on your Desktop (one line),")
+            lines.append(f"      or point {env_var} at a file holding it.")
+        lines += ["",
+                  "Every role needs one, at least 12 characters. The build wraps the data",
+                  "key separately for each, so a missing one would stall at a prompt.",
+                  "Delete the files once the run finishes."]
+        sys.exit("\n".join(lines))
 
     bump_cache()
-    run([py, "build_dashboard.py", "--publish", "--encrypt",
-         "--admin-password-file", str(admin),
-         "--viewer-password-file", str(team)],
+    run([py, "build_dashboard.py", "--publish", "--encrypt", *pass_args],
         "Building encrypted dashboard", capture=True)
 
     if not OUT.exists():
