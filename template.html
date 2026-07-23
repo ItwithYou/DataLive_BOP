@@ -383,6 +383,18 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .narr h4{margin:0 0 9px;font-size:14.5px;font-weight:700;line-height:1.4}
 .narr p{margin:0;text-indent:1.8em;text-align:justify;hyphens:auto}
 @media(max-width:639px){.narr p{text-align:left;text-indent:1.4em}}
+/* Data Sources list in the import modal. */
+.src-grp{margin-bottom:12px}
+.src-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--ink-3);margin:0 0 6px}
+.src-row{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--line);
+  border-radius:9px;margin-bottom:6px;background:var(--panel-2)}
+.src-nm{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink-1);
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.src-meta{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.src-row .xbtn{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink-3);cursor:pointer;font-size:16px;line-height:1;flex:0 0 auto}
+.src-row .xbtn:hover{color:var(--neg);border-color:var(--neg)}
 /* Inline exchange-rate correction in the FX table. */
 .fxedit{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .fxedit .fxrate{width:88px;font-size:12px;padding:4px 7px;min-height:30px;text-align:right;
@@ -1006,13 +1018,14 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 <div class="modal" id="importModal">
   <div class="modal-card">
     <button class="modal-x" id="impClose" type="button" aria-label="Close">&times;</button>
-    <h2 id="impTitle">Import data</h2>
+    <h2 id="impTitle">Data sources</h2>
     <p class="lead" id="impLead"></p>
+    <div id="impSources"></div>
     <div class="drop" id="impDrop">
       <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4.5 4.5M12 4 7.5 8.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
       <b id="impDropTitle">Choose a file or drop it here</b>
-      <span id="impDropSub">.csv transactions, or a .json data pack</span>
-      <input type="file" id="impFile" accept=".csv,.json,.txt" hidden>
+      <span id="impDropSub">.xlsx export, .csv, or a .json data pack</span>
+      <input type="file" id="impFile" accept=".csv,.json,.txt,.xlsx" hidden>
     </div>
     <div id="impMsg"></div>
     <div class="imp-log" id="impLog"></div>
@@ -1217,9 +1230,16 @@ const I18N = {
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
  impBtn:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
  roleAdmin:["Admin","ຜູ້ຄຸ້ມຄອງ"], roleViewer:["Team","ທີມງານ"],
- impTitle:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
- impLead:["Add new transactions to the report. The file is read in your browser and never uploaded anywhere. Changes last for this session only — to make them permanent, add the file to the Payment or Receive folder and rebuild.",
-          "ເພີ່ມທຸລະກຳໃໝ່ເຂົ້າໃນລາຍງານ. ໄຟລ໌ຖືກອ່ານໃນບຣາວເຊີຂອງທ່ານ ແລະ ບໍ່ຖືກສົ່ງໄປໃສ. ການປ່ຽນແປງມີຜົນສະເພາະຮອບນີ້ — ເພື່ອໃຫ້ຖາວອນ ໃຫ້ເພີ່ມໄຟລ໌ໃສ່ໂຟນເດີ Payment ຫຼື Receive ແລ້ວສ້າງໃໝ່."],
+ impTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
+ impLead:["The files below make up the report. Upload a new export (.xlsx) or CSV to add or replace data — it is read in your browser, kept on this device, and re-applied every time you open the report. The built-in data is never changed.",
+          "ໄຟລ໌ຂ້າງລຸ່ມນີ້ປະກອບເປັນລາຍງານ. ອັບໂຫຼດໄຟລ໌ export ໃໝ່ (.xlsx) ຫຼື CSV ເພື່ອເພີ່ມ ຫຼື ແທນທີ່ຂໍ້ມູນ — ຖືກອ່ານໃນບຣາວເຊີ, ເກັບໄວ້ໃນອຸປະກອນນີ້, ແລະ ນຳໃຊ້ຄືນທຸກຄັ້ງທີ່ເປີດລາຍງານ. ຂໍ້ມູນຕິດຕັ້ງມາບໍ່ຖືກປ່ຽນ."],
+ impBuiltIn:["Built in","ຕິດຕັ້ງມາ"], impUploaded:["Uploaded on this device","ອັບໂຫຼດໃນອຸປະກອນນີ້"],
+ impRemove:["Remove","ລຶບ"],
+ impLocalNote:["Uploaded files stay on this device and are re-applied on load. Remove one to take it out of the report here. To publish for everyone, rebuild from the source files.",
+               "ໄຟລ໌ທີ່ອັບໂຫຼດຢູ່ໃນອຸປະກອນນີ້ ແລະ ນຳໃຊ້ຄືນເມື່ອໂຫຼດ. ລຶບເພື່ອເອົາອອກຈາກລາຍງານນີ້. ເພື່ອເຜີຍແຜ່ໃຫ້ທຸກຄົນ ໃຫ້ສ້າງໃໝ່ຈາກໄຟລ໌ຕົ້ນທາງ."],
+ errFlow:["Name the file …in… or …out… so its direction is clear.","ຕັ້ງຊື່ໄຟລ໌ໃຫ້ມີ in ຫຼື out ເພື່ອບອກທິດທາງ."],
+ errXlsx:["This .xlsx could not be read (unsupported compression).","ອ່ານໄຟລ໌ .xlsx ນີ້ບໍ່ໄດ້."],
+ errDetail:["No known column headers found in this export.","ບໍ່ພົບຫົວຖັນທີ່ຮູ້ຈັກໃນໄຟລ໌ນີ້."],
  impDropTitle:["Choose a file or drop it here","ເລືອກໄຟລ໌ ຫຼື ລາກມາວາງບ່ອນນີ້"],
  impDropSub:["CSV of transactions, or a .json data pack","CSV ຂອງທຸລະກຳ ຫຼື .json data pack"],
  impCancel:["Cancel","ຍົກເລີກ"], impApply:["Apply to report","ນຳໃຊ້ກັບລາຍງານ"],
@@ -3811,6 +3831,139 @@ addEventListener('resize', () => { if (openMenu) openMenu(); });
 addEventListener('scroll', () => { if (openMenu) openMenu(); }, true);
 
 /* ===================== import UI ===================== */
+/* ===================== data sources =====================
+   Uploaded files are kept on this device in IndexedDB and re-applied on load,
+   so the analyst can add, replace and remove data without a rebuild. The base
+   dataset baked into the file is never touched. */
+const IDB = { name:'itrs', store:'uploads' };
+function idbOpen(){
+  return new Promise((res, rej) => {
+    const q = indexedDB.open(IDB.name, 1);
+    q.onupgradeneeded = () => q.result.createObjectStore(IDB.store, {keyPath:'id'});
+    q.onsuccess = () => res(q.result);
+    q.onerror = () => rej(q.error);
+  });
+}
+async function idbAll(){
+  try { const db = await idbOpen();
+    return await new Promise((res, rej) => {
+      const r = db.transaction(IDB.store).objectStore(IDB.store).getAll();
+      r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
+    });
+  } catch (e){ return []; }
+}
+async function idbPut(rec){ const db = await idbOpen();
+  return new Promise((res, rej) => { const t = db.transaction(IDB.store, 'readwrite');
+    t.objectStore(IDB.store).put(rec); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function idbDel(id){ const db = await idbOpen();
+  return new Promise((res, rej) => { const t = db.transaction(IDB.store, 'readwrite');
+    t.objectStore(IDB.store).delete(id); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+
+/* ---- dependency-free .xlsx reader ---------------------------------------
+   An xlsx is a zip of XML. We walk the zip's local file headers, inflate the
+   parts we need with the browser's own DecompressionStream, and scan the XML.
+   No library, so nothing to load and nothing offline can break. */
+async function inflateRaw(bytes){
+  const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+const XML_UNESC = x => x.replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+  .replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+async function readXlsx(fileOrBytes){
+  const buf = fileOrBytes instanceof Uint8Array ? fileOrBytes
+            : new Uint8Array(await fileOrBytes.arrayBuffer());
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const td = new TextDecoder(), entries = {};
+  let i = 0;
+  while (i + 4 <= buf.length && dv.getUint32(i, true) === 0x04034b50){
+    const method = dv.getUint16(i+8, true), compSize = dv.getUint32(i+18, true);
+    const nameLen = dv.getUint16(i+26, true), extraLen = dv.getUint16(i+28, true);
+    const name = td.decode(buf.subarray(i+30, i+30+nameLen));
+    const dataStart = i + 30 + nameLen + extraLen;
+    if (compSize === 0) throw new Error(t('errXlsx'));   // streamed zip, no size
+    entries[name] = {method, compSize, dataStart};
+    i = dataStart + compSize;
+  }
+  const part = async n => { const e = entries[n]; if (!e) return '';
+    const sl = buf.subarray(e.dataStart, e.dataStart + e.compSize);
+    return td.decode(e.method === 0 ? sl : await inflateRaw(sl)); };
+  const ss = [];
+  (await part('xl/sharedStrings.xml')).replace(/<si>([\s\S]*?)<\/si>/g, (_, s) => {
+    const runs = s.match(/<t[^>]*>([\s\S]*?)<\/t>/g) || [];
+    ss.push(XML_UNESC(runs.map(r => r.replace(/<[^>]+>/g,'')).join(''))); return ''; });
+  const col2ix = ref => { const m = ref.match(/^([A-Z]+)/); let n = 0;
+    for (const ch of m[1]) n = n*26 + (ch.charCodeAt(0)-64); return n-1; };
+  const sheet = await part('xl/worksheets/sheet1.xml');
+  const rows = [];
+  sheet.replace(/<row[^>]*>([\s\S]*?)<\/row>/g, (_, body) => {
+    const cells = [];
+    body.replace(/<c\s+r="([A-Z]+\d+)"([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g, (__, ref, attrs, inner) => {
+      inner = inner || ''; const ci = col2ix(ref);
+      const vm = inner.match(/<v>([\s\S]*?)<\/v>/);
+      if (vm) cells[ci] = /t="s"/.test(attrs) ? ss[+vm[1]] : XML_UNESC(vm[1]);
+      else { const im = inner.match(/<t[^>]*>([\s\S]*?)<\/t>/); if (im) cells[ci] = XML_UNESC(im[1]); }
+      return ''; });
+    rows.push(cells); return ''; });
+  return rows;
+}
+
+/* Lao (and English) header wording -> the column name mapColumns() knows.
+   Match is by header text, so a reordered export still lines up. */
+const DETAIL_HDR = {
+  'ທະນາຄານ':'Banks', 'bank':'Banks',
+  'ວັນເດືອນປີ ເຮັດທຸລະກຳ':'Date_of_Transaction', 'date of transaction':'Date_of_Transaction',
+  'ວັນເດືອນປີ ສົ່ງຂໍ້ມູນ':'Date_of_Submission',
+  'ຊື່ຜູ້ໂອນ':'Transferor_Name', 'ຊື່ຜູ້ຮັບ':'Recipient_Name',
+  'ເລກປະຈຳຕົວຜູ້ເສຍອາກອນຜູ້ໂອນ':'Transferor_TIN', 'ເລກປະຈຳຕົວຜູ້ເສຍອາກອນຜູ້ຮັບ':'Recipient_TIN',
+  'ເອກະສານປະກອບ':'Supporting_Documents',
+  'ລະຫັດ lsic':'LSIC_Code', 'ລະຫັດຈຸດປະສົງ':'Purpose_Code', 'purpose code':'Purpose_Code',
+  'ລະຫັດປະເທດ':'Country_Code', 'ວິທີການໂອນ':'Transfer_Method',
+  'ລະຫັດສະກຸນເງິນ':'Currency_Code', 'ອັດຕາແລກປ່ຽນເປັນໂດລາ':'Exchange_Rates_USD',
+  'ຈຳນວນເງິນເປັນກີບ':'Amount_Kip', 'ຈຳນວນເງີນເປັນໂດລາ':'Amount_USD', 'ຈຳນວນເງິນເປັນໂດລາ':'Amount_USD',
+};
+const normHdr = s => String(s || '').replace(/\s+/g,' ').trim().toLowerCase();
+/** Excel serial date -> YYYY-MM-DD. Serial 0 is 1899-12-30. */
+function excelDate(v){
+  const n = +v; if (!isFinite(n) || n < 1) return String(v || '');
+  const d = new Date(Date.UTC(1899,11,30) + Math.round(n)*86400000);
+  return d.toISOString().slice(0,10);
+}
+/** Parsed xlsx rows -> [header, ...rows] that buildImport() understands.
+    flow is taken from the file, not the rows. */
+function detailToImport(rows, flow){
+  let hRow = -1, colmap = {};
+  for (let r = 0; r < Math.min(rows.length, 6); r++){
+    const cm = {}; (rows[r]||[]).forEach((v,i) => { const f = DETAIL_HDR[normHdr(v)]; if (f) cm[i] = f; });
+    if (Object.keys(cm).length >= 6){ hRow = r; colmap = cm; break; }
+  }
+  if (hRow < 0) throw new Error(t('errDetail'));
+  const fields = [...new Set(Object.values(colmap))];
+  const out = [['Flow','Pur_5', ...fields]];
+  for (let r = hRow + 1; r < rows.length; r++){
+    const raw = rows[r]; if (!raw || !raw[0]) continue;
+    const rec = {}; for (const [i,f] of Object.entries(colmap)) rec[f] = raw[i];
+    if (!rec['Date_of_Transaction']) continue;
+    const pcode = String(rec['Purpose_Code'] || '').replace(/^'/, '');
+    const line = [flow === REC ? 'Receive' : 'Payment', pcode.slice(0,6)];
+    for (const f of fields){
+      let v = rec[f];
+      if (f === 'Date_of_Transaction' || f === 'Date_of_Submission') v = excelDate(v);
+      else v = v == null ? '' : String(v).replace(/^'/, '');
+      line.push(v);
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+async function reapplyUploads(){
+  const ups = await idbAll();
+  for (const u of ups){
+    try { buildImport(u.rows); } catch (e){ /* a stale upload should not brick boot */ }
+  }
+  return ups.length;
+}
+
 function initImport(){
   const modal = $('#importModal'), drop = $('#impDrop'), file = $('#impFile');
   const msg = $('#impMsg'), log = $('#impLog'), apply = $('#impApply');
@@ -3827,7 +3980,32 @@ function initImport(){
   };
   const reset = () => { pending = null; apply.disabled = true;
     msg.innerHTML = ''; log.innerHTML = ''; file.value = ''; };
-  const open = () => { paint(); reset(); modal.classList.add('open'); };
+
+  async function renderSources(){
+    const box = $('#impSources');
+    const built = (meta.sourceStats || []);
+    const ups = await idbAll();
+    const span = s => `${s.min || '—'} → ${s.max || '—'}`;
+    const grp = (title, items, removable) => !items.length ? '' :
+      `<div class="src-grp"><div class="src-h">${esc(title)}</div>${items.map(s => `
+        <div class="src-row">
+          <div class="src-nm">${esc(s.name)}
+            <span class="pill ${s.flow==='Receive'?'ok':'bad'}">${esc(s.flow===
+              'Receive'?t('inflow'):t('outflow'))}</span></div>
+          <div class="src-meta">${int(s.rows)} ${esc(t('records'))} · ${esc(span(s))}</div>
+          ${removable ? `<button class="xbtn src-del" data-id="${esc(s.id)}" title="${esc(t('impRemove'))}">×</button>` : ''}
+        </div>`).join('')}</div>`;
+    box.innerHTML =
+      grp(t('impBuiltIn'), built, false) +
+      grp(t('impUploaded'), ups.map(u => ({...u, name:u.name})), true) +
+      (ups.length ? `<p class="note" style="margin:8px 2px 0">${esc(t('impLocalNote'))}</p>` : '');
+    $$('#impSources .src-del').forEach(b => b.addEventListener('click', async () => {
+      await idbDel(b.dataset.id);
+      location.reload();          // re-apply the remaining uploads from a clean base
+    }));
+  }
+
+  const open = () => { paint(); reset(); renderSources(); modal.classList.add('open'); };
   const close = () => { modal.classList.remove('open'); reset(); };
   const say = (cls, html) => { msg.innerHTML = `<div class="imp-msg ${cls}">${html}</div>`; };
 
@@ -3836,6 +4014,21 @@ function initImport(){
     say('warn', `<span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}`);
     log.innerHTML = '';
     try {
+      // .xlsx export: which direction is inferred from the file name.
+      if (/\.xlsx$/i.test(f.name)){
+        const nm = f.name.toLowerCase();
+        const flow = /out|payment|ໂອນອອກ/.test(nm) ? PAY
+                   : /in|receive|recieve|ໂອນເຂົ້າ/.test(nm) ? REC : null;
+        if (flow === null) throw new Error(t('errFlow'));
+        const parsed = await readXlsx(f);
+        const rows = detailToImport(parsed, flow);
+        if (rows.length < 2) throw new Error(t('errNoRows'));
+        pending = {kind:'csv', payload:rows, file:f.name, flow};
+        say('ok', `<b>${int(rows.length-1)}</b> ${esc(t('impReady'))} `
+          + `(${esc(flow === REC ? t('inflow') : t('outflow'))}).`);
+        apply.disabled = false;
+        return;
+      }
       const text = await f.text();
       if (/^\s*[{[]/.test(text)){
         const pack = JSON.parse(text);
@@ -3903,7 +4096,17 @@ function initImport(){
       log.innerHTML = `<table><tbody>${rowsHtml}</tbody></table>`
         + `<p class="note">${esc(t('impNote'))}</p>`;
       say('ok', esc(t('impDone')));
+      // Persist so the upload survives a reload and can be removed later.
+      // Stored as the mapped rows, not the raw file, so re-apply is a merge.
+      const savedRows = pending.payload, savedFlow = pending.flow,
+            savedName = pending.file;
       apply.disabled = true; pending = null;
+      if (savedName){
+        idbPut({id: 'u' + Object.keys(cubes).length + '-' + savedName + '-' + st.read,
+                name: savedName, flow: savedFlow === REC ? 'Receive' : 'Payment',
+                rows: savedRows, records: st.ok, min: st.minD, max: st.maxD})
+          .then(renderSources).catch(()=>{});
+      }
       // Dimension arrays and cubes changed underneath every cached view.
       Object.keys(state.hidden).forEach(k => delete state.hidden[k]);
       rebuildYearOptions();
@@ -4203,7 +4406,12 @@ function initControls(){
   // Import mutates the dataset, so it is admin-only. Removing the button is
   // presentational; the real boundary is that a viewer's passphrase cannot
   // unwrap the data key at all without also being handed the admin one.
-  if (isAdmin()) initImport();
+  if (isAdmin()){
+    initImport();
+    // Re-apply device uploads onto the freshly-loaded base, then repaint.
+    reapplyUploads().then(n => { if (n){ rebuildYearOptions(); initMeta(); renderAll(); } })
+      .catch(()=>{});
+  }
   else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
   const sb = $('#settingsBtn');
   if (sb) sb.addEventListener('click', () => {

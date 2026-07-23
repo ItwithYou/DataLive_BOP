@@ -287,6 +287,7 @@ def create_clean_view(con):
             -- misapplied-currency error lives: a USD transfer that carries a
             -- THB-magnitude rate here converts to the wrong number of kip.
             Exchange_Rates_Kip                                        AS fxkip,
+            Source_File,                                             -- for the Data Sources panel
 
             ("Use"     = 'Yes')                                       AS use_flag,
             (M2        = 'Yes')                                       AS m2_flag,
@@ -850,16 +851,22 @@ def build_exceptions(con, dims):
 
     # Totals across every transaction (not just the shown top 300), so the tab
     # can state how many wrong-rate / out-of-band / missing records exist.
+    # medfx: the year's own LAK/USD rate. The band check is judged against it
+    # rather than a fixed 7,000-25,000 window, because the real rate rose from
+    # ~8,200 in 2017 to ~22,000 in 2024 and a fixed band mis-reads both ends.
     fc = con.execute(f"""
         WITH med AS (SELECT currency, yr, MEDIAN(fxkip) AS m FROM tx
-                     WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30)
+                     WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30),
+             medfx AS (SELECT yr, MEDIAN(fx) AS mf FROM tx WHERE fx > 0 GROUP BY 1)
         SELECT
           COUNT(*) FILTER (WHERE t.usd IS NULL) AS missing,
           COUNT(*) FILTER (WHERE t.usd <= 0) AS nonpos,
           COUNT(*) FILTER (WHERE med.m IS NOT NULL AND t.fxkip > 0
                            AND (t.fxkip > med.m*3 OR t.fxkip < med.m/3)) AS wrongrate,
-          COUNT(*) FILTER (WHERE t.bad_fx AND t.usd > 0) AS band
+          COUNT(*) FILTER (WHERE t.usd > 0 AND medfx.mf IS NOT NULL AND t.fx > 0
+                           AND (t.fx > medfx.mf*2 OR t.fx < medfx.mf/2)) AS band
         FROM tx t LEFT JOIN med ON med.currency = t.currency AND med.yr = t.yr
+                  LEFT JOIN medfx ON medfx.yr = t.yr
     """).fetchone()
     exc["fxCounts"] = {"missing": int(fc[0]), "nonpos": int(fc[1] or 0),
                        "wrongrate": int(fc[2] or 0), "band": int(fc[3] or 0)}
@@ -879,7 +886,8 @@ def build_exceptions(con, dims):
         for hid, d, b, fl, c, amt, rate, exp, usd, ref, kind in con.execute(f"""
             WITH med AS (
                 SELECT currency, yr, MEDIAN(fxkip) AS m FROM tx
-                WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30)
+                WHERE fxkip > 0 GROUP BY 1,2 HAVING COUNT(*) >= 30),
+                 medfx AS (SELECT yr, MEDIAN(fx) AS mf FROM tx WHERE fx > 0 GROUP BY 1)
             SELECT t.Hash_ID, t.ymd, t.bank, t.flow, t.currency, t.amt_orig,
                    t.fxkip, med.m, t.usd, t.ref,
                    CASE
@@ -887,10 +895,14 @@ def build_exceptions(con, dims):
                      WHEN t.usd <= 0 THEN 'nonpos'
                      WHEN med.m IS NOT NULL AND t.fxkip > 0
                           AND (t.fxkip > med.m * 3 OR t.fxkip < med.m / 3) THEN 'wrongrate'
-                     WHEN t.bad_fx THEN 'band'
+                     WHEN medfx.mf IS NOT NULL AND t.fx > 0
+                          AND (t.fx > medfx.mf * 2 OR t.fx < medfx.mf / 2) THEN 'band'
                      ELSE 'ok' END AS kind
             FROM tx t LEFT JOIN med ON med.currency = t.currency AND med.yr = t.yr
-            WHERE (t.usd IS NULL OR t.usd <= 0 OR t.bad_fx
+                      LEFT JOIN medfx ON medfx.yr = t.yr
+            WHERE (t.usd IS NULL OR t.usd <= 0
+                   OR (medfx.mf IS NOT NULL AND t.fx > 0
+                       AND (t.fx > medfx.mf * 2 OR t.fx < medfx.mf / 2))
                    OR (med.m IS NOT NULL AND t.fxkip > 0
                        AND (t.fxkip > med.m * 3 OR t.fxkip < med.m / 3)))
             ORDER BY CASE WHEN med.m IS NOT NULL AND t.fxkip > 0
@@ -1133,11 +1145,23 @@ def build_meta(con, files, ent_meta, cfg):
     row = con.execute("""
         SELECT COUNT(*), COUNT(DISTINCT Hash_ID), MIN(tx_date)::DATE, MAX(tx_date)::DATE,
                SUM(usd)/1e6 FROM tx""").fetchone()
+    # Per source file: direction, rows, date span. This is what the dashboard's
+    # Data Sources panel lists, so the analyst sees exactly what is loaded and
+    # how the files join up.
+    file_stats = [
+        {"name": nm, "flow": fl, "rows": int(n),
+         "min": str(mn), "max": str(mx)}
+        for nm, fl, n, mn, mx in con.execute("""
+            SELECT Source_File, ANY_VALUE(flow), COUNT(*),
+                   MIN(tx_date)::DATE, MAX(tx_date)::DATE
+            FROM tx WHERE Source_File IS NOT NULL
+            GROUP BY 1 ORDER BY MIN(tx_date), Source_File""").fetchall()
+    ]
     return {
         "generated": datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M"),
         "rows": int(row[0]), "uniqueIds": int(row[1]),
         "dateMin": str(row[2]), "dateMax": str(row[3]), "grossUsdM": r2(row[4]),
-        "sourceFiles": files, "fxBand": [FX_MIN, FX_MAX],
+        "sourceFiles": files, "sourceStats": file_stats, "fxBand": [FX_MIN, FX_MAX],
         "entityMeta": ent_meta,
         "entityTxLimit": ENTITY_TX_LIMIT, "exceptionLimit": EXCEPTION_LIMIT,
         "bankOwnPatterns": cfg.get("bankOwnRule", {}).get("namePatterns", []),
