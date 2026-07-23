@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0; url=docs/">
+<title>ITRS Live Report</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{display:flex;align-items:center;justify-content:center;
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:#0b1220;color:#9aa8bd}
+  a{color:#5aa0f0;text-decoration:none}
+</style>
+<script>
+  // Serve the app that lives under docs/ from the repository root, so the
+  // plain project URL works. Keep any query and hash the user arrived with.
+  location.replace('docs/' + location.search + location.hash);
+</script>
+</head>
+<body>
+  <p>Opening ITRS Live Report… <a href="docs/">Continue</a></p>
+</body>
+</html>
