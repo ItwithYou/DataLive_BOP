@@ -1050,6 +1050,15 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <p class="sub" data-t="dsBuiltInSub">2017–2025 · fixed, cannot be removed here</p>
         <div class="scroll" id="dsBuilt" style="max-height:540px"></div></div>
     </div>
+    <div class="card" id="dsPublish" hidden>
+      <h3 data-t="pubTitle">Publish uploaded data</h3>
+      <p class="sub" data-t="pubSub">Bake the files uploaded on this device into the published report so every user sees them.</p>
+      <div id="pubMsg"></div>
+      <div class="row" style="margin-top:11px">
+        <button class="btn pri" id="pubBtn" data-t="pubBtn">Publish uploaded data</button>
+      </div>
+      <p class="note" data-t="pubNote"></p>
+    </div>
   </section>
   <section class="tab" id="tab-accounts"></section>
 </div>
@@ -1160,6 +1169,16 @@ const I18N = {
  acDownloaded:["Downloaded. Now replace docs/index.html with it and publish.","ດາວໂຫລດແລ້ວ. ຕອນນີ້ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່."],
  acNoManager:["The account manager needs the encrypted dashboard opened with the superyang passphrase.","ຕົວຈັດການບັນຊີຕ້ອງເປີດ dashboard ທີ່ເຂົ້າລະຫັດດ້ວຍລະຫັດຜ່ານ superyang."],
  acAllTabs:["all tabs","ທຸກແທັບ"],
+ pubTitle:["Publish uploaded data","ເຜີຍແຜ່ຂໍ້ມູນທີ່ອັບໂຫລດ"],
+ pubSub:["Bake the files uploaded on this device into the published report so every user sees them.",
+         "ຝັງໄຟລ໌ທີ່ອັບໂຫລດໃນອຸປະກອນນີ້ເຂົ້າໃນລາຍງານທີ່ເຜີຍແຜ່ ເພື່ອໃຫ້ທຸກຄົນເຫັນ."],
+ pubBtn:["Publish uploaded data","ເຜີຍແຜ່ຂໍ້ມູນທີ່ອັບໂຫລດ"],
+ pubNote:["Re-encrypts under the same key, so every existing login keeps working. Downloads index.html — replace docs/index.html with it and publish. A full rebuild from build_dashboard.py does not carry these, so re-publish here after one.",
+          "ເຂົ້າລະຫັດຄືນດ້ວຍກະແຈເກົ່າ, ດັ່ງນັ້ນທຸກບັນຊີເຂົ້າລະບົບໃຊ້ໄດ້ຄືເກົ່າ. ດາວໂຫລດ index.html — ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່. ການ build ໃໝ່ທັງໝົດຈາກ build_dashboard.py ຈະບໍ່ນຳຂໍ້ມູນນີ້ໄປ."],
+ pubWorking:["Encrypting the updated report…","ກຳລັງເຂົ້າລະຫັດລາຍງານທີ່ປັບປຸງ…"],
+ pubDone:["Downloaded. Replace docs/index.html with it and publish — then everyone sees the data.",
+          "ດາວໂຫລດແລ້ວ. ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່ — ຈາກນັ້ນທຸກຄົນຈະເຫັນຂໍ້ມູນ."],
+ pubNothing:["No uploads on this device to publish. Add a file above first.","ບໍ່ມີໄຟລ໌ອັບໂຫລດໃນອຸປະກອນນີ້ໃຫ້ເຜີຍແຜ່. ກະລຸນາເພີ່ມໄຟລ໌ຂ້າງເທິງກ່ອນ."],
  setFx:["Exchange rate bands","ຂອບເຂດອັດຕາແລກປ່ຽນ"],
  setFxSub:["A rate outside its band is flagged as an exception","ອັດຕານອກຂອບເຂດຈະຖືກໝາຍ"],
  setPurpose:["Purpose transform rules","ກົດການປ່ຽນລະຫັດຈຸດປະສົງ"],
@@ -4164,12 +4183,26 @@ function detailToImport(rows, flow){
   return out;
 }
 
+// Uploads that superyang has published are baked into the encrypted payload and
+// applied to EVERY browser here; skip them in reapplyUploads() so a device that
+// also still holds its own copy is not counted twice.
+let BAKED_IDS = new Set();
+function applyBakedUploads(){
+  const list = Array.isArray(DATA.baked_uploads) ? DATA.baked_uploads : [];
+  BAKED_IDS = new Set(list.map(u => u.id));
+  for (const u of list){
+    try { buildImport(u.rows); } catch (e){ /* a bad baked upload must not brick boot */ }
+  }
+  return list.length;
+}
 async function reapplyUploads(){
   const ups = await idbAll();
+  let n = 0;
   for (const u of ups){
-    try { buildImport(u.rows); } catch (e){ /* a stale upload should not brick boot */ }
+    if (BAKED_IDS.has(u.id)) continue;   // already in the published base
+    try { buildImport(u.rows); n++; } catch (e){ /* a stale upload should not brick boot */ }
   }
-  return ups.length;
+  return n;
 }
 
 /* Data management now lives in the Data tab (renderData/processDataFile). */
@@ -4380,6 +4413,28 @@ function renderData(){
   }
   renderDsBuilt();
   renderDsUploads();
+  // superyang can push this device's uploads into the published file so every
+  // user sees them; everyone else never sees the control.
+  const pub = $('#dsPublish');
+  if (pub){
+    if (!isSuper()) pub.remove();
+    else {
+      pub.hidden = false;
+      if (!renderData.pubWired){
+        renderData.pubWired = true;
+        $('#pubBtn').addEventListener('click', async () => {
+          const m = $('#pubMsg');
+          m.className = 'imp-msg warn'; m.innerHTML = `<span class="spin"></span>${esc(t('pubWorking'))}`;
+          try {
+            const r = await acPublishData();
+            if (!r.added){ m.className = 'imp-msg warn'; m.textContent = t('pubNothing'); return; }
+            acDownload(await acBuildHtml());
+            m.className = 'imp-msg ok'; m.textContent = t('pubDone');
+          } catch (e){ m.className = 'imp-msg err'; m.textContent = String(e && e.message || e); }
+        });
+      }
+    }
+  }
 }
 /* ===================== Accounts (superyang only) =====================
    Provision logins without a server. superyang holds the raw data key, so the
@@ -4390,7 +4445,48 @@ function renderData(){
 const AC_TAB_LABEL = {overview:'tabOverview', bop:'tabBop', timeseries:'tabTs',
   weekly:'tabWeekly', search:'tabSearch', fx:'tabFx', dups:'tabDups',
   officers:'tabOfficers', banks:'tabBanks', quality:'tabQuality'};
-const acB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+// Chunked so a multi-MB ciphertext does not overflow the argument stack.
+const acB64 = buf => {
+  const u8 = new Uint8Array(buf); let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+const acB64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function acGzip(u8){
+  const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+// Decrypt the ORIGINAL payload straight from the stored env — never the mutated
+// in-memory DATA — so re-encryption always starts from a clean base.
+async function acPristinePayload(){
+  const env = DATA._env;
+  const key = await crypto.subtle.importKey('raw', DATA._dk, 'AES-GCM', false, ['decrypt']);
+  let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: acB64dec(env.iv)}, key, acB64dec(env.ct));
+  if (env.gz){
+    const ds = new DecompressionStream('gzip');
+    plain = await new Response(new Blob([plain]).stream().pipeThrough(ds)).arrayBuffer();
+  }
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+// Bake this device's uploads into the payload as raw rows (every client re-runs
+// buildImport on them at boot), then re-encrypt under the same data key so all
+// existing logins still open the file. Only env.ct/iv change; accounts are kept.
+async function acPublishData(){
+  if (!acEnv) acEnv = Object.assign({}, DATA._env, {keys: (DATA._env.keys || []).slice()});
+  const base = await acPristinePayload();
+  const existing = Array.isArray(base.baked_uploads) ? base.baked_uploads : [];
+  const ids = new Set(existing.map(u => u.id));
+  const ups = await idbAll();
+  const add = ups.filter(u => !ids.has(u.id)).map(u => ({id: u.id, rows: u.rows}));
+  if (!add.length) return {added: 0, total: existing.length};
+  base.baked_uploads = existing.concat(add);
+  const gz = await acGzip(new TextEncoder().encode(JSON.stringify(base)));
+  const key = await crypto.subtle.importKey('raw', DATA._dk, 'AES-GCM', false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, gz);
+  acEnv.iv = acB64(iv); acEnv.ct = acB64(ct); acEnv.gz = true;
+  return {added: add.length, total: base.baked_uploads.length};
+}
 let acEnv = null;                 // working copy of the encrypted env
 const acNew = new Set();          // names added this session, not yet published
 let acLast = null;                // {name, pass} of the most recent creation
@@ -4713,6 +4809,9 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
+  // Published (baked) uploads are part of the dataset every account should see,
+  // so they are applied for all roles before the first paint.
+  if (applyBakedUploads()) rebuildYearOptions();
   // Import mutates the dataset, so it is limited to the full-access roles.
   // Removing the button is presentational; the real boundary is that a viewer's
   // passphrase cannot unwrap the data key at all without a full-access one.
