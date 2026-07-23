@@ -690,11 +690,14 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <button class="iconbtn" id="installBtn" type="button" title="Install" hidden>
         <svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.6"/><path d="M10.6 5.6h2.8"/><path d="M12 10v6m0 0 2.4-2.4M12 16l-2.4-2.4"/></svg>
       </button>
-      <button class="iconbtn" id="importBtn" type="button" title="Import data">
-        <svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      <button class="iconbtn" id="importBtn" type="button" title="Data sources">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <button class="iconbtn" id="themeBtn" type="button"></button>
       <button class="iconbtn" id="langBtn" type="button"></button>
+      <button class="iconbtn" id="logoutBtn" type="button" title="Log out">
+        <svg viewBox="0 0 24 24"><path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+      </button>
     </div>
   </div>
   <div class="controls">
@@ -1009,30 +1012,30 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       </div>
       <p class="note" data-t="setHow"></p>
     </div>
+  <section class="tab" id="tab-data">
+    <div class="card">
+      <h3 data-t="dsTitle">Data sources</h3>
+      <p class="sub" id="dsLead"></p>
+      <div class="drop" id="dsDrop">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <b data-t="dsDropTitle">Add a 2026 export file</b>
+        <span id="dsDropSub"></span>
+        <input type="file" id="dsFile" accept=".csv,.json,.txt,.xlsx" hidden>
+      </div>
+      <div id="dsMsg" style="margin-top:11px"></div>
+    </div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="dsUploaded">Uploaded on this device</h3>
+        <p class="sub" id="dsUploadedSub"></p>
+        <div id="dsUploads"></div></div>
+      <div class="card"><h3 data-t="dsBuiltIn">Built in</h3>
+        <p class="sub" data-t="dsBuiltInSub">2017–2025 · fixed, cannot be removed here</p>
+        <div class="scroll" id="dsBuilt" style="max-height:540px"></div></div>
+    </div>
   </section>
 </div>
 
 <footer><div id="footMeta"></div></footer>
-</div>
-<div class="modal" id="importModal">
-  <div class="modal-card">
-    <button class="modal-x" id="impClose" type="button" aria-label="Close">&times;</button>
-    <h2 id="impTitle">Data sources</h2>
-    <p class="lead" id="impLead"></p>
-    <div id="impSources"></div>
-    <div class="drop" id="impDrop">
-      <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4.5 4.5M12 4 7.5 8.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-      <b id="impDropTitle">Choose a file or drop it here</b>
-      <span id="impDropSub">.xlsx export, .csv, or a .json data pack</span>
-      <input type="file" id="impFile" accept=".csv,.json,.txt,.xlsx" hidden>
-    </div>
-    <div id="impMsg"></div>
-    <div class="imp-log" id="impLog"></div>
-    <div class="modal-foot">
-      <button class="btn" id="impCancel" type="button">Cancel</button>
-      <button class="btn pri" id="impApply" type="button" disabled>Apply</button>
-    </div>
-  </div>
 </div>
 <div id="tip"></div>
 <script id="itrs-data" type="application/json">__ITRS_DATA__</script>
@@ -1227,7 +1230,16 @@ const I18N = {
  exceptions:["exceptions per 10,000 records","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ"],
  clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
- impBtn:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
+ impBtn:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
+ logout:["Log out","ອອກຈາກລະບົບ"],
+ dsTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
+ dsDropSub:["Excel export (.xlsx) or CSV — read in your browser, never uploaded anywhere","ໄຟລ໌ Excel (.xlsx) ຫຼື CSV — ອ່ານໃນບຣາວເຊີ, ບໍ່ຖືກສົ່ງໄປໃສ"],
+ dsUploaded:["Uploaded on this device","ອັບໂຫຼດໃນອຸປະກອນນີ້"],
+ dsBuiltIn:["Built in","ຕິດຕັ້ງມາ"],
+ dsBuiltInSub:["2017–2025 · fixed, cannot be removed here","2017–2025 · ຄົງທີ່, ລຶບຢູ່ນີ້ບໍ່ໄດ້"],
+ dsNoUploads:["No files uploaded yet. Drop a 2026 export above to add the current year.","ຍັງບໍ່ມີໄຟລ໌ອັບໂຫຼດ. ວາງໄຟລ໌ export ປີ 2026 ຂ້າງເທິງ ເພື່ອເພີ່ມປີປັດຈຸບັນ."],
+ dsHasUploads:["Each file is re-applied on load. Remove one to take it out of the report.","ແຕ່ລະໄຟລ໌ນຳໃຊ້ຄືນເມື່ອໂຫຼດ. ລຶບເພື່ອເອົາອອກຈາກລາຍງານ."],
+ logoutConfirm:["Log out and lock this report?","ອອກຈາກລະບົບ ແລະ ລັອກລາຍງານນີ້?"],
  roleAdmin:["Admin","ຜູ້ຄຸ້ມຄອງ"], roleViewer:["Team","ທີມງານ"],
  impTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
  impLead:["The report is built from 2017–2025. Upload your 2026 export files (.xlsx) — daily, weekly or monthly — to add the current year. Each upload is read in your browser, kept on this device, re-applied every time you open the report, and can be removed anytime. The built-in years are never changed.",
@@ -3963,165 +3975,7 @@ async function reapplyUploads(){
   return ups.length;
 }
 
-function initImport(){
-  const modal = $('#importModal'), drop = $('#impDrop'), file = $('#impFile');
-  const msg = $('#impMsg'), log = $('#impLog'), apply = $('#impApply');
-  let pending = null;                     // {kind, payload, stat}
-
-  const paint = () => {
-    $('#impTitle').textContent = t('impTitle');
-    $('#impLead').textContent = t('impLead');
-    $('#impDropTitle').textContent = t('impDropTitle');
-    $('#impDropSub').textContent = t('impDropSub');
-    $('#impCancel').textContent = t('impCancel');
-    apply.textContent = t('impApply');
-    $('#importBtn').title = t('impBtn');
-  };
-  const reset = () => { pending = null; apply.disabled = true;
-    msg.innerHTML = ''; log.innerHTML = ''; file.value = ''; };
-
-  async function renderSources(){
-    const box = $('#impSources');
-    const built = (meta.sourceStats || []);
-    const ups = await idbAll();
-    const span = s => `${s.min || '—'} → ${s.max || '—'}`;
-    const grp = (title, items, removable) => !items.length ? '' :
-      `<div class="src-grp"><div class="src-h">${esc(title)}</div>${items.map(s => `
-        <div class="src-row">
-          <div class="src-nm">${esc(s.name)}
-            <span class="pill ${s.flow==='Receive'?'ok':'bad'}">${esc(s.flow===
-              'Receive'?t('inflow'):t('outflow'))}</span></div>
-          <div class="src-meta">${int(s.rows)} ${esc(t('records'))} · ${esc(span(s))}</div>
-          ${removable ? `<button class="xbtn src-del" data-id="${esc(s.id)}" title="${esc(t('impRemove'))}">×</button>` : ''}
-        </div>`).join('')}</div>`;
-    box.innerHTML =
-      grp(t('impBuiltIn'), built, false) +
-      grp(t('impUploaded'), ups.map(u => ({...u, name:u.name})), true) +
-      (ups.length ? `<p class="note" style="margin:8px 2px 0">${esc(t('impLocalNote'))}</p>` : '');
-    $$('#impSources .src-del').forEach(b => b.addEventListener('click', async () => {
-      await idbDel(b.dataset.id);
-      location.reload();          // re-apply the remaining uploads from a clean base
-    }));
-  }
-
-  const open = () => { paint(); reset(); renderSources(); modal.classList.add('open'); };
-  const close = () => { modal.classList.remove('open'); reset(); };
-  const say = (cls, html) => { msg.innerHTML = `<div class="imp-msg ${cls}">${html}</div>`; };
-
-  async function handle(f){
-    if (!f) return;
-    say('warn', `<span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}`);
-    log.innerHTML = '';
-    try {
-      // .xlsx export: which direction is inferred from the file name.
-      if (/\.xlsx$/i.test(f.name)){
-        const nm = f.name.toLowerCase();
-        const flow = /out|payment|ໂອນອອກ/.test(nm) ? PAY
-                   : /in|receive|recieve|ໂອນເຂົ້າ/.test(nm) ? REC : null;
-        if (flow === null) throw new Error(t('errFlow'));
-        const parsed = await readXlsx(f);
-        const rows = detailToImport(parsed, flow);
-        if (rows.length < 2) throw new Error(t('errNoRows'));
-        pending = {kind:'csv', payload:rows, file:f.name, flow};
-        say('ok', `<b>${int(rows.length-1)}</b> ${esc(t('impReady'))} `
-          + `(${esc(flow === REC ? t('inflow') : t('outflow'))}).`);
-        apply.disabled = false;
-        return;
-      }
-      const text = await f.text();
-      if (/^\s*[{[]/.test(text)){
-        const pack = JSON.parse(text);
-        if (!pack.cubes || !pack.dims) throw new Error(t('errNotPack'));
-        pending = {kind:'pack', payload:pack};
-        say('ok', `${esc(t('impPack'))}: <b>${int(pack.meta.rows)}</b> ${esc(t('transactions'))}, `
-          + `${esc(pack.meta.dateMin)} → ${esc(pack.meta.dateMax)}. `
-          + `${esc(t('impPackWarn'))}`);
-      } else {
-        const rows = parseCsv(text);
-        if (rows.length < 2) throw new Error(t('errNoRows'));
-        pending = {kind:'csv', payload:rows};
-        const cols = mapColumns(rows[0]);
-        const missing = [];
-        if (cols.date < 0) missing.push('Date_of_Transaction');
-        if (cols.usd < 0 && (cols.kip < 0 || cols.fx < 0)) missing.push('Amount_USD');
-        if (missing.length) throw new Error(t('errMissing') + ' ' + missing.join(', '));
-        say('ok', `<b>${int(rows.length-1)}</b> ${esc(t('impReady'))} `
-          + `<b>${rows[0].length}</b> ${esc(t('impCols'))}.`);
-        const named = Object.entries(cols).filter(([,v]) => v >= 0).map(([k]) => k);
-        log.innerHTML = `<p class="note" style="margin:0">${esc(t('impMapped'))}: ${esc(named.join(', '))}</p>`;
-      }
-      apply.disabled = false;
-    } catch (err){
-      pending = null; apply.disabled = true;
-      say('err', esc(err.message || String(err)));
-    }
-  }
-
-  drop.addEventListener('click', () => file.click());
-  file.addEventListener('change', e => handle(e.target.files[0]));
-  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', e => handle(e.dataTransfer.files[0]));
-
-  apply.addEventListener('click', () => {
-    if (!pending) return;
-    try {
-      if (pending.kind === 'pack'){
-        // Wholesale replacement: reload with the new payload in place.
-        const p = pending.payload;
-        Object.keys(cubes).forEach(k => delete cubes[k]);
-        Object.assign(cubes, p.cubes);
-        Object.keys(dims).forEach(k => delete dims[k]);
-        Object.assign(dims, p.dims);
-        Object.assign(meta, p.meta);
-        close();
-        location.reload();
-        return;
-      }
-      const st = buildImport(pending.payload);
-      const rowsHtml = [
-        [t('impRows'), int(st.read)],
-        [t('impUsable'), int(st.ok)],
-        [t('impBadDate'), int(st.badDate)],
-        [t('impBadAmt'), int(st.badAmt)],
-        [t('inflow'), fmtM(st.usdIn/1e6, 2)],
-        [t('outflow'), fmtM(st.usdOut/1e6, 2)],
-        [t('impRange'), `${st.minD} → ${st.maxD}`],
-        [t('impNewDims'), [...new Set([...st.newBanks, ...st.newCountries,
-          ...st.newCurrencies, ...st.newPurposes])].join(', ') || '—'],
-      ].map(([k,v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('');
-      log.innerHTML = `<table><tbody>${rowsHtml}</tbody></table>`
-        + `<p class="note">${esc(t('impNote'))}</p>`;
-      say('ok', esc(t('impDone')));
-      // Persist so the upload survives a reload and can be removed later.
-      // Stored as the mapped rows, not the raw file, so re-apply is a merge.
-      const savedRows = pending.payload, savedFlow = pending.flow,
-            savedName = pending.file;
-      apply.disabled = true; pending = null;
-      if (savedName){
-        idbPut({id: 'u' + Object.keys(cubes).length + '-' + savedName + '-' + st.read,
-                name: savedName, flow: savedFlow === REC ? 'Receive' : 'Payment',
-                rows: savedRows, records: st.ok, min: st.minD, max: st.maxD})
-          .then(renderSources).catch(()=>{});
-      }
-      // Dimension arrays and cubes changed underneath every cached view.
-      Object.keys(state.hidden).forEach(k => delete state.hidden[k]);
-      rebuildYearOptions();
-      initMeta();
-      renderAll();
-    } catch (err){
-      say('err', esc(err.message || String(err)));
-    }
-  });
-  $('#impCancel').addEventListener('click', close);
-  $('#impClose').addEventListener('click', close);
-  modal.addEventListener('click', e => { if (e.target === modal) close(); });
-  addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
-  $('#importBtn').addEventListener('click', open);
-  initImport.paint = paint;
-}
+/* Data management now lives in the Data tab (renderData/processDataFile). */
 /** Years may have grown during an import; refresh the period selectors. */
 function rebuildYearOptions(){
   [['#yFrom', 'yFrom'], ['#yTo', 'yTo']].forEach(([sel, key]) => {
@@ -4261,9 +4115,78 @@ function renderSettings(){
 }
 
 /* ===================== shell ===================== */
+function renderDsBuilt(){
+  const built = meta.sourceStats || [];
+  const span = s => `${s.min || '—'} → ${s.max || '—'}`;
+  $('#dsBuilt').innerHTML = built.map(s => `
+    <div class="src-row">
+      <div class="src-nm">${esc(s.name)} <span class="pill ${s.flow==='Receive'?'ok':'bad'}">${esc(s.flow==='Receive'?t('inflow'):t('outflow'))}</span></div>
+      <div class="src-meta">${int(s.rows)} ${esc(t('records'))} · ${esc(span(s))}</div>
+    </div>`).join('');
+}
+async function renderDsUploads(){
+  const ups = await idbAll();
+  const span = s => `${s.min || '—'} → ${s.max || '—'}`;
+  $('#dsUploadedSub').textContent = ups.length ? t('dsHasUploads') : t('dsNoUploads');
+  $('#dsUploads').innerHTML = ups.map(u => `
+    <div class="src-row">
+      <div class="src-nm">${esc(u.name)} <span class="pill ${u.flow==='Receive'?'ok':(u.flow==='Payment'?'bad':'')}">${esc(u.flow)}</span></div>
+      <div class="src-meta">${int(u.records)} ${esc(t('records'))} · ${esc(span(u))}</div>
+      <button class="xbtn ds-del" data-id="${esc(u.id)}" title="${esc(t('impRemove'))}">×</button>
+    </div>`).join('');
+  $$('#dsUploads .ds-del').forEach(b => b.addEventListener('click', async () => {
+    await idbDel(b.dataset.id);
+    location.reload();          // re-apply the remaining uploads onto a clean base
+  }));
+}
+async function processDataFile(f){
+  if (!f) return;
+  const msg = $('#dsMsg');
+  msg.innerHTML = `<div class="imp-msg warn"><span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}</div>`;
+  try {
+    let rows, flow = null;
+    if (/\.xlsx$/i.test(f.name)){
+      const nm = f.name.toLowerCase();
+      flow = /out|payment|ໂອນອອກ/.test(nm) ? PAY
+           : /in|receive|recieve|ໂອນເຂົ້າ/.test(nm) ? REC : null;
+      if (flow === null) throw new Error(t('errFlow'));
+      rows = detailToImport(await readXlsx(f), flow);
+    } else {
+      rows = parseCsv(await f.text());
+    }
+    if (rows.length < 2) throw new Error(t('errNoRows'));
+    const st = buildImport(rows);
+    await idbPut({id: 'u' + String(f.size) + '-' + f.name + '-' + st.read,
+      name: f.name, flow: flow===REC?'Receive':(flow===PAY?'Payment':'—'),
+      rows, records: st.ok, min: st.minD, max: st.maxD});
+    Object.keys(state.hidden).forEach(k => delete state.hidden[k]);
+    rebuildYearOptions(); initMeta();
+    msg.innerHTML = `<div class="imp-msg ok">${esc(t('impDone'))} — <b>${int(st.ok)}</b> ${esc(t('records'))}, ${esc(st.minD)} → ${esc(st.maxD)}</div>`;
+    await renderDsUploads();
+    renderAll();
+  } catch (err){
+    msg.innerHTML = `<div class="imp-msg err">${esc(err.message || String(err))}</div>`;
+  }
+  $('#dsFile').value = '';
+}
+function renderData(){
+  $('#dsLead').textContent = t('impLead');
+  $('#dsDropSub').textContent = t('dsDropSub');
+  if (!renderData.wired){
+    renderData.wired = true;
+    const drop = $('#dsDrop'), file = $('#dsFile');
+    drop.addEventListener('click', () => file.click());
+    file.addEventListener('change', e => processDataFile(e.target.files[0]));
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', e => processDataFile(e.dataTransfer.files[0]));
+  }
+  renderDsBuilt();
+  renderDsUploads();
+}
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
   weekly:renderWeekly, search:renderSearch, fx:renderFx, dups:renderDups,
-  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings};
+  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings, data:renderData};
 let rendered = {};
 function renderBanner(){
   const msg = {
@@ -4295,7 +4218,9 @@ function applyI18n(){
   lb.title = isLo() ? 'Switch to English' : 'ປ່ຽນເປັນພາສາລາວ';
   lb.setAttribute('aria-label', lb.title);
   lb.classList.toggle('lao', !isLo());
-  if (initImport.paint) initImport.paint();
+  const lo = $('#logoutBtn');
+  if (lo){ lo.title = t('logout'); lo.setAttribute('aria-label', t('logout')); }
+  const ib = $('#importBtn'); if (ib) ib.title = t('impBtn');
   // Option labels just changed language; repaint any enhanced dropdown.
   ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
     const el = $(s); if (el && el._sel) el._sel.refresh();
@@ -4342,6 +4267,12 @@ function initControls(){
     applyI18n(); initMeta(); renderAll();
     const b = e.currentTarget;
     b.classList.remove('flip'); void b.offsetWidth; b.classList.add('flip');
+  });
+  $('#logoutBtn').addEventListener('click', () => {
+    if (!confirm(t('logoutConfirm'))) return;
+    // Drop the remembered passphrase and reload; the unlock gate takes over.
+    try { localStorage.removeItem('itrs-pass'); } catch (e) {}
+    location.reload();
   });
   $('#tsDim').addEventListener('change', e => { state.tsDim = e.target.value; state.tsPick = null; renderTimeSeries(); });
   $('#tsCsv').addEventListener('click', tsCsv);
@@ -4404,12 +4335,29 @@ function initControls(){
   // presentational; the real boundary is that a viewer's passphrase cannot
   // unwrap the data key at all without also being handed the admin one.
   if (isAdmin()){
-    initImport();
+    // The + button opens the Data tab, like the gear opens Settings.
+    $('#importBtn').addEventListener('click', () => {
+      state.tab = 'data';
+      $$('#nav button').forEach(x => x.setAttribute('aria-selected', 'false'));
+      $$('.tab').forEach(x => x.classList.toggle('on', x.id === 'tab-data'));
+      renderTab();
+      scrollTo({top:0, behavior:'smooth'});
+    });
     // Re-apply device uploads onto the freshly-loaded base, then repaint.
     reapplyUploads().then(n => { if (n){ rebuildYearOptions(); initMeta(); renderAll(); } })
       .catch(()=>{});
   }
   else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
+  // The MPD role sees only these four report tabs; the rest are removed from the
+  // nav so there is nothing to click through to.
+  if (ROLE === 'mpd'){
+    const allowed = new Set(['overview', 'bop', 'timeseries', 'weekly']);
+    $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
+    if (!allowed.has(state.tab)){
+      state.tab = 'overview';
+      $('#nav button[data-tab="overview"]').setAttribute('aria-selected', 'true');
+    }
+  }
   const sb = $('#settingsBtn');
   if (sb) sb.addEventListener('click', () => {
     state.tab = 'settings';

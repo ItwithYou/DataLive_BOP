@@ -1228,6 +1228,8 @@ ROLES = {
                "full access, including data import"),
     "viewer": ("ITRS_PASSWORD_VIEWER", "Team passphrase",
                "read-only: every report, no import"),
+    "mpd":    ("ITRS_PASSWORD_MPD",    "MPD passphrase",
+               "limited: Overview, Balance of Payments, Time Series, Period Report"),
 }
 
 
@@ -1277,6 +1279,8 @@ def parse_args():
                    help="file holding the admin passphrase (full access)")
     p.add_argument("--viewer-password-file",
                    help="file holding the team passphrase (read-only)")
+    p.add_argument("--mpd-password-file",
+                   help="file holding the MPD passphrase (limited tab access)")
     p.add_argument("--out", help="output path (default: ITRS_Dashboard.html, "
                                  "or docs/index.html with --encrypt --publish)")
     p.add_argument("--publish", action="store_true",
