@@ -975,20 +975,27 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div class="grid g-4">
       <div class="card"><h3 data-t="qScore">Overall data quality</h3><p class="sub" data-t="qScoreSub">Selected period</p>
         <div class="score"><span class="g" id="qGrade">—</span><span id="qGradeTxt" class="muted"></span></div>
-        <div id="qScoreBar"></div></div>
+        <div id="qScoreBar"></div>
+        <div id="qScale"></div></div>
       <div class="card span3"><h3 data-t="qIssues">Validation exceptions</h3>
         <p class="sub" data-t="qIssuesSub">Records failing each check</p><ul class="issues" id="qIssues"></ul></div>
+    </div>
+    <div class="card"><h3 data-t="qExplain">What the grade means</h3>
+      <p class="sub" data-t="qExplainSub">How the score is worked out, and what would raise it</p>
+      <div id="qExplain"></div></div>
+    <div class="grid g-2">
+      <div class="card"><h3 data-t="qTrend">Quality trend by year</h3>
+        <p class="sub" data-t="qTrendSub">Exceptions per 10,000 records, each year</p>
+        <div id="qTrend"></div></div>
+      <div class="card"><h3 data-t="qBank">Bank reporting scorecard</h3>
+        <p class="sub" data-t="qBankSub">Exceptions per 10,000 records</p><div class="scroll" id="qBankTable"></div></div>
     </div>
     <div class="card"><h3 data-t="qComp">Field completeness by year</h3>
       <p class="sub" data-t="qCompSub">Percentage of records with a value</p>
       <div class="tw" id="qCompleteness"></div></div>
-    <div class="grid g-2">
-      <div class="card"><h3 data-t="qBank">Bank reporting scorecard</h3>
-        <p class="sub" data-t="qBankSub">Exceptions per 10,000 records</p><div class="scroll" id="qBankTable"></div></div>
-      <div class="card"><h3 data-t="qConc">Value concentration</h3>
-        <p class="sub" data-t="qConcSub">Share carried by the largest transactions</p>
-        <div id="qConcentration"></div><p class="note" data-t="qConcNote"></p></div>
-    </div>
+    <div class="card"><h3 data-t="qConc">Value concentration</h3>
+      <p class="sub" data-t="qConcSub">Share carried by the largest transactions</p>
+      <div id="qConcentration"></div><p class="note" data-t="qConcNote"></p></div>
   </section>
 
   <section class="tab" id="tab-settings">
@@ -1044,7 +1051,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         <b data-t="dsDropTitle">Add a 2026 export file</b>
         <span id="dsDropSub"></span>
-        <input type="file" id="dsFile" accept=".csv,.json,.txt,.xlsx" hidden>
+        <input type="file" id="dsFile" accept=".csv,.tsv,.txt,.json,.xlsx" hidden>
       </div>
       <div id="dsMsg" style="margin-top:11px"></div>
     </div>
@@ -1267,13 +1274,17 @@ const I18N = {
  qBank:["Bank reporting scorecard","ຄະແນນການລາຍງານຂອງທະນາຄານ"], qBankSub:["Exceptions per 10,000","ຂໍ້ຜິດພາດຕໍ່ 10,000"],
  qConc:["Value concentration","ການກະຈຸກຕົວຂອງມູນຄ່າ"], qConcSub:["Share held by largest transactions","ສັດສ່ວນຂອງທຸລະກຳໃຫຍ່ສຸດ"],
  qConcNote:["Verifying the top 100 records each year covers roughly a fifth of reported value.","ການກວດ 100 ລາຍການໃຫຍ່ສຸດຂອງແຕ່ລະປີ ກວມປະມານໜຶ່ງສ່ວນຫ້າຂອງມູນຄ່າລາຍງານ."],
+ qExplain:["What the grade means","ຄວາມໝາຍຂອງຄະແນນ"],
+ qExplainSub:["How the score is worked out, and what would raise it","ວິທີຄິດໄລ່ຄະແນນ ແລະ ສິ່ງທີ່ຈະຊ່ວຍໃຫ້ດີຂຶ້ນ"],
+ qTrend:["Quality trend by year","ທ່າອ່ຽງຄຸນນະພາບຕາມປີ"],
+ qTrendSub:["Exceptions per 10,000 records, each year","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ ໃນແຕ່ລະປີ"],
  exceptions:["exceptions per 10,000 records","ຂໍ້ຜິດພາດຕໍ່ 10,000 ລາຍການ"],
  clean:["clean","ສະອາດ"], showingTop:["Showing top","ສະແດງສູງສຸດ"], of:["of","ຈາກ"],
  noData:["No data for this selection.","ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກນີ້."],
  impBtn:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
  logout:["Log out","ອອກຈາກລະບົບ"],
  dsTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
- dsDropSub:["Excel export (.xlsx) or CSV — read in your browser, never uploaded anywhere","ໄຟລ໌ Excel (.xlsx) ຫຼື CSV — ອ່ານໃນບຣາວເຊີ, ບໍ່ຖືກສົ່ງໄປໃສ"],
+ dsDropSub:["Excel (.xlsx), CSV, TSV or JSON — read in your browser, never uploaded anywhere","ໄຟລ໌ Excel (.xlsx), CSV, TSV ຫຼື JSON — ອ່ານໃນບຣາວເຊີ, ບໍ່ຖືກສົ່ງໄປໃສ"],
  dsDropTitle:["Add a data file","ເພີ່ມໄຟລ໌ຂໍ້ມູນ"],
  dsUploaded:["Uploaded on this device","ອັບໂຫຼດໃນອຸປະກອນນີ້"],
  dsBuiltIn:["Built in","ຕິດຕັ້ງມາ"],
@@ -3394,27 +3405,77 @@ const QCHECKS = () => [
    why:isLo()?'ຊ່ອງ Country_Code ຫວ່າງເປົ່າ':'Country_Code is empty'},
 ];
 function renderQuality(){
-  const per = new Map(), tot = new Array(12).fill(0);
+  const checks = QCHECKS();
+  const per = new Map(), tot = new Array(12).fill(0), perYear = new Map();
   for (const r of cubes.quality){
     if (r[0]<state.yFrom||r[0]>state.yTo) continue;
     if (state.bank>=0 && r[1]!==state.bank) continue;
     let e = per.get(r[1]); if (!e) per.set(r[1], e = new Array(12).fill(0));
     for (let k=2;k<r.length;k++){ e[k]+=r[k]; tot[k]+=r[k]; }
+    let y = perYear.get(r[0]); if (!y) perYear.set(r[0], y = [0,0]);   // [records, exceptions]
+    y[0] += r[2]; y[1] += checks.reduce((a,c)=>a+r[c.k], 0);
   }
-  const checks = QCHECKS(), N = tot[2]||1;
+  const N = tot[2]||1;
   const ex = checks.reduce((a,c)=>a+tot[c.k],0), rate = 10000*ex/N;
+  // Grade bands, expressed as exceptions per 10,000 records. One place to read
+  // the thresholds from, so the letter, the bar, the scale and the plain-text
+  // explanation below can never disagree.
+  const BANDS = [{g:'A',lo:0,hi:5},{g:'B',lo:5,hi:25},{g:'C',lo:25,hi:100},{g:'D',lo:100,hi:Infinity}];
+  const gcol = g => g==='A'?cssv('--in'):g==='B'?cssv('--accent'):g==='C'?cssv('--warn'):cssv('--bad');
+  const gradeName = g => (isLo()?{A:'ດີເລີດ',B:'ດີ',C:'ພໍໃຊ້',D:'ຕ້ອງປັບປຸງ'}
+                               :{A:'Excellent',B:'Good',C:'Fair',D:'Needs work'})[g];
   const grade = rate<5?'A':rate<25?'B':rate<100?'C':'D';
   $('#qGrade').className = 'g '+grade.toLowerCase();
   $('#qGrade').textContent = grade;
   $('#qGradeTxt').innerHTML = `${rate.toFixed(1)} ${esc(t('exceptions'))}<br><span style="font-size:11px">${int(ex)} ${esc(t('of'))} ${int(N)}</span>`;
   $('#qScoreBar').innerHTML = `<div style="height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:10px">
-    <div style="height:100%;width:${clamp(100-rate/2,2,100).toFixed(1)}%;background:${grade==='A'?cssv('--in'):grade==='B'?cssv('--accent'):grade==='C'?cssv('--warn'):cssv('--bad')}"></div></div>`;
+    <div style="height:100%;width:${clamp(100-rate/2,2,100).toFixed(1)}%;background:${gcol(grade)}"></div></div>`;
+  // Grade scale: four bands, the current one lit, its numeric range beneath —
+  // so anyone can see at a glance why the period landed where it did.
+  $('#qScale').innerHTML = `<div style="margin-top:12px">
+      <div style="display:flex;height:24px;border-radius:6px;overflow:hidden">${
+        BANDS.map(b=>`<div style="flex:1;background:${gcol(b.g)};opacity:${b.g===grade?1:0.26};color:#fff;font:700 12px/24px system-ui;text-align:center">${b.g}</div>`).join('')}</div>
+      <div style="display:flex;margin-top:3px">${
+        BANDS.map(b=>`<div style="flex:1;text-align:center;font:500 9px/1.3 system-ui;color:var(--ink-2)">${b.g==='D'?'100+':b.lo+'–'+b.hi}</div>`).join('')}</div>
+    </div>`;
   $('#qIssues').innerHTML = checks.map(c => {
     const n = tot[c.k], p = 100*n/N;
     const cls = n===0?'ok':p>0.5?'bad':p>0.05?'warn':'';
     return `<li><span><b>${esc(c.label)}</b><br><span class="muted" style="font-size:11px">${esc(c.why)}</span></span>
       <span class="n">${int(n)}<br><span class="pill ${cls}">${n===0?esc(t('clean')):p.toFixed(p<0.01?3:2)+'%'}</span></span></li>`;
   }).join('');
+
+  // Plain-language explanation of the score, so a reader who doesn't know the
+  // formula can still tell what grade B is and how to improve it.
+  const drivers = checks.map(c=>({label:c.label, n:tot[c.k]})).filter(d=>d.n>0).sort((a,b)=>b.n-a.n);
+  const bi_ = BANDS.findIndex(b=>b.g===grade), better = bi_>0 ? BANDS[bi_-1] : null;
+  const toFix = better ? Math.max(0, ex - (Math.ceil(BANDS[bi_].lo * N/10000) - 1)) : 0;
+  const nm = gradeName(grade), lo = isLo();
+  const bandsTxt = lo ? 'ຂອບເຂດຄະແນນ (ຕໍ່ 10,000 ລາຍການ): A ຕ່ຳກວ່າ 5 · B 5–25 · C 25–100 · D 100 ຂຶ້ນໄປ.'
+                      : 'Grade bands (per 10,000 records): A under 5 · B 5–25 · C 25–100 · D 100 or more.';
+  const perRecTxt = lo ? '“ຕໍ່ 10,000 ລາຍການ” ໝາຍວ່າ ໃນທຸກ 10,000 ທຸລະກຳ ຈະພົບບັນຫາຈຳນວນເທົ່າໃດ.'
+                       : '“Per 10,000 records” means: out of every 10,000 transactions, how many trip a check.';
+  const P = [];
+  P.push(lo
+    ? `ທຸກລາຍການຖືກກວດກັບກົດ ${checks.length} ຂໍ້. ມີ <b>${int(ex)}</b> ຈາກ <b>${int(N)}</b> ລາຍການ (<b>${rate.toFixed(1)}</b> ຕໍ່ 10,000) ບໍ່ຜ່ານຢ່າງໜ້ອຍໜຶ່ງຂໍ້ — ຈຶ່ງໄດ້ຄະແນນ <b>${grade}</b> (${nm}).`
+    : `Every record is checked against ${checks.length} validation rules. <b>${int(ex)}</b> of <b>${int(N)}</b> records (<b>${rate.toFixed(1)}</b> per 10,000) fail at least one — which places this period at grade <b>${grade}</b> (${nm}).`);
+  if (drivers[0]) P.push(lo
+    ? `ສາເຫດໃຫຍ່ສຸດ: “${esc(drivers[0].label)}” — ${int(drivers[0].n)} ລາຍການ.`
+    : `Biggest single source: “${esc(drivers[0].label)}” — ${int(drivers[0].n)} records.`);
+  P.push(better ? (lo
+      ? `ເພື່ອຂຶ້ນເປັນຄະແນນ <b>${better.g}</b> ຕ້ອງແກ້ໄຂປະມານ <b>${int(toFix)}</b> ລາຍການ.`
+      : `To reach grade <b>${better.g}</b>, about <b>${int(toFix)}</b> of these records would need correcting.`)
+    : (lo ? 'ນີ້ແມ່ນຄະແນນສູງສຸດແລ້ວ — ບໍ່ຕ້ອງດຳເນີນການເພີ່ມ.' : 'This is already the top grade — nothing to act on.'));
+  $('#qExplain').innerHTML = P.map((p,i)=>`<p style="margin:${i?6:0}px 0 6px">${p}</p>`).join('')
+    + `<p class="note" style="margin-top:8px">${esc(bandsTxt)} ${esc(perRecTxt)}</p>`;
+
+  // Is quality getting better or worse? Exception rate per year.
+  const tyrs = [...perYear.keys()].sort((a,b)=>a-b);
+  if (tyrs.length) lineChart($('#qTrend'), tyrs.map(y=>String(YEARS[y])), [
+      {name:lo?'ຂໍ້ຜິດພາດຕໍ່ 10,000':'Exceptions per 10,000', color:cssv('--accent'),
+       values:tyrs.map(y=>{ const v=perYear.get(y); return v[0]?10000*v[1]/v[0]:0; })}
+    ], {h:230, key:'qtrend', w:460, fmt:v=>v.toFixed(1), axisFmt:v=>v.toFixed(0)});
+  else $('#qTrend').innerHTML = `<p class="empty">${esc(t('noData'))}</p>`;
 
   const yrs = yearsInRange(), comp = {};
   for (const r of cubes.completeness) if (r[0]>=state.yFrom && r[0]<=state.yTo) comp[r[0]] = r;
@@ -3476,8 +3537,14 @@ const SEP = String.fromCharCode(1);
 
 function parseCsv(text){
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-  const delim = (text.slice(0, 2000).match(/;/g) || []).length >
-                (text.slice(0, 2000).match(/,/g) || []).length ? ';' : ',';
+  // Auto-detect the separator so the same reader handles .csv, .tsv and tab- or
+  // semicolon-delimited .txt exports. Whichever punctuation is most common in
+  // the head of the file wins; comma is the fallback.
+  const head = text.slice(0, 4000);
+  const count = ch => (head.split(ch).length - 1);
+  const delim = [['\t', count('\t')], [';', count(';')], [',', count(',')]]
+    .sort((a, b) => b[1] - a[1])[0];
+  const sep = delim[1] > 0 ? delim[0] : ',';
   const rows = []; let row = [], cell = '', q = false;
   for (let i = 0; i < text.length; i++){
     const c = text[i];
@@ -3485,12 +3552,28 @@ function parseCsv(text){
       if (c === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
       else cell += c;
     } else if (c === '"') q = true;
-    else if (c === delim){ row.push(cell); cell = ''; }
+    else if (c === sep){ row.push(cell); cell = ''; }
     else if (c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
     else if (c !== '\r') cell += c;
   }
   if (cell.length || row.length){ row.push(cell); rows.push(row); }
   return rows.filter(r => r.some(v => v !== ''));
+}
+/* Accept .json in a few shapes: an array of row-arrays (first is the header),
+   an array of record objects (keys become the header), or a wrapper object
+   carrying such an array under `rows` or `data`. Everything downstream then
+   goes through the same column mapping as a CSV. */
+function jsonToRows(data){
+  let arr = data;
+  if (!Array.isArray(arr)){
+    if (arr && Array.isArray(arr.rows)) arr = arr.rows;
+    else if (arr && Array.isArray(arr.data)) arr = arr.data;
+    else throw new Error(t('errNoRows'));
+  }
+  if (!arr.length) return [];
+  if (Array.isArray(arr[0])) return arr;
+  const cols = [...new Set(arr.flatMap(o => Object.keys(o || {})))];
+  return [cols, ...arr.map(o => cols.map(c => { const v = o == null ? '' : o[c]; return v == null ? '' : String(v); }))];
 }
 const canon = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 function mapColumns(header){
@@ -4143,10 +4226,15 @@ function renderSettings(){
   const users = DATA._users || [];
   const NAV = {overview:t('tabOverview'), bop:t('tabBop'), timeseries:t('tabTs'),
     weekly:t('tabWeekly'), search:t('tabSearch'), fx:t('tabFx'), dups:t('tabDups'),
-    officers:t('tabOfficers'), banks:t('tabBanks'), quality:t('tabQuality')};
+    officers:t('tabOfficers'), banks:t('tabBanks'), quality:t('tabQuality'),
+    data:(isLo()?'ຈັດການຂໍ້ມູນ':'Data'), settings:(isLo()?'ຕັ້ງຄ່າ':'Settings')};
   const tabLabel = ts => ts === 'all' || !Array.isArray(ts)
     ? (isLo() ? 'ທຸກແຖບ' : 'All tabs')
     : ts.map(x => NAV[x] || x).join(', ');
+  // The account list (and, implicitly, who can see what) is a super-admin view.
+  // A member granted the Settings tab still must not see it.
+  const uc = $('#setUsersCard');
+  if (uc) uc.style.display = isAdmin() ? '' : 'none';
   $('#setUsers').innerHTML = `<table><thead><tr>
       <th style="text-align:left">${esc(t('ofOfficer'))}</th>
       <th style="text-align:left">${esc(t('setUsersRole'))}</th>
@@ -4316,8 +4404,10 @@ async function processDataFile(f){
            : /in|receive|recieve|ໂອນເຂົ້າ/.test(nm) ? REC : null;
       if (flow === null) throw new Error(t('errFlow'));
       rows = detailToImport(await readXlsx(f), flow);
+    } else if (/\.json$/i.test(f.name)){
+      rows = jsonToRows(JSON.parse(await f.text()));
     } else {
-      rows = parseCsv(await f.text());
+      rows = parseCsv(await f.text());   // .csv, .tsv, tab/;/,-delimited .txt
     }
     if (rows.length < 2) throw new Error(t('errNoRows'));
     const st = buildImport(rows);
@@ -4501,10 +4591,14 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
-  // Import mutates the dataset, so it is admin-only. Removing the button is
-  // presentational; the real boundary is that a viewer's passphrase cannot
-  // unwrap the data key at all without also being handed the admin one.
-  if (isAdmin()){
+  // Data (upload) and Settings are ordinary grantable tabs now: an account gets
+  // them if it is admin, or if 'data' / 'settings' is in its tabs list. So the
+  // super admin can, say, give one person only Overview + Data.
+  const grants = Array.isArray(DATA._tabs) ? new Set(DATA._tabs) : null;
+  const canData = isAdmin() || (grants && grants.has('data'));
+  const canSettings = isAdmin() || (grants && grants.has('settings'));
+
+  if (canData){
     // The + button opens the Data tab, like the gear opens Settings.
     $('#importBtn').addEventListener('click', () => {
       state.tab = 'data';
@@ -4516,16 +4610,15 @@ function initControls(){
     // Re-apply device uploads onto the freshly-loaded base, then repaint.
     reapplyUploads().then(n => { if (n){ rebuildYearOptions(); initMeta(); renderAll(); } })
       .catch(()=>{});
-  }
-  else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
-  // A non-admin account sees only the tabs it was granted; the rest are removed
-  // from the nav so there is nothing to click through to. tabs === 'all' (or an
-  // admin) sees everything.
-  if (!isAdmin() && Array.isArray(DATA._tabs)){
-    const allowed = new Set(DATA._tabs);
-    $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
-    if (!allowed.has(state.tab)){
-      state.tab = DATA._tabs[0] || 'overview';
+  } else $('#importBtn').remove();
+  if (!canSettings) $('#settingsBtn').remove();
+
+  // A non-admin account sees only the report tabs it was granted; the rest are
+  // removed from the nav so there is nothing to click through to.
+  if (!isAdmin() && grants){
+    $$('#nav button').forEach(b => { if (!grants.has(b.dataset.tab)) b.remove(); });
+    if (!grants.has(state.tab)){
+      state.tab = [...grants].find(x => $(`#nav button[data-tab="${x}"]`)) || 'overview';
       const nb = $(`#nav button[data-tab="${state.tab}"]`);
       if (nb) nb.setAttribute('aria-selected', 'true');
     }
