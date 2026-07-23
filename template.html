@@ -1302,6 +1302,7 @@ const I18N = {
                "ໄຟລ໌ທີ່ອັບໂຫຼດຢູ່ໃນອຸປະກອນນີ້ ແລະ ນຳໃຊ້ຄືນເມື່ອໂຫຼດ. ລຶບເພື່ອເອົາອອກຈາກລາຍງານນີ້. ເພື່ອເຜີຍແຜ່ໃຫ້ທຸກຄົນ ໃຫ້ສ້າງໃໝ່ຈາກໄຟລ໌ຕົ້ນທາງ."],
  errFlow:["Name the file …in… or …out… so its direction is clear.","ຕັ້ງຊື່ໄຟລ໌ໃຫ້ມີ in ຫຼື out ເພື່ອບອກທິດທາງ."],
  errXlsx:["This .xlsx could not be read (unsupported compression).","ອ່ານໄຟລ໌ .xlsx ນີ້ບໍ່ໄດ້."],
+ errParquet:["Parquet files are loaded through the build, not the browser. Export it to CSV or Excel first, or send the .parquet to be baked in.","ໄຟລ໌ Parquet ໂຫຼດຜ່ານການ build ບໍ່ແມ່ນຜ່ານບຣາວເຊີ. ໃຫ້ export ເປັນ CSV ຫຼື Excel ກ່ອນ ຫຼື ສົ່ງໄຟລ໌ .parquet ໃຫ້ບັນຈຸເຂົ້າ."],
  errDetail:["No known column headers found in this export.","ບໍ່ພົບຫົວຖັນທີ່ຮູ້ຈັກໃນໄຟລ໌ນີ້."],
  impDropTitle:["Choose a file or drop it here","ເລືອກໄຟລ໌ ຫຼື ລາກມາວາງບ່ອນນີ້"],
  impDropSub:["CSV of transactions, or a .json data pack","CSV ຂອງທຸລະກຳ ຫຼື .json data pack"],
@@ -4398,6 +4399,7 @@ async function processDataFile(f){
   msg.innerHTML = `<div class="imp-msg warn"><span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}</div>`;
   try {
     let rows, flow = null;
+    if (/\.parquet$/i.test(f.name)) throw new Error(t('errParquet'));
     if (/\.xlsx$/i.test(f.name)){
       const nm = f.name.toLowerCase();
       flow = /out|payment|ໂອນອອກ/.test(nm) ? PAY
