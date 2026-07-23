@@ -25,22 +25,27 @@
    choice as its own selector lets it override the OS in both directions.
 --------------------------------------------------------------------------- */
 :root{
-  --bg:#eef1f6;
-  --bg-1:#dbe6f5; --bg-2:#e6dff3; --bg-3:#d8ecec;
-  --panel:rgba(255,255,255,.66); --panel-solid:#fff; --panel-2:rgba(255,255,255,.45);
-  --ink:#101620; --ink-2:#48546a; --ink-3:#78849a;
-  --line:rgba(16,24,40,.10); --line-2:rgba(16,24,40,.06);
-  --glass-blur:18px; --glass-sat:170%;
-  --glass-edge:rgba(255,255,255,.75);
-  --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,0) 42%);
-  --in:#0c8a68; --in-soft:rgba(12,138,104,.14); --out:#c0433a; --out-soft:rgba(192,67,58,.14); --up:#2563eb; --down:#b45309;
-  --accent:#2563a8; --accent-soft:rgba(37,99,168,.13);
-  --warn:#a8760a; --warn-soft:rgba(168,118,10,.14); --bad:#c0433a;
+  /* Light = "Sonoma Frost": a cool, de-purpled, high-key near-white field the
+     glass refracts; near-opaque white card edges with a lit-from-above inset
+     highlight (--glass-hi); a deep, soft double drop shadow so panes float.
+     Body text stays ~15:1 on the card — legibility is never traded for gloss. */
+  --bg:#edf1f7;
+  --bg-1:#dce7f5; --bg-2:#e3e9f6; --bg-3:#dcebf1;
+  --panel:rgba(250,252,255,.60); --panel-solid:#fbfcfe; --panel-2:rgba(248,251,255,.44);
+  --ink:#0e141c; --ink-2:#444f63; --ink-3:#5f6a82;
+  --line:rgba(14,22,40,.10); --line-2:rgba(14,22,40,.055);
+  --glass-blur:22px; --glass-sat:180%;
+  --glass-edge:rgba(255,255,255,.92);
+  --glass-hi:rgba(255,255,255,.72);
+  --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.60),rgba(255,255,255,0) 45%);
+  --in:#0a8f6a; --in-soft:rgba(10,143,106,.13); --out:#c8443b; --out-soft:rgba(200,68,59,.13); --up:#2563eb; --down:#b45309;
+  --accent:#2563ac; --accent-soft:rgba(37,99,172,.13);
+  --warn:#a8760a; --warn-soft:rgba(168,118,10,.14); --bad:#c8443b;
   --c1:#2563a8; --c2:#0c8a68; --c3:#a8760a; --c4:#8250b8; --c5:#c0433a;
   --c6:#2f8397; --c7:#b96f28; --c8:#65748a; --c9:#965172; --c10:#43764f;
   --r:14px; --tap:44px;
-  --sh:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -10px rgba(16,24,40,.18);
-  --sh-lg:0 2px 6px rgba(16,24,40,.05), 0 22px 48px -18px rgba(16,24,40,.32);
+  --sh:0 1px 2px rgba(16,24,40,.05), 0 12px 32px -12px rgba(16,24,40,.22);
+  --sh-lg:0 2px 8px rgba(16,24,40,.06), 0 30px 60px -20px rgba(16,24,40,.38);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
@@ -51,6 +56,7 @@
     --ink:#eef3fa; --ink-2:#bccada; --ink-3:#93a3b8;
     --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.08);
     --glass-edge:rgba(255,255,255,.13);
+    --glass-hi:rgba(255,255,255,.06);
     --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
     --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15); --up:#5b9bff; --down:#e0a04a;
     --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
@@ -69,6 +75,7 @@
   --ink:#e8eef6; --ink-2:#9dabbd; --ink-3:#6d7d93;
   --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.055);
   --glass-edge:rgba(255,255,255,.13);
+  --glass-hi:rgba(255,255,255,.06);
   --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
   --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15); --up:#5b9bff; --down:#e0a04a;
   --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
@@ -101,7 +108,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
 @media(min-width:760px){.wrap{padding:0 20px 60px}}
 
 header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1px solid var(--glass-edge);
-  -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%)}
+  box-shadow:inset 0 1px 0 var(--glass-hi), 0 8px 24px -16px rgba(16,24,40,.22);
+  -webkit-backdrop-filter:blur(26px) saturate(185%);backdrop-filter:blur(26px) saturate(185%)}
 .hdr{max-width:1500px;margin:0 auto;padding:9px 12px 0;display:flex;align-items:center;gap:10px}
 @media(min-width:760px){.hdr{padding:12px 20px 0}}
 /* The title is the name of the system, so it sits in the middle of the bar
@@ -281,13 +289,13 @@ nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--a
 /* Glass panel. The ::after sheen is what sells it — a single soft highlight
    raking across the top-left, the way light catches a real pane. */
 .card{position:relative;background:var(--panel);border:1px solid var(--glass-edge);
-  border-radius:var(--r);box-shadow:var(--sh);padding:13px;min-width:0;isolation:isolate;
+  border-radius:var(--r);box-shadow:var(--sh), inset 0 1px 0 var(--glass-hi);padding:13px;min-width:0;isolation:isolate;
   -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
   backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
   transition:box-shadow .22s ease, transform .22s ease, border-color .22s ease}
 .card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:var(--glass-sheen);z-index:-1}
-.card:hover{box-shadow:var(--sh-lg)}
+.card:hover{box-shadow:var(--sh-lg), inset 0 1px 0 var(--glass-hi)}
 @media(min-width:760px){.card{padding:15px 16px}}
 @supports not (backdrop-filter:blur(1px)){
   .card,header,.gate-card{background:var(--panel-solid)}
@@ -777,7 +785,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 
   <section class="tab" id="tab-bop">
     <div class="grid g-4" id="bopKpis"></div>
-    <div class="card" style="margin-top:13px">
+    <div class="card" style="margin-top:13px" id="bopBridgeCard">
       <h3 data-t="bopBridge">From gross ITRS turnover to BOP-relevant flows</h3>
       <p class="sub" data-t="bopBridgeSub">How the compilation flags reduce reported turnover</p>
       <div class="tw" id="bopBridge"></div>
@@ -1997,6 +2005,9 @@ function renderBop(){
   $('#bopBridgeNote').innerHTML = isLo()
     ? `<b>ເປັນຫຍັງຈຶ່ງສຳຄັນ:</b> ${fmtM(fl.noUse)} ຂອງມູນຄ່າລວມມີ <code>Use = No</code> ພຽງແຕ່ ${int(fl.noUseN)} ລາຍການ. ສ່ວນຫຼາຍແມ່ນທຸລະກຳລະຫວ່າງທະນາຄານໃນບັນຊີການເງິນ. ການອ້າງມູນຄ່າລວມວ່າເປັນ "ກະແສຂ້າມຊາຍແດນ" ຈະເກີນຄວາມຈິງປະມານ ${fl.useYes?(fl.gross/fl.useYes).toFixed(1):'—'} ເທົ່າ.`
     : `<b>Why this matters:</b> ${fmtM(fl.noUse)} of gross turnover carries <code>Use = No</code> on just ${int(fl.noUseN)} records — overwhelmingly financial-account placements between banks. Quoting gross turnover as "cross-border flows" overstates activity by roughly ${fl.useYes?(fl.gross/fl.useYes).toFixed(1):'—'}×.`;
+  // The gross→BOP reconciliation exposes the compilation internals (Move_Fund /
+  // Use flag reductions). Super-admin only; hidden from every other account.
+  const bbc = $('#bopBridgeCard'); if (bbc) bbc.style.display = isAdmin() ? '' : 'none';
 
   const mIdx = monthsInRange(), first = mIdx[0] ?? 0, vi = 4+vIdx();
   const series = ['01','02','03','04'].map((code,ci) => {
