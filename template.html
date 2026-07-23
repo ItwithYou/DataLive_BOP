@@ -993,6 +993,12 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 
   <section class="tab" id="tab-settings">
     <div class="banner" style="padding:0"><div class="in" id="setNote"></div></div>
+    <div class="card" style="margin-top:13px" id="setUsersCard">
+      <h3 data-t="setUsers">User accounts</h3>
+      <p class="sub" data-t="setUsersSub">Who can log in and what each may see</p>
+      <div class="scroll" id="setUsers"></div>
+      <p class="note" data-t="setUsersHow"></p>
+    </div>
     <div class="card" style="margin-top:13px">
       <h3 data-t="setFx">Exchange rate bands</h3>
       <p class="sub" data-t="setFxSub">A rate outside its band is flagged as an exception</p>
@@ -1110,6 +1116,11 @@ const I18N = {
  setCheck:["Check","ກວດສອບ"], setReset:["Reset","ຕັ້ງຄືນ"], setSave:["Download bop_rules.json","ດາວໂຫລດ bop_rules.json"],
  setHow:["Download the file, replace dashboard/config/bop_rules.json with it, then rebuild. The rules take effect on the next build.","ດາວໂຫລດໄຟລ໌, ແທນທີ່ dashboard/config/bop_rules.json ແລ້ວສ້າງໃໝ່."],
  setNote:["These are the rules that produced the figures in this report. Editing here prepares a new rule file \\u2014 it does not recalculate what is on screen.","ນີ້ແມ່ນກົດທີ່ສ້າງຕົວເລກໃນລາຍງານນີ້."],
+ setUsers:["User accounts","ບັນຊີຜູ້ໃຊ້"],
+ setUsersSub:["Who can log in and what each may see","ໃຜເຂົ້າໃຊ້ໄດ້ ແລະ ເຫັນຫຍັງແດ່"],
+ setUsersRole:["Access","ສິດເຂົ້າເຖິງ"], setUsersTabs:["Can see","ເຫັນໄດ້"],
+ setUsersAdmin:["Super admin","ຜູ້ຄຸ້ມຄອງສູງສຸດ"], setUsersMember:["Member","ສະມາຊິກ"],
+ setUsersHow:["To add or remove a person, change their password, or adjust which tabs they see, update config/users.json and re-publish (python reinject.py — about 30 seconds).","ເພື່ອເພີ່ມ/ລຶບຜູ້ໃຊ້, ປ່ຽນລະຫັດຜ່ານ ຫຼື ປັບແຖບທີ່ເຫັນ ໃຫ້ແກ້ config/users.json ແລ້ວເຜີຍແຜ່ຄືນ (python reinject.py — ປະມານ 30 ວິນາທີ)."],
  setValid:["Valid JSON.","JSON ຖືກຕ້ອງ."], setInvalid:["Invalid JSON:","JSON ຜິດພາດ:"],
  setSaved:["Saved on this device. Download the file and rebuild to apply it to everyone.","ບັນທຶກໄວ້ໃນເຄື່ອງນີ້. ດາວໂຫລດໄຟລ໌ ແລ້ວສ້າງໃໝ່ ເພື່ອນຳໃຊ້ກັບທຸກຄົນ."],
  setLocalEdits:["You have unsaved local edits to these rules.","ທ່ານມີການແກ້ໄຂກົດໃນເຄື່ອງນີ້ທີ່ຍັງບໍ່ໄດ້ນຳໃຊ້."],
@@ -4127,6 +4138,27 @@ function rebuildYearOptions(){
    produced the figures. Editing prepares a replacement config file; it does
    not recalculate anything, because aggregation happens at build time. */
 function renderSettings(){
+  // Every account that can log in, and the tabs it may see. Read from the
+  // public login wrappers, so no password is ever exposed here.
+  const users = DATA._users || [];
+  const NAV = {overview:t('tabOverview'), bop:t('tabBop'), timeseries:t('tabTs'),
+    weekly:t('tabWeekly'), search:t('tabSearch'), fx:t('tabFx'), dups:t('tabDups'),
+    officers:t('tabOfficers'), banks:t('tabBanks'), quality:t('tabQuality')};
+  const tabLabel = ts => ts === 'all' || !Array.isArray(ts)
+    ? (isLo() ? 'ທຸກແຖບ' : 'All tabs')
+    : ts.map(x => NAV[x] || x).join(', ');
+  $('#setUsers').innerHTML = `<table><thead><tr>
+      <th style="text-align:left">${esc(t('ofOfficer'))}</th>
+      <th style="text-align:left">${esc(t('setUsersRole'))}</th>
+      <th style="text-align:left">${esc(t('setUsersTabs'))}</th></tr></thead><tbody>`
+    + users.map(u => `<tr>
+        <td style="text-align:left"><b>${esc(u.name)}</b></td>
+        <td style="text-align:left">${u.admin
+            ? `<span class="pill">${esc(t('setUsersAdmin'))}</span>`
+            : `<span class="pill ok">${esc(t('setUsersMember'))}</span>`}</td>
+        <td style="text-align:left">${esc(u.admin ? tabLabel('all') : tabLabel(u.tabs))}</td></tr>`).join('')
+    + '</tbody></table>';
+  $('#setUsersHow').textContent = t('setUsersHow');
   const R = RULES;
   if (!R || !R.exchangeRate){
     $('#setFx').innerHTML = '<p class="empty">' + esc(t('setNoRules')) + '</p>';
@@ -4486,14 +4518,16 @@ function initControls(){
       .catch(()=>{});
   }
   else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
-  // The MPD role sees only these four report tabs; the rest are removed from the
-  // nav so there is nothing to click through to.
-  if (ROLE === 'mpd'){
-    const allowed = new Set(['overview', 'bop', 'timeseries', 'weekly']);
+  // A non-admin account sees only the tabs it was granted; the rest are removed
+  // from the nav so there is nothing to click through to. tabs === 'all' (or an
+  // admin) sees everything.
+  if (!isAdmin() && Array.isArray(DATA._tabs)){
+    const allowed = new Set(DATA._tabs);
     $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
     if (!allowed.has(state.tab)){
-      state.tab = 'overview';
-      $('#nav button[data-tab="overview"]').setAttribute('aria-selected', 'true');
+      state.tab = DATA._tabs[0] || 'overview';
+      const nb = $(`#nav button[data-tab="${state.tab}"]`);
+      if (nb) nb.setAttribute('aria-selected', 'true');
     }
   }
   const sb = $('#settingsBtn');
@@ -4685,7 +4719,7 @@ function initInstall(){
     const enc = new TextEncoder();
     const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
     const wrappers = env.keys || [{role:'admin', salt:env.salt, iv:env.iv, key:null}];
-    let dataKey = null, role = null;
+    let dataKey = null, acct = null;
     for (const w of wrappers){
       const kek = await crypto.subtle.deriveKey(
         {name:'PBKDF2', salt:b64(w.salt), iterations:env.iter, hash:'SHA-256'},
@@ -4694,11 +4728,11 @@ function initInstall(){
         const rawKey = await crypto.subtle.decrypt(
           {name:'AES-GCM', iv:b64(w.iv)}, kek, b64(w.key));
         dataKey = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt']);
-        role = w.role;
+        acct = w;
         break;
-      } catch (e) { /* wrong passphrase for this role; try the next */ }
+      } catch (e) { /* wrong passphrase for this account; try the next */ }
     }
-    if (!dataKey) throw new Error('no matching role');
+    if (!dataKey) throw new Error('no matching account');
     let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, dataKey, b64(env.ct));
     if (env.gz){
       const ds = new DecompressionStream('gzip');
@@ -4706,7 +4740,18 @@ function initInstall(){
       plain = await new Response(stream).arrayBuffer();
     }
     const data = JSON.parse(new TextDecoder().decode(plain));
-    data._role = role;
+    // Identity + permissions come from the wrapper that unwrapped. Old files
+    // carried only a role; new ones carry name / admin / tabs.
+    const admin = acct.admin === true || acct.role === 'admin';
+    data._role = admin ? 'admin' : 'viewer';
+    data._admin = admin;
+    data._tabs = acct.tabs || 'all';
+    data._userName = acct.name || '';
+    // The super admin can list every account, read from the public wrappers
+    // (which hold names and access levels, never passwords).
+    data._users = (env.keys || []).map(k =>
+      ({name: k.name || k.role || '', admin: k.admin === true || k.role === 'admin',
+        tabs: k.tabs || 'all'}));
     return data;
   }
 

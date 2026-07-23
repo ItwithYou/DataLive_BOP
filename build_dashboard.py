@@ -1213,7 +1213,38 @@ def build_meta(con, files, ent_meta, cfg):
     }
 
 
-def encrypt_payload(blob, roles):
+def load_accounts(args):
+    """Login accounts, each: {name, password, admin, tabs}.
+
+    Prefer config/users.json (the super admin manages people there). If it is
+    absent, fall back to the admin/viewer/mpd passphrase files so existing
+    builds keep working. `tabs` is a list of tab ids the user may see, or the
+    string "all"; `admin` grants full access plus data and settings.
+    """
+    upath = CONFIG / "users.json"
+    if upath.exists():
+        cfg = json.loads(upath.read_text(encoding="utf-8"))
+        accounts = cfg.get("users", [])
+        if not accounts:
+            sys.exit("config/users.json has no users.")
+        for a in accounts:
+            _check(a["password"], a.get("name", "user"))
+        pws = [a["password"] for a in accounts]
+        if len(set(pws)) != len(pws):
+            sys.exit("Two users share a password; each must be unique.")
+        return accounts
+    # Fallback: the fixed three roles from passphrase files/env.
+    roles = read_roles(args)
+    meta = {"admin":  ("Super admin", True, "all"),
+            "viewer": ("BOP team", False, "all"),
+            "mpd":    ("MPD", False, ["overview", "bop", "timeseries", "weekly"])}
+    return [{"name": meta.get(r, (r, False, "all"))[0],
+             "admin": meta.get(r, (r, False, "all"))[1],
+             "tabs": meta.get(r, (r, False, "all"))[2],
+             "password": pw} for r, pw in roles.items()]
+
+
+def encrypt_payload(blob, accounts):
     """gzip, encrypt once under a random data key, then wrap that key per role.
 
     ``roles`` maps a role name to its passphrase. The payload is encrypted a
@@ -1238,17 +1269,21 @@ def encrypt_payload(blob, roles):
     b64 = lambda b: base64.b64encode(b).decode("ascii")
 
     wrapped = []
-    for role, pw in roles.items():
+    for acc in accounts:
         salt = secrets.token_bytes(16)
         kek = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt,
-                         iterations=KDF_ITERATIONS).derive(pw.encode("utf-8"))
+                         iterations=KDF_ITERATIONS).derive(acc["password"].encode("utf-8"))
         wiv = secrets.token_bytes(12)
-        wrapped.append({"role": role, "salt": b64(salt), "iv": b64(wiv),
-                        "key": b64(AESGCM(kek).encrypt(wiv, data_key, None))})
+        # Each account gets its own wrapper, tagged with the person's name, an
+        # admin flag, and the tab ids they may see. The wrapper that unwraps
+        # names who signed in and what they may access. No password is stored.
+        wrapped.append({"name": acc["name"], "admin": bool(acc.get("admin")),
+                        "tabs": acc.get("tabs", "all"), "salt": b64(salt),
+                        "iv": b64(wiv), "key": b64(AESGCM(kek).encrypt(wiv, data_key, None))})
 
     print(f"  payload {len(blob)/1048576:.1f} MB → gzip {len(raw)/1048576:.1f} MB "
           f"→ encrypted {len(ct)/1048576:.1f} MB")
-    print(f"  roles: {', '.join(roles)}")
+    print(f"  accounts: {', '.join(a['name'] + (' [admin]' if a.get('admin') else '') for a in accounts)}")
     return json.dumps({
         "enc": "AES-GCM-256", "kdf": "PBKDF2-SHA256", "iter": KDF_ITERATIONS,
         "gz": True, "iv": b64(iv), "ct": b64(ct), "keys": wrapped,
@@ -1349,7 +1384,7 @@ def main():
     # Ask for the passphrase before the slow work, not after it. Aggregating and
     # indexing takes minutes; prompting at the end means an unattended build
     # stalls on an invisible prompt.
-    roles = read_roles(args) if args.encrypt else None
+    accounts = load_accounts(args) if args.encrypt else None
 
     cfg, lines = load_report_config()
     print(f"Report config: {len(lines)} lines from {CONFIG / 'report_lines.json'}")
@@ -1411,7 +1446,7 @@ def main():
 
     if args.encrypt:
         print("Encrypting ...")
-        blob = encrypt_payload(blob, roles)
+        blob = encrypt_payload(blob, accounts)
 
     out = Path(args.out) if args.out else (
         HERE / "docs" / "index.html" if args.publish else OUTPUT)

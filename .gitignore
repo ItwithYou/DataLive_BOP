@@ -47,3 +47,6 @@ docs/README.txt
 
 # Plaintext data pack (contains names/TINs) - never commit
 ITRS_data_pack.json
+
+# Login accounts (passwords) - never commit
+config/users.json
