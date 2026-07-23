@@ -44,3 +44,6 @@ desktop.ini
 README.md
 README_local_backup.md
 docs/README.txt
+
+# Plaintext data pack (contains names/TINs) - never commit
+ITRS_data_pack.json

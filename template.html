@@ -388,6 +388,8 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .wk-dev{margin-left:5px;font-weight:600}
 .wk-dev.above{color:var(--up)}
 .wk-dev.below{color:var(--down)}
+.num.wk-above{color:var(--up);font-weight:600}
+.num.wk-below{color:var(--down);font-weight:600}
 .sub2 td:first-child{padding-left:2.4em;font-size:12.5px}
 .sub2.other td:first-child{font-style:italic;color:var(--ink-3)}
 tr.goods{cursor:pointer}
@@ -2314,20 +2316,21 @@ function avgBaseline(cur, kind){
       subs.push({from:toISO(st), to:toISO(en)});
     }
   }
-  const present = subs.filter(x => x.to >= meta.dateMin);
-  const recs = present.map(x => { const w=weekTotals(x.from,x.to); return {...x, in:w.tin, out:w.tout}; });
-  const avgDir = dir => {
-    let pool;
-    if (kind === 'Day'){
-      const wk = recs.filter(r => parseISO(r.d).getUTCDay()%6!==0);   // drop Sat/Sun
-      const mean = wk.reduce((a,r)=>a+r[dir],0)/(wk.length||1);
-      pool = wk.filter(r => r[dir] > 0.05*mean);                       // drop holidays
-    } else pool = recs.filter(r => (r.in+r.out)>0);
-    const k = pool.length;
-    return { avg: k ? pool.reduce((a,r)=>a+r[dir],0)/k : null, k,
-             nom: (kind==='Day' ? Math.round(present.length*5/7) : subs.length) };
+  let present = subs.filter(x => x.to >= meta.dateMin);
+  if (kind === 'Day') present = present.filter(x => parseISO(x.d).getUTCDay()%6!==0);  // business days
+  const recs = present.map(x => ({ w: weekTotals(x.from,x.to), g: goodsTotals(x.from,x.to) }));
+  const active = recs.filter(r => (r.w.tin + r.w.tout) > 0);      // drop dead windows
+  const pool = active.length ? active : recs;
+  const K = pool.length || 1;
+  const avg = fn => pool.reduce((a,r)=>a+fn(r), 0) / K;
+  return {
+    net:  avg(r=>r.w.net),
+    tin:  avg(r=>r.w.tin),
+    tout: avg(r=>r.w.tout),
+    lines: LINES.map((L,i)=>({ in:avg(r=>r.w.lines[i].in), out:avg(r=>r.w.lines[i].out) })),
+    goods: dims.goodsCodes.map((gc,ci)=>({ in:avg(r=>r.g[ci].in), out:avg(r=>r.g[ci].out) })),
+    k: K, nom: (kind==='Day' ? present.length : subs.length),
   };
-  return { in:avgDir('in'), out:avgDir('out') };
 }
 /** The six Goods commodities summed over a range. dayGoods has no bank axis. */
 function goodsTotals(fromISO, toISO_){
@@ -2413,67 +2416,65 @@ function renderWeekly(){
   const hdr = `${dLabel(cur.from)}–${dLabel(cur.to)}/${cur.to.slice(0,4)}`
             + `  ·  ${n} ${isLo()?'ວັນ':'day'+(n===1?'':'s')}`;
 
-  const block = (label, a, b, cls, ann) => {
+  const block = (label, a, b, cls, avgV) => {
     const c = b - a, p = pct(a,b);
+    const dev = (avgV != null && avgV !== 0) ? (b - avgV) / avgV * 100 : null;
+    const avgTd = avgV == null
+      ? `<td class="num muted">—</td><td class="num">—</td>`
+      : `<td class="num">${fm(avgV)}</td>`
+        + `<td class="num ${dev==null?'':(dev<0?'wk-below':'wk-above')}">${dev==null?'—':fmtPct(dev,0)}</td>`;
     return `<tr class="${cls||''}"><td>${esc(label)}</td>
-      <td class="num">${fm(a)}</td><td class="num">${fm(b)}${ann||''}</td>
+      <td class="num">${fm(a)}</td><td class="num">${fm(b)}</td>
       <td class="num ${c<0?'neg':'pos'}">${fm(c)}</td>
-      <td class="num ${p!=null&&p<0?'neg':'pos'}">${p==null?'—':fmtPct(p,2)}</td></tr>`;
+      <td class="num ${p!=null&&p<0?'neg':'pos'}">${p==null?'—':fmtPct(p,2)}</td>
+      ${avgTd}</tr>`;
   };
-  // feature A: recent-average annotation, on the two directional total rows only
   const kind = periodKind(), bl = avgBaseline(cur, kind);
-  const isWeekendDay = kind === 'Day' && parseISO(cur.from).getUTCDay() % 6 === 0;
-  const annCell = (level, dir, thisV) => {
-    if (level == null) return `<span class="wk-avg"><span class="wk-avg-lvl">${esc(avgLabel())} —</span></span>`;
-    const dev = level ? (thisV - level) / level * 100 : null;
-    const pill = (isWeekendDay || dev == null) ? ''
-      : `<span class="wk-dev ${dev<0?'below':'above'}">${fmtPct(dev,0)}</span>`;
-    return `<span class="wk-avg"><span class="wk-avg-lvl">${esc(avgLabel())} ${esc(fm(level))}</span>${pill}</span>`;
-  };
-  const annIn = annCell(bl.in.avg, 'in', B.tin), annOut = annCell(bl.out.avg, 'out', B.tout);
-  // feature B: goods sub-detail (all banks only; dayGoods has no bank axis)
+  // Goods sub-detail: inflow shows Lao EXPORTS, outflow shows Lao IMPORTS.
   const goodsIx = LINES.findIndex(L => L.id === 'goods');
   const showGoods = state.bank < 0 && state.wkGoodsOpen;
   const G  = showGoods ? goodsTotals(cur.from, cur.to) : null;
   const Ga = showGoods ? goodsTotals(prv.from, prv.to) : null;
   const GOODS_KEY = {'010107':'wkGoodsMinerals','010105':'wkGoodsAgri','010102':'wkGoodsElec',
                      '010109':'wkGoodsFuel','010110':'wkGoodsVehicles','010301':'wkGoodsGold'};
-  const goodsSubRows = (dir, aTot, bTot, Ga_, G_) => {
+  const goodsSubRows = (dir, aTot, bTot) => {
+    const wantSide = dir === 'in' ? 'in' : 'out';   // in = exports, out = imports
     let rows = '', sa = 0, sb = 0;
     dims.goodsCodes.forEach((gc, ci) => {
-      const a = Ga_[ci][dir], b = G_[ci][dir];
-      if (!(a > 0.005 || b > 0.005)) return;
+      if (gc.side !== wantSide) return;
+      const a = Ga[ci][dir], b = G[ci][dir];
       sa += a; sb += b;
-      rows += block(t(GOODS_KEY[gc.code]), a, b, 'sub2');
+      rows += block(t(GOODS_KEY[gc.code]), a, b, 'sub2', bl.goods[ci][dir]);
     });
-    rows += block(t('wkGoodsOther'), Math.max(0, aTot - sa), Math.max(0, bTot - sb), 'sub2 other');
+    rows += block(t('wkGoodsOther'), Math.max(0, aTot - sa), Math.max(0, bTot - sb), 'sub2 other', null);
     return rows;
   };
   const caret = () => state.wkGoodsOpen ? '▾ ' : '▸ ';
   const lineRow = (i, dir, a, b) => {
     const isG = i === goodsIx && state.bank < 0;
-    let r = block((isG ? caret() : '') + bi(LINES[i]), a, b, isG ? 'sub goods' : 'sub');
-    if (isG && showGoods) r += goodsSubRows(dir, a, b, Ga, G);
+    let r = block((isG ? caret() : '') + bi(LINES[i]), a, b, isG ? 'sub goods' : 'sub', bl.lines[i][dir]);
+    if (isG && showGoods) r += goodsSubRows(dir, a, b);
     return r;
   };
   let h = `<table><thead><tr><th style="text-align:left">${esc(hdr)}</th>
     <th>${esc(priorLabel())}</th><th>${esc(thisLabel())}</th>
-    <th>${esc(t('wkChange'))}</th><th>${esc(t('wkPct'))}</th></tr></thead><tbody>`;
-  h += block(isLo()?'ສຸດທິ':'Net', A.net, B.net, 'total');
-  h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total', annIn);
+    <th>${esc(t('wkChange'))}</th><th>${esc(t('wkPct'))}</th>
+    <th>${esc(avgLabel())}</th><th>${esc(t('wkVsAvg'))}</th></tr></thead><tbody>`;
+  h += block(isLo()?'ສຸດທິ':'Net', A.net, B.net, 'total', bl.net);
+  h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total', bl.tin);
   LINES.forEach((L,i) => { if (A.lines[i].in || B.lines[i].in)
     h += lineRow(i, 'in', A.lines[i].in, B.lines[i].in); });
-  h += block(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, 'total', annOut);
+  h += block(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, 'total', bl.tout);
   LINES.forEach((L,i) => { if (A.lines[i].out || B.lines[i].out)
     h += lineRow(i, 'out', A.lines[i].out, B.lines[i].out); });
   let extra = '';
   if (state.bank >= 0 && goodsIx >= 0)
     extra = `<p class="note">${esc(t('wkGoodsNoBank'))}</p>`;
   else if (showGoods){
-    const legend = dims.goodsCodes.filter((gc,ci)=>(Ga[ci].in+Ga[ci].out+G[ci].in+G[ci].out)>0.005)
+    const legend = dims.goodsCodes
       .map(gc => { const p = PURPOSES[purposeByCode[gc.code]];
         return gc.code + ' · ' + (p ? purposeLabel(p) : ''); }).join('   ·   ');
-    if (legend) extra = `<div class="wk-goods-legend"><b>${esc(t('wkGoodsLegend'))}:</b> ${esc(legend)}</div>`;
+    extra = `<div class="wk-goods-legend"><b>${esc(t('wkGoodsLegend'))}:</b> ${esc(legend)}</div>`;
   }
   $('#wkTable').innerHTML = h + '</tbody></table>'
     + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`
@@ -2488,25 +2489,24 @@ function renderWeekly(){
   renderWkTop(cur.from, cur.to);
   renderWkTrend(cur);
   $('#wkTable')._csv = () => {
-    const out = [[hdr, priorLabel(), thisLabel(), t('wkChange'), t('wkPct'), t('wkAvgCol'), t('wkVsAvg')]];
-    const push = (l,a,b,av,dv) => out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
-      pct(a,b)==null?'':pct(a,b).toFixed(2), av==null?'':av.toFixed(2), dv==null?'':dv.toFixed(1)]);
-    const dvOf = (lv,tv) => (lv ? (tv-lv)/lv*100 : null);
-    // CSV always carries the goods breakdown (all banks), independent of the toggle.
-    const Gc = state.bank<0 ? goodsTotals(cur.from,cur.to) : null;
-    const Gac = state.bank<0 ? goodsTotals(prv.from,prv.to) : null;
-    const csvGoods = dir => { if (state.bank>=0) return; let sa=0,sb=0;
-      const tA = dir==='in'?A.lines[goodsIx].in:A.lines[goodsIx].out;
-      const tB = dir==='in'?B.lines[goodsIx].in:B.lines[goodsIx].out;
-      dims.goodsCodes.forEach((gc,ci)=>{ const a=Gac[ci][dir], b=Gc[ci][dir];
-        if (a>0.005||b>0.005){ sa+=a;sb+=b; push('    '+t(GOODS_KEY[gc.code]), a, b); }});
-      push('    '+t('wkGoodsOther'), Math.max(0,tA-sa), Math.max(0,tB-sb)); };
-    push(isLo()?'ສຸດທິ':'Net', A.net, B.net);
-    push(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, bl.in.avg, dvOf(bl.in.avg,B.tin));
-    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].in, B.lines[i].in);
+    const out = [[hdr, priorLabel(), thisLabel(), t('wkChange'), t('wkPct'), avgLabel(), t('wkVsAvg')]];
+    const push = (l,a,b,avgV) => { const dev=(avgV!=null&&avgV!==0)?(b-avgV)/avgV*100:null;
+      out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
+        pct(a,b)==null?'':pct(a,b).toFixed(2), avgV==null?'':avgV.toFixed(2), dev==null?'':dev.toFixed(1)]); };
+    const csvGoods = dir => { if (state.bank>=0) return; const wantSide=dir==='in'?'in':'out';
+      const Gc=goodsTotals(cur.from,cur.to), Gac=goodsTotals(prv.from,prv.to);
+      const tA=dir==='in'?A.lines[goodsIx].in:A.lines[goodsIx].out;
+      const tB=dir==='in'?B.lines[goodsIx].in:B.lines[goodsIx].out;
+      let sa=0,sb=0;
+      dims.goodsCodes.forEach((gc,ci)=>{ if(gc.side!==wantSide) return; const a=Gac[ci][dir],b=Gc[ci][dir];
+        sa+=a;sb+=b; push('    '+t(GOODS_KEY[gc.code]), a, b, bl.goods[ci][dir]); });
+      push('    '+t('wkGoodsOther'), Math.max(0,tA-sa), Math.max(0,tB-sb), null); };
+    push(isLo()?'ສຸດທິ':'Net', A.net, B.net, bl.net);
+    push(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, bl.tin);
+    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].in, B.lines[i].in, bl.lines[i].in);
       if (i===goodsIx) csvGoods('in'); });
-    push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, bl.out.avg, dvOf(bl.out.avg,B.tout));
-    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].out, B.lines[i].out);
+    push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, bl.tout);
+    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].out, B.lines[i].out, bl.lines[i].out);
       if (i===goodsIx) csvGoods('out'); });
     downloadCsv(`ITRS_report_${cur.from}_to_${cur.to}.csv`, out);
   };
@@ -4529,8 +4529,8 @@ function initMeta(){
   // Coverage and freshness are worth stating; the build command and the source
   // file count are internal and belong nowhere near a published report.
   $('#footMeta').innerHTML = isLo()
-    ? `ຂໍ້ມູນ ${esc(meta.dateMin)} ຫາ ${esc(meta.dateMax)} · ${int(meta.rows)} ລາຍການ · ປັບປຸງ ${esc(String(meta.generated).slice(0,10))}`
-    : `Data ${esc(meta.dateMin)} to ${esc(meta.dateMax)} · ${int(meta.rows)} records · updated ${esc(String(meta.generated).slice(0,10))}`;
+    ? `ຂໍ້ມູນ ${esc(meta.dateMin)} ຫາ ${esc(meta.dateMax)} · ${int(meta.rows)} ລາຍການ · ປັບປຸງ ${esc(meta.generated)}`
+    : `Data ${esc(meta.dateMin)} to ${esc(meta.dateMax)} · ${int(meta.rows)} records · updated ${esc(meta.generated)}`;
 }
 initControls();
 applyI18n();
