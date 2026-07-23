@@ -8,7 +8,7 @@
  * Bump CACHE when publishing a rebuild, otherwise phones that already have it
  * installed will keep serving the previous copy from cache.
  */
-const CACHE = 'itrs-v22';
+const CACHE = 'itrs-v23';
 const SHELL = [
   './',
   './index.html',
@@ -42,10 +42,14 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Network first, so a republished dashboard is picked up as soon as the
-  // phone has a connection; the cache is the offline fallback.
+  // Network first, and with {cache:'no-cache'} so the browser revalidates the
+  // file against the server every time (a cheap 304 when unchanged, a full
+  // download only when it actually changed). Without this, GitHub Pages' own
+  // 10-minute browser cache would keep serving the previous copy even though
+  // the service worker asked the network - the cause of "still the old version"
+  // after a republish. The cache remains the offline fallback.
   e.respondWith(
-    fetch(req)
+    fetch(req, {cache: 'no-cache'})
       .then(res => {
         if (res && res.status === 200 && res.type === 'basic'){
           const copy = res.clone();

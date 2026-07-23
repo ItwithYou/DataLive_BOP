@@ -471,6 +471,18 @@ def build_dimensions(con, lines):
         })
     dims["purposes"] = sorted(purposes, key=lambda p: p["code"])
 
+    # The six Goods commodities the Period Report breaks out. "side" is the
+    # measured dominant money-flow (home section); off-direction legs are still
+    # shown where material, so this is a sort/label hint, not a hard filter.
+    dims["goodsCodes"] = [
+        {"code": "010107", "side": "in"},   # Minerals
+        {"code": "010105", "side": "in"},   # Agriculture & forest
+        {"code": "010102", "side": "in"},   # Electricity
+        {"code": "010109", "side": "out"},  # Fuel (oil)
+        {"code": "010110", "side": "out"},  # Vehicles
+        {"code": "010301", "side": "out"},  # Gold
+    ]
+
     # --- other dimensions -------------------------------------------------
     countries = [r[0] for r in con.execute("""
         SELECT country FROM tx WHERE country IS NOT NULL
@@ -752,6 +764,39 @@ def build_cubes(con, dims):
             WHERE cu.ix < {DAILY_CURRENCIES}
             GROUP BY 1,2,3,4 ORDER BY 1,2,3,4""").fetchall()
     ]
+
+    # dayGoods: [date, flow, goodsCode index 0-5, useFlag, usdMillions].
+    # The six commodity sub-items of the Goods report line, kept per day so the
+    # Period Report can break Goods down for any date range. Both directions are
+    # carried because both are displayed (imports pay out fuel/vehicles/gold;
+    # exports receive minerals/agriculture/electricity, but each has an
+    # off-direction leg worth showing).
+    cubes["dayGoods"] = [
+        [d, int(f), int(g), int(uix), r2(u)]
+        for d, f, g, uix, u in con.execute("""
+            SELECT t.ymd, t.flow_ix, gc.ix, t.use_ix, SUM(t.usd)/1e6
+            FROM txf t
+            JOIN (VALUES ('010107',0),('010105',1),('010102',2),
+                         ('010109',3),('010110',4),('010301',5)) AS gc(code, ix)
+              ON gc.code = t.pur5
+            WHERE t.usd IS NOT NULL
+            GROUP BY 1,2,3,4
+            HAVING ROUND(SUM(t.usd)/1e6, 3) <> 0
+            ORDER BY 1,2,3,4""").fetchall()
+    ]
+    print(f"  dayGoods         {len(cubes['dayGoods']):,} rows")
+    # Guard against a direction-inversion wiring bug: each code's declared side
+    # must match its measured dominant money-flow over the whole range.
+    _dom = {c: side for c, side in con.execute("""
+        SELECT t.pur5,
+               CASE WHEN SUM(CASE WHEN t.flow_ix=1 THEN t.usd ELSE 0 END)
+                       > SUM(CASE WHEN t.flow_ix=0 THEN t.usd ELSE 0 END)
+                    THEN 'in' ELSE 'out' END
+        FROM txf t WHERE t.pur5 IN ('010107','010105','010102','010109','010110','010301')
+        GROUP BY 1""").fetchall()}
+    for gc in dims["goodsCodes"]:
+        assert _dom.get(gc["code"]) == gc["side"], \
+            f"goods side mismatch {gc['code']}: measured {_dom.get(gc['code'])}, declared {gc['side']}"
 
     # ---- reporting quality ----------------------------------------------
     cubes["lag"] = [

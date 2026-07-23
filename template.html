@@ -33,7 +33,7 @@
   --glass-blur:18px; --glass-sat:170%;
   --glass-edge:rgba(255,255,255,.75);
   --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.55),rgba(255,255,255,0) 42%);
-  --in:#0c8a68; --in-soft:rgba(12,138,104,.14); --out:#c0433a; --out-soft:rgba(192,67,58,.14);
+  --in:#0c8a68; --in-soft:rgba(12,138,104,.14); --out:#c0433a; --out-soft:rgba(192,67,58,.14); --up:#2563eb; --down:#b45309;
   --accent:#2563a8; --accent-soft:rgba(37,99,168,.13);
   --warn:#a8760a; --warn-soft:rgba(168,118,10,.14); --bad:#c0433a;
   --c1:#2563a8; --c2:#0c8a68; --c3:#a8760a; --c4:#8250b8; --c5:#c0433a;
@@ -52,7 +52,7 @@
     --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.08);
     --glass-edge:rgba(255,255,255,.13);
     --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
-    --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15);
+    --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15); --up:#5b9bff; --down:#e0a04a;
     --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
     --warn:#e0aa4c; --warn-soft:rgba(224,170,76,.15); --bad:#e8695f;
     --c1:#63a4de; --c2:#3ec295; --c3:#e0aa4c; --c4:#b088dd; --c5:#e8695f;
@@ -70,7 +70,7 @@
   --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.055);
   --glass-edge:rgba(255,255,255,.13);
   --glass-sheen:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,0) 42%);
-  --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15);
+  --in:#3ec295; --in-soft:rgba(62,194,149,.15); --out:#e8695f; --out-soft:rgba(232,105,95,.15); --up:#5b9bff; --down:#e0a04a;
   --accent:#63a4de; --accent-soft:rgba(99,164,222,.16);
   --warn:#e0aa4c; --warn-soft:rgba(224,170,76,.15); --bad:#e8695f;
   --c1:#63a4de; --c2:#3ec295; --c3:#e0aa4c; --c4:#b088dd; --c5:#e8695f;
@@ -110,6 +110,7 @@ header{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1p
 .hdr-spacer{flex:1 1 0;min-width:0}
 .brand{flex:0 1 auto;text-align:center;min-width:0}
 .brand h1{margin:0;font-size:16px;font-weight:680;letter-spacing:-.2px;white-space:nowrap}
+.brand-short{display:none}
 .brand p{margin:2px 0 0;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56vw}
 /* On a phone there is no room to centre anything: the title takes the row. */
 @media(max-width:759px){.hdr-spacer{display:none}.brand{text-align:left;flex:1 1 auto}}
@@ -383,6 +384,16 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .narr h4{margin:0 0 9px;font-size:14.5px;font-weight:700;line-height:1.4}
 .narr p{margin:0;text-indent:1.8em;text-align:justify;hyphens:auto}
 @media(max-width:639px){.narr p{text-align:left;text-indent:1.4em}}
+.wk-avg{display:block;font-size:10px;color:var(--ink-3);font-weight:400;margin-top:2px}
+.wk-dev{margin-left:5px;font-weight:600}
+.wk-dev.above{color:var(--up)}
+.wk-dev.below{color:var(--down)}
+.sub2 td:first-child{padding-left:2.4em;font-size:12.5px}
+.sub2.other td:first-child{font-style:italic;color:var(--ink-3)}
+tr.goods{cursor:pointer}
+tr.goods td:first-child{font-weight:600}
+.wk-goods-legend{font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.55}
+@media(max-width:639px){.wk-avg-lvl{display:none}}
 /* Data Sources list in the import modal. */
 .src-grp{margin-bottom:12px}
 .src-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
@@ -480,8 +491,12 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
   .kpi .label{font-size:9px}
   .kpi .foot{font-size:10.5px;gap:5px}
   .kpi .spark{height:24px}
-  .brand h1{font-size:14px}
-  .brand p{font-size:10px;max-width:48vw}
+  /* On a phone the header shows just "ITRS"; the full title and the subtitle
+     are hidden to keep the top bar clean. */
+  .brand h1{font-size:16px;font-weight:700}
+  .brand-full{display:none}
+  .brand-short{display:inline}
+  .brand p{display:none}
   /* Scroll strips get an inset so the last chip is never flush to the edge. */
   .controls{padding-bottom:2px;scroll-padding-inline:10px}
   .controls::after,nav::after{content:"";flex:0 0 10px}
@@ -680,7 +695,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
   <div class="hdr">
     <div class="hdr-spacer"></div>
     <div class="brand">
-      <h1 data-t="appTitle">ITRS Live Report</h1>
+      <h1><span class="brand-full" data-t="appTitle">ITRS Live Report</span><span class="brand-short">ITRS</span></h1>
       <p data-t="appSub">Lao PDR — International Transactions Reporting System</p>
     </div>
     <div class="hdr-right">
@@ -1157,6 +1172,17 @@ const I18N = {
  wkAll:["All transactions","ທຸລະກຳທັງໝົດ"], wkNonbank:["Excl. commercial banks","ບໍ່ລວມທະນາຄານທຸລະກິດ"],
  copyText:["Copy text","ສຳເນົາຂໍ້ຄວາມ"], copied:["Copied","ສຳເນົາແລ້ວ"],
  wkNarr:["Generated narrative","ຂໍ້ຄວາມທີ່ສ້າງຂຶ້ນ"],
+ wkAvgDay:["Avg / day","ສະເລ່ຍ/ວັນ"], wkAvgWeek:["Avg / week","ສະເລ່ຍ/ອາທິດ"],
+ wkAvgMonth:["Avg / month","ສະເລ່ຍ/ເດືອນ"], wkAvgQuarter:["Avg / quarter","ສະເລ່ຍ/ໄຕມາດ"],
+ wkAvgHalf:["Avg / half-year","ສະເລ່ຍ/ເຄິ່ງປີ"], wkAvgYear:["Avg / year","ສະເລ່ຍ/ປີ"],
+ wkAvgPeriod:["Avg / period","ສະເລ່ຍ/ໄລຍະ"],
+ wkAvgCol:["Recent average","ຄ່າສະເລ່ຍໄລຍະຜ່ານມາ"], wkVsAvg:["vs recent average","ທຽບຄ່າສະເລ່ຍ"],
+ wkGoodsMinerals:["Minerals","ບໍ່ແຮ່"], wkGoodsAgri:["Agriculture","ກະສິກຳ"],
+ wkGoodsElec:["Electricity","ໄຟຟ້າ"], wkGoodsFuel:["Fuel (oil)","ນ້ຳມັນ"],
+ wkGoodsVehicles:["Vehicles","ຍານພາຫະນະ"], wkGoodsGold:["Gold","ຄຳ"],
+ wkGoodsOther:["Other goods","ຄ່າສິນຄ້າອື່ນໆ"],
+ wkGoodsNoBank:["Goods breakdown is available for All banks only","ລາຍລະອຽດຄ່າສິນຄ້າມີສະເພາະ ທຸກທະນາຄານ"],
+ wkGoodsLegend:["Codes shown","ລະຫັດທີ່ສະແດງ"],
  wkNarrSub:["Draft text — review before publishing","ຂໍ້ຄວາມຮ່າງ — ກວດກ່ອນເຜີຍແຜ່"],
  wkNarrShort:["Summary","ຫຍໍ້"], wkNarrLong:["Detailed","ລະອຽດ"],
  wkTopSub2:["Named counterparties above $0.5m in the period","ຄູ່ຮ່ວມທີ່ມີຊື່ ເກີນ 0.5 ລ້ານໂດລາ ໃນໄລຍະນີ້"],
@@ -1361,7 +1387,7 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
-  wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', dupTier:'A', seQuery:'',
+  wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
 const yearsInRange = () => YEARS.map((y,i)=>i).filter(i => i>=state.yFrom && i<=state.yTo);
@@ -2269,6 +2295,51 @@ function weekTotals(fromISO, toISO_){
   }
   return {lines, tin, tout, net:tin-tout};
 }
+const avgLabel = () => t('wkAvg' + periodKind());
+/** Trailing average of the same-granularity window, direction-specific, so the
+    report can say whether THIS period is above or below the recent typical
+    level. Reuses weekTotals, so basis/bank/scope filters are inherited exactly. */
+function avgBaseline(cur, kind){
+  const f0 = parseISO(cur.from), subs = [];
+  if (kind === 'Day'){
+    for (let k=1;k<=28;k++){ const d=addDays(cur.from,-k); subs.push({from:d,to:d,d}); }
+  } else if (kind === 'Week' || kind === 'Period'){
+    const n = rangeDays();
+    for (let k=1;k<=4;k++){ const fr=addDays(cur.from,-n*k); subs.push({from:fr,to:addDays(fr,n-1)}); }
+  } else {
+    const step={Month:1,Quarter:3,Half:6,Year:12}[kind], K={Month:12,Quarter:4,Half:4,Year:3}[kind];
+    for (let k=1;k<=K;k++){
+      const st=new Date(Date.UTC(f0.getUTCFullYear(), f0.getUTCMonth()-step*k, 1));
+      const en=new Date(Date.UTC(f0.getUTCFullYear(), f0.getUTCMonth()-step*(k-1), 0));
+      subs.push({from:toISO(st), to:toISO(en)});
+    }
+  }
+  const present = subs.filter(x => x.to >= meta.dateMin);
+  const recs = present.map(x => { const w=weekTotals(x.from,x.to); return {...x, in:w.tin, out:w.tout}; });
+  const avgDir = dir => {
+    let pool;
+    if (kind === 'Day'){
+      const wk = recs.filter(r => parseISO(r.d).getUTCDay()%6!==0);   // drop Sat/Sun
+      const mean = wk.reduce((a,r)=>a+r[dir],0)/(wk.length||1);
+      pool = wk.filter(r => r[dir] > 0.05*mean);                       // drop holidays
+    } else pool = recs.filter(r => (r.in+r.out)>0);
+    const k = pool.length;
+    return { avg: k ? pool.reduce((a,r)=>a+r[dir],0)/k : null, k,
+             nom: (kind==='Day' ? Math.round(present.length*5/7) : subs.length) };
+  };
+  return { in:avgDir('in'), out:avgDir('out') };
+}
+/** The six Goods commodities summed over a range. dayGoods has no bank axis. */
+function goodsTotals(fromISO, toISO_){
+  const g = dims.goodsCodes.map(()=>({in:0,out:0}));
+  for (const r of cubes.dayGoods){        // [date, flow, gix, use, usd]
+    if (r[0] < fromISO || r[0] > toISO_) continue;
+    if (!useOK(r[3])) continue;
+    const e = g[r[2]]; if (!e) continue;
+    if (r[1] === REC) e.in += r[4]; else e.out += r[4];
+  }
+  return g;
+}
 function weekCurrency(fromISO, toISO_){
   const inM = new Map(), outM = new Map();
   for (const r of cubes.dayCurrency){
@@ -2342,29 +2413,73 @@ function renderWeekly(){
   const hdr = `${dLabel(cur.from)}–${dLabel(cur.to)}/${cur.to.slice(0,4)}`
             + `  ·  ${n} ${isLo()?'ວັນ':'day'+(n===1?'':'s')}`;
 
-  const block = (label, a, b, cls) => {
+  const block = (label, a, b, cls, ann) => {
     const c = b - a, p = pct(a,b);
     return `<tr class="${cls||''}"><td>${esc(label)}</td>
-      <td class="num">${fm(a)}</td><td class="num">${fm(b)}</td>
+      <td class="num">${fm(a)}</td><td class="num">${fm(b)}${ann||''}</td>
       <td class="num ${c<0?'neg':'pos'}">${fm(c)}</td>
       <td class="num ${p!=null&&p<0?'neg':'pos'}">${p==null?'—':fmtPct(p,2)}</td></tr>`;
+  };
+  // feature A: recent-average annotation, on the two directional total rows only
+  const kind = periodKind(), bl = avgBaseline(cur, kind);
+  const isWeekendDay = kind === 'Day' && parseISO(cur.from).getUTCDay() % 6 === 0;
+  const annCell = (level, dir, thisV) => {
+    if (level == null) return `<span class="wk-avg"><span class="wk-avg-lvl">${esc(avgLabel())} —</span></span>`;
+    const dev = level ? (thisV - level) / level * 100 : null;
+    const pill = (isWeekendDay || dev == null) ? ''
+      : `<span class="wk-dev ${dev<0?'below':'above'}">${fmtPct(dev,0)}</span>`;
+    return `<span class="wk-avg"><span class="wk-avg-lvl">${esc(avgLabel())} ${esc(fm(level))}</span>${pill}</span>`;
+  };
+  const annIn = annCell(bl.in.avg, 'in', B.tin), annOut = annCell(bl.out.avg, 'out', B.tout);
+  // feature B: goods sub-detail (all banks only; dayGoods has no bank axis)
+  const goodsIx = LINES.findIndex(L => L.id === 'goods');
+  const showGoods = state.bank < 0 && state.wkGoodsOpen;
+  const G  = showGoods ? goodsTotals(cur.from, cur.to) : null;
+  const Ga = showGoods ? goodsTotals(prv.from, prv.to) : null;
+  const GOODS_KEY = {'010107':'wkGoodsMinerals','010105':'wkGoodsAgri','010102':'wkGoodsElec',
+                     '010109':'wkGoodsFuel','010110':'wkGoodsVehicles','010301':'wkGoodsGold'};
+  const goodsSubRows = (dir, aTot, bTot, Ga_, G_) => {
+    let rows = '', sa = 0, sb = 0;
+    dims.goodsCodes.forEach((gc, ci) => {
+      const a = Ga_[ci][dir], b = G_[ci][dir];
+      if (!(a > 0.005 || b > 0.005)) return;
+      sa += a; sb += b;
+      rows += block(t(GOODS_KEY[gc.code]), a, b, 'sub2');
+    });
+    rows += block(t('wkGoodsOther'), Math.max(0, aTot - sa), Math.max(0, bTot - sb), 'sub2 other');
+    return rows;
+  };
+  const caret = () => state.wkGoodsOpen ? '▾ ' : '▸ ';
+  const lineRow = (i, dir, a, b) => {
+    const isG = i === goodsIx && state.bank < 0;
+    let r = block((isG ? caret() : '') + bi(LINES[i]), a, b, isG ? 'sub goods' : 'sub');
+    if (isG && showGoods) r += goodsSubRows(dir, a, b, Ga, G);
+    return r;
   };
   let h = `<table><thead><tr><th style="text-align:left">${esc(hdr)}</th>
     <th>${esc(priorLabel())}</th><th>${esc(thisLabel())}</th>
     <th>${esc(t('wkChange'))}</th><th>${esc(t('wkPct'))}</th></tr></thead><tbody>`;
   h += block(isLo()?'ສຸດທິ':'Net', A.net, B.net, 'total');
-  h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total');
+  h += block(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, 'total', annIn);
   LINES.forEach((L,i) => { if (A.lines[i].in || B.lines[i].in)
-    h += block(bi(L), A.lines[i].in, B.lines[i].in, 'sub'); });
-  h += block(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, 'total');
+    h += lineRow(i, 'in', A.lines[i].in, B.lines[i].in); });
+  h += block(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, 'total', annOut);
   LINES.forEach((L,i) => { if (A.lines[i].out || B.lines[i].out)
-    h += block(bi(L), A.lines[i].out, B.lines[i].out, 'sub'); });
+    h += lineRow(i, 'out', A.lines[i].out, B.lines[i].out); });
+  let extra = '';
+  if (state.bank >= 0 && goodsIx >= 0)
+    extra = `<p class="note">${esc(t('wkGoodsNoBank'))}</p>`;
+  else if (showGoods){
+    const legend = dims.goodsCodes.filter((gc,ci)=>(Ga[ci].in+Ga[ci].out+G[ci].in+G[ci].out)>0.005)
+      .map(gc => { const p = PURPOSES[purposeByCode[gc.code]];
+        return gc.code + ' · ' + (p ? purposeLabel(p) : ''); }).join('   ·   ');
+    if (legend) extra = `<div class="wk-goods-legend"><b>${esc(t('wkGoodsLegend'))}:</b> ${esc(legend)}</div>`;
+  }
   $('#wkTable').innerHTML = h + '</tbody></table>'
-    + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`;
+    + `<p class="note">${isLo()?'ຫົວໜ່ວຍ: ລ້ານໂດລາທຽບເທົ່າ':'Unit: USD millions equivalent'}</p>`
+    + extra;
 
-  // The first block is the heading; the rest are paragraphs. Rendering them as
-  // real <p> elements gives a first-line indent and no blank-line gaps.
-  const paras = narrative(cur, A, B, state.wkNarr).split(/\n\n+/).map(s => s.trim()).filter(Boolean);
+  const paras = narrative(cur, A, B, state.wkNarr).split(/\n\n+/).map(x => x.trim()).filter(Boolean);
   $('#wkNarrative').innerHTML = paras.map((p, i) =>
     i === 0 ? `<h4>${esc(p)}</h4>` : `<p>${esc(p)}</p>`).join('');
   const wc = weekCurrency(cur.from, cur.to);
@@ -2373,14 +2488,26 @@ function renderWeekly(){
   renderWkTop(cur.from, cur.to);
   renderWkTrend(cur);
   $('#wkTable')._csv = () => {
-    const out = [[hdr, priorLabel(), thisLabel(), t('wkChange'), t('wkPct')]];
-    const push = (l,a,b) => out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
-      pct(a,b)==null?'':pct(a,b).toFixed(2)]);
+    const out = [[hdr, priorLabel(), thisLabel(), t('wkChange'), t('wkPct'), t('wkAvgCol'), t('wkVsAvg')]];
+    const push = (l,a,b,av,dv) => out.push([l, a.toFixed(2), b.toFixed(2), (b-a).toFixed(2),
+      pct(a,b)==null?'':pct(a,b).toFixed(2), av==null?'':av.toFixed(2), dv==null?'':dv.toFixed(1)]);
+    const dvOf = (lv,tv) => (lv ? (tv-lv)/lv*100 : null);
+    // CSV always carries the goods breakdown (all banks), independent of the toggle.
+    const Gc = state.bank<0 ? goodsTotals(cur.from,cur.to) : null;
+    const Gac = state.bank<0 ? goodsTotals(prv.from,prv.to) : null;
+    const csvGoods = dir => { if (state.bank>=0) return; let sa=0,sb=0;
+      const tA = dir==='in'?A.lines[goodsIx].in:A.lines[goodsIx].out;
+      const tB = dir==='in'?B.lines[goodsIx].in:B.lines[goodsIx].out;
+      dims.goodsCodes.forEach((gc,ci)=>{ const a=Gac[ci][dir], b=Gc[ci][dir];
+        if (a>0.005||b>0.005){ sa+=a;sb+=b; push('    '+t(GOODS_KEY[gc.code]), a, b); }});
+      push('    '+t('wkGoodsOther'), Math.max(0,tA-sa), Math.max(0,tB-sb)); };
     push(isLo()?'ສຸດທິ':'Net', A.net, B.net);
-    push(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin);
-    LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].in, B.lines[i].in));
-    push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout);
-    LINES.forEach((L,i)=>push('  '+bi(L), A.lines[i].out, B.lines[i].out));
+    push(isLo()?'ກະແສເງິນໂອນເຂົ້າ':'Total inflow', A.tin, B.tin, bl.in.avg, dvOf(bl.in.avg,B.tin));
+    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].in, B.lines[i].in);
+      if (i===goodsIx) csvGoods('in'); });
+    push(isLo()?'ກະແສເງິນໂອນອອກ':'Total outflow', A.tout, B.tout, bl.out.avg, dvOf(bl.out.avg,B.tout));
+    LINES.forEach((L,i)=>{ push('  '+bi(L), A.lines[i].out, B.lines[i].out);
+      if (i===goodsIx) csvGoods('out'); });
     downloadCsv(`ITRS_report_${cur.from}_to_${cur.to}.csv`, out);
   };
 }
@@ -3464,8 +3591,9 @@ function buildImport(rows){
   const D = {month:new Map(), country:new Map(), currency:new Map(), bank:new Map(),
     purpose:new Map(), size:new Map(), flags:new Map(), quality:new Map(),
     completeness:new Map(), tsBank:new Map(), tsCountry:new Map(), tsCurrency:new Map(),
-    tsPurpose:new Map(), dayLine:new Map(), dayCurrency:new Map()};
+    tsPurpose:new Map(), dayLine:new Map(), dayCurrency:new Map(), dayGoods:new Map()};
   const months = new Set();
+  const GIX = {}; (dims.goodsCodes||[]).forEach((g,i)=>GIX[g.code]=i);
   const stat = {read:0, ok:0, badDate:0, badAmt:0, usdIn:0, usdOut:0, minD:null, maxD:null,
     newBanks:[], newCountries:[], newCurrencies:[], newPurposes:[]};
 
@@ -3537,6 +3665,8 @@ function buildImport(rows){
                    if (s.pur5.length <= 4) bump(D.tsPurpose, [m, s.flow, pIx, s.use, bIx].join(SEP), one); }
     const li = lineOf(s.pur5);
     if (li >= 0) bump(D.dayLine, [s.ymd, s.flow, li, s.use, bIx].join(SEP), one);
+    const gix = GIX[s.pur5];
+    if (gix !== undefined) bump(D.dayGoods, [s.ymd, s.flow, gix, s.use].join(SEP), [v]);
     const a = Math.abs(s.usd);
     const bIdx = a < 1e3 ? 0 : a < 1e4 ? 1 : a < 1e5 ? 2 : a < 1e6 ? 3 : a < 1e7 ? 4 : 5;
     if (s.usd > 0) bump(D.size, [y, s.flow, bIdx, s.use].join(SEP), one);
@@ -3564,6 +3694,7 @@ function buildImport(rows){
   mergeCube('tsPurpose', 5, D.tsPurpose);
   mergeCube('dayLine', 5, D.dayLine);
   mergeCube('dayCurrency', 4, D.dayCurrency, 1);
+  mergeCube('dayGoods', 4, D.dayGoods, 1);
   mergeCube('flags', 5, D.flags);
   mergeCube('quality', 2, D.quality, 10);
   mergeCube('completeness', 1, D.completeness, 12);
@@ -4299,6 +4430,11 @@ function initControls(){
     syncRangeInputs(); renderWeekly();
   });
   segBind('#wkPresetSeg', v => { applyPreset(v); renderWeekly(); });
+  // Tapping the Goods row toggles its commodity breakdown. Delegated so it
+  // survives the table's innerHTML rebuilds.
+  $('#wkTable').addEventListener('click', e => {
+    if (e.target.closest('tr.goods')){ state.wkGoodsOpen = !state.wkGoodsOpen; renderWeekly(); }
+  });
   segBind('#wkNarrSeg', v => { state.wkNarr = v; renderWeekly(); });
   $('#wkCopy2').addEventListener('click', async e => {
     try { await navigator.clipboard.writeText($('#wkNarrative').textContent);
