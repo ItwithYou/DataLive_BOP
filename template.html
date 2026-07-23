@@ -744,6 +744,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="officers" aria-selected="false" data-t="tabOfficers">Officers</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
     <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
+    <button data-tab="accounts" aria-selected="false" data-t="tabAccounts">Accounts</button>
   </nav>
 </header>
 
@@ -1049,7 +1050,17 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <p class="sub" data-t="dsBuiltInSub">2017–2025 · fixed, cannot be removed here</p>
         <div class="scroll" id="dsBuilt" style="max-height:540px"></div></div>
     </div>
+    <div class="card" id="dsPublish" hidden>
+      <h3 data-t="pubTitle">Publish uploaded data</h3>
+      <p class="sub" data-t="pubSub">Bake the files uploaded on this device into the published report so every user sees them.</p>
+      <div id="pubMsg"></div>
+      <div class="row" style="margin-top:11px">
+        <button class="btn pri" id="pubBtn" data-t="pubBtn">Publish uploaded data</button>
+      </div>
+      <p class="note" data-t="pubNote"></p>
+    </div>
   </section>
+  <section class="tab" id="tab-accounts"></section>
 </div>
 
 <footer><div id="footMeta"></div></footer>
@@ -1065,6 +1076,34 @@ const RULES = DATA.rules || {};
    role and get full access, since there is nothing to gate. */
 const ROLE = DATA._role || 'admin';
 const isAdmin = () => ROLE === 'admin';
+// Only an authenticated (encrypted) build carries a role; an ungated local
+// build has nothing to gate and keeps full access.
+const ENCRYPTED = !!DATA._role;
+const isSuper = () => ROLE === 'superyang';
+// A per-account permission record — {tabs:[...], caps:{import,settings}} — is
+// carried on the wrapper that opened the payload and set by the superyang
+// account manager. Accounts created before it existed have none and fall back
+// to the built-in role rules below. Note this gate is presentational: every
+// account shares one data key, so the boundary between roles is which tabs the
+// UI offers, not what the browser could technically decrypt.
+const CAPS = DATA._caps || null;
+const canImport = () => CAPS ? !!CAPS.import : (isAdmin() || isSuper());
+const canSettings = () => CAPS ? !!CAPS.settings : (isSuper() || !ENCRYPTED);
+// Report tabs in nav-bar order. 'accounts' is the superyang-only admin tab and
+// is handled apart from this list.
+const REPORT_TABS = ['overview','bop','timeseries','weekly','search','fx','dups','officers','banks','quality'];
+// Legacy hardcoded role limits, still honoured for accounts that predate the
+// per-account permission model.
+const LIMITED_TABS = { mpd:['overview','bop','timeseries','weekly'], epitrs:['weekly'] };
+function allowedTabs(){
+  let base;
+  if (Array.isArray(DATA._tabs)) base = DATA._tabs;
+  else if (LIMITED_TABS[ROLE]) base = LIMITED_TABS[ROLE];
+  else base = REPORT_TABS;                 // admin / superyang / viewer see all
+  const set = new Set(base);
+  const out = REPORT_TABS.filter(x => set.has(x));
+  return out.length ? out : ['overview'];
+}
 
 /* ===================== i18n ===================== */
 const I18N = {
@@ -1094,6 +1133,52 @@ const I18N = {
  ofNoteTxt:["The duplicate count is the complete figure for the period. The exported file carries the largest exceptions by value that this report holds — {n} rows for the whole team — not every underlying record. Work the export, then use the count to know how much is left.",
             "ຈຳນວນລາຍການຊ້ຳແມ່ນຕົວເລກຄົບຖ້ວນຂອງໄລຍະນີ້. ແຕ່ໄຟລ໌ທີ່ສົ່ງອອກມີສະເພາະລາຍການທີ່ມີມູນຄ່າສູງສຸດເທົ່າທີ່ລາຍງານນີ້ເກັບໄວ້ — {n} ແຖວສຳລັບທັງທີມ — ບໍ່ແມ່ນທຸກລາຍການ. ໃຫ້ນຳໃຊ້ໄຟລ໌ທີ່ສົ່ງອອກກ່ອນ ແລ້ວເບິ່ງຕົວເລກເພື່ອຮູ້ວ່າຍັງເຫຼືອເທົ່າໃດ."],
  tabBanks:["Banks","ທະນາຄານ"], tabQuality:["Data Quality","ຄຸນນະພາບຂໍ້ມູນ"], tabSettings:["Settings","ການຕັ້ງຄ່າ"],
+ tabAccounts:["Accounts","ບັນຊີຜູ້ໃຊ້"],
+ acTitle:["User accounts","ບັນຊີຜູ້ໃຊ້"],
+ acLead:["Create a login, tick which tabs it may see, then download the updated dashboard and re-publish it so the account works for everyone. Nothing is saved to a server — the download IS the change.",
+         "ສ້າງບັນຊີເຂົ້າລະບົບ, ເລືອກແທັບທີ່ບັນຊີນັ້ນເຫັນໄດ້, ຈາກນັ້ນດາວໂຫລດ dashboard ທີ່ປັບປຸງ ແລ້ວເຜີຍແຜ່ຄືນ ເພື່ອໃຫ້ບັນຊີໃຊ້ໄດ້ກັບທຸກຄົນ. ບໍ່ມີການເກັບໄວ້ໃນເຊີເວີ — ໄຟລ໌ທີ່ດາວໂຫລດຄືການປ່ຽນແປງນັ້ນເອງ."],
+ acNewTitle:["New account","ບັນຊີໃໝ່"],
+ acName:["Account name","ຊື່ບັນຊີ"],
+ acNamePh:["e.g. finance-team","ຕົວຢ່າງ finance-team"],
+ acPass:["Password","ລະຫັດຜ່ານ"],
+ acGen:["Generate","ສ້າງ"],
+ acCopy:["Copy","ສຳເນົາ"],
+ acCopied:["Copied","ສຳເນົາແລ້ວ"],
+ acTabsAllowed:["Tabs this account can see","ແທັບທີ່ບັນຊີນີ້ເຫັນໄດ້"],
+ acAll:["All","ທັງໝົດ"],
+ acNone:["None","ບໍ່ມີ"],
+ acCaps:["Extra permissions","ສິດເພີ່ມເຕີມ"],
+ acCapImport:["Can import data","ນຳເຂົ້າຂໍ້ມູນໄດ້"],
+ acCapSettings:["Can see the Settings tab","ເຫັນແທັບການຕັ້ງຄ່າ"],
+ acCreate:["Create account","ສ້າງບັນຊີ"],
+ acCreated:["Account created. Copy the password now — it is not stored and cannot be shown again once you leave this page.",
+            "ສ້າງບັນຊີແລ້ວ. ສຳເນົາລະຫັດຜ່ານດຽວນີ້ — ມັນບໍ່ໄດ້ຖືກເກັບໄວ້ ແລະ ຈະສະແດງບໍ່ໄດ້ອີກເມື່ອອອກຈາກໜ້ານີ້."],
+ acPwFor:["Password for","ລະຫັດຜ່ານສຳລັບ"],
+ acNeedName:["Enter an account name.","ກະລຸນາໃສ່ຊື່ບັນຊີ."],
+ acBadName:["Use only letters, numbers, dot, dash or underscore.","ໃຊ້ໄດ້ພຽງຕົວອັກສອນ, ຕົວເລກ, ຈຸດ, ຂີດ ຫຼື ຂີດລຸ່ມ."],
+ acDupName:["That account name already exists.","ຊື່ບັນຊີນີ້ມີຢູ່ແລ້ວ."],
+ acShort:["Password must be at least 12 characters.","ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 12 ຕົວອັກສອນ."],
+ acNoTabs:["Tick at least one tab (or the Settings permission).","ເລືອກຢ່າງໜ້ອຍໜຶ່ງແທັບ (ຫຼືສິດການຕັ້ງຄ່າ)."],
+ acExisting:["Accounts","ບັນຊີ"],
+ acPublished:["Published","ເຜີຍແຜ່ແລ້ວ"],
+ acNewBadge:["New — needs publishing","ໃໝ່ — ຕ້ອງເຜີຍແຜ່"],
+ acRemove:["Remove","ລຶບ"],
+ acDownload:["Download updated dashboard","ດາວໂຫລດ dashboard ທີ່ປັບປຸງ"],
+ acDownloadHint:["Downloads index.html. Replace docs/index.html in the repository with it and publish; until then, accounts added here work only in this browser.",
+                 "ດາວໂຫລດ index.html. ປ່ຽນ docs/index.html ໃນ repository ດ້ວຍໄຟລ໌ນີ້ ແລ້ວເຜີຍແຜ່; ກ່ອນນັ້ນ, ບັນຊີທີ່ເພີ່ມທີ່ນີ້ໃຊ້ໄດ້ພຽງໃນບຣາວເຊີນີ້."],
+ acDownloaded:["Downloaded. Now replace docs/index.html with it and publish.","ດາວໂຫລດແລ້ວ. ຕອນນີ້ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່."],
+ acNoManager:["The account manager needs the encrypted dashboard opened with the superyang passphrase.","ຕົວຈັດການບັນຊີຕ້ອງເປີດ dashboard ທີ່ເຂົ້າລະຫັດດ້ວຍລະຫັດຜ່ານ superyang."],
+ acAllTabs:["all tabs","ທຸກແທັບ"],
+ pubTitle:["Publish uploaded data","ເຜີຍແຜ່ຂໍ້ມູນທີ່ອັບໂຫລດ"],
+ pubSub:["Bake the files uploaded on this device into the published report so every user sees them.",
+         "ຝັງໄຟລ໌ທີ່ອັບໂຫລດໃນອຸປະກອນນີ້ເຂົ້າໃນລາຍງານທີ່ເຜີຍແຜ່ ເພື່ອໃຫ້ທຸກຄົນເຫັນ."],
+ pubBtn:["Publish uploaded data","ເຜີຍແຜ່ຂໍ້ມູນທີ່ອັບໂຫລດ"],
+ pubNote:["Re-encrypts under the same key, so every existing login keeps working. Downloads index.html — replace docs/index.html with it and publish. A full rebuild from build_dashboard.py does not carry these, so re-publish here after one.",
+          "ເຂົ້າລະຫັດຄືນດ້ວຍກະແຈເກົ່າ, ດັ່ງນັ້ນທຸກບັນຊີເຂົ້າລະບົບໃຊ້ໄດ້ຄືເກົ່າ. ດາວໂຫລດ index.html — ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່. ການ build ໃໝ່ທັງໝົດຈາກ build_dashboard.py ຈະບໍ່ນຳຂໍ້ມູນນີ້ໄປ."],
+ pubWorking:["Encrypting the updated report…","ກຳລັງເຂົ້າລະຫັດລາຍງານທີ່ປັບປຸງ…"],
+ pubDone:["Downloaded. Replace docs/index.html with it and publish — then everyone sees the data.",
+          "ດາວໂຫລດແລ້ວ. ປ່ຽນ docs/index.html ດ້ວຍມັນ ແລ້ວເຜີຍແຜ່ — ຈາກນັ້ນທຸກຄົນຈະເຫັນຂໍ້ມູນ."],
+ pubNothing:["No uploads on this device to publish. Add a file above first.","ບໍ່ມີໄຟລ໌ອັບໂຫລດໃນອຸປະກອນນີ້ໃຫ້ເຜີຍແຜ່. ກະລຸນາເພີ່ມໄຟລ໌ຂ້າງເທິງກ່ອນ."],
  setFx:["Exchange rate bands","ຂອບເຂດອັດຕາແລກປ່ຽນ"],
  setFxSub:["A rate outside its band is flagged as an exception","ອັດຕານອກຂອບເຂດຈະຖືກໝາຍ"],
  setPurpose:["Purpose transform rules","ກົດການປ່ຽນລະຫັດຈຸດປະສົງ"],
@@ -4098,12 +4183,26 @@ function detailToImport(rows, flow){
   return out;
 }
 
+// Uploads that superyang has published are baked into the encrypted payload and
+// applied to EVERY browser here; skip them in reapplyUploads() so a device that
+// also still holds its own copy is not counted twice.
+let BAKED_IDS = new Set();
+function applyBakedUploads(){
+  const list = Array.isArray(DATA.baked_uploads) ? DATA.baked_uploads : [];
+  BAKED_IDS = new Set(list.map(u => u.id));
+  for (const u of list){
+    try { buildImport(u.rows); } catch (e){ /* a bad baked upload must not brick boot */ }
+  }
+  return list.length;
+}
 async function reapplyUploads(){
   const ups = await idbAll();
+  let n = 0;
   for (const u of ups){
-    try { buildImport(u.rows); } catch (e){ /* a stale upload should not brick boot */ }
+    if (BAKED_IDS.has(u.id)) continue;   // already in the published base
+    try { buildImport(u.rows); n++; } catch (e){ /* a stale upload should not brick boot */ }
   }
-  return ups.length;
+  return n;
 }
 
 /* Data management now lives in the Data tab (renderData/processDataFile). */
@@ -4314,10 +4413,253 @@ function renderData(){
   }
   renderDsBuilt();
   renderDsUploads();
+  // superyang can push this device's uploads into the published file so every
+  // user sees them; everyone else never sees the control.
+  const pub = $('#dsPublish');
+  if (pub){
+    if (!isSuper()) pub.remove();
+    else {
+      pub.hidden = false;
+      if (!renderData.pubWired){
+        renderData.pubWired = true;
+        $('#pubBtn').addEventListener('click', async () => {
+          const m = $('#pubMsg');
+          m.className = 'imp-msg warn'; m.innerHTML = `<span class="spin"></span>${esc(t('pubWorking'))}`;
+          try {
+            const r = await acPublishData();
+            if (!r.added){ m.className = 'imp-msg warn'; m.textContent = t('pubNothing'); return; }
+            acDownload(await acBuildHtml());
+            m.className = 'imp-msg ok'; m.textContent = t('pubDone');
+          } catch (e){ m.className = 'imp-msg err'; m.textContent = String(e && e.message || e); }
+        });
+      }
+    }
+  }
+}
+/* ===================== Accounts (superyang only) =====================
+   Provision logins without a server. superyang holds the raw data key, so the
+   browser can wrap it under a new passphrase — the same wrapper the Python
+   build writes — tag it with the tabs that account may see, and rebuild the
+   published file for download. Every account shares one data key, so the tab
+   list is a UI permission, not a cryptographic partition of the data. */
+const AC_TAB_LABEL = {overview:'tabOverview', bop:'tabBop', timeseries:'tabTs',
+  weekly:'tabWeekly', search:'tabSearch', fx:'tabFx', dups:'tabDups',
+  officers:'tabOfficers', banks:'tabBanks', quality:'tabQuality'};
+// Chunked so a multi-MB ciphertext does not overflow the argument stack.
+const acB64 = buf => {
+  const u8 = new Uint8Array(buf); let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+const acB64dec = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function acGzip(u8){
+  const stream = new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+// Decrypt the ORIGINAL payload straight from the stored env — never the mutated
+// in-memory DATA — so re-encryption always starts from a clean base.
+async function acPristinePayload(){
+  const env = DATA._env;
+  const key = await crypto.subtle.importKey('raw', DATA._dk, 'AES-GCM', false, ['decrypt']);
+  let plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: acB64dec(env.iv)}, key, acB64dec(env.ct));
+  if (env.gz){
+    const ds = new DecompressionStream('gzip');
+    plain = await new Response(new Blob([plain]).stream().pipeThrough(ds)).arrayBuffer();
+  }
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+// Bake this device's uploads into the payload as raw rows (every client re-runs
+// buildImport on them at boot), then re-encrypt under the same data key so all
+// existing logins still open the file. Only env.ct/iv change; accounts are kept.
+async function acPublishData(){
+  if (!acEnv) acEnv = Object.assign({}, DATA._env, {keys: (DATA._env.keys || []).slice()});
+  const base = await acPristinePayload();
+  const existing = Array.isArray(base.baked_uploads) ? base.baked_uploads : [];
+  const ids = new Set(existing.map(u => u.id));
+  const ups = await idbAll();
+  const add = ups.filter(u => !ids.has(u.id)).map(u => ({id: u.id, rows: u.rows}));
+  if (!add.length) return {added: 0, total: existing.length};
+  base.baked_uploads = existing.concat(add);
+  const gz = await acGzip(new TextEncoder().encode(JSON.stringify(base)));
+  const key = await crypto.subtle.importKey('raw', DATA._dk, 'AES-GCM', false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, gz);
+  acEnv.iv = acB64(iv); acEnv.ct = acB64(ct); acEnv.gz = true;
+  return {added: add.length, total: base.baked_uploads.length};
+}
+let acEnv = null;                 // working copy of the encrypted env
+const acNew = new Set();          // names added this session, not yet published
+let acLast = null;                // {name, pass} of the most recent creation
+const acDraft = {name:'', pass:'', tabs:new Set(REPORT_TABS), imp:false, set:false};
+
+function acGenPassword(len){
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const r = crypto.getRandomValues(new Uint32Array(len || 18));
+  return [...r].map(x => A[x % A.length]).join('');
+}
+function acKnownNames(){ return new Set((acEnv.keys || []).map(k => k.role)); }
+async function acWrap(pw){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  const kek = await crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations: acEnv.iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const wrapped = await crypto.subtle.encrypt({name:'AES-GCM', iv}, kek, DATA._dk);
+  return {salt: acB64(salt), iv: acB64(iv), key: acB64(wrapped)};
+}
+async function acBuildHtml(){
+  // Splice the augmented key set into a fresh copy of the current page. The
+  // huge ciphertext is reused untouched; only env.keys grows.
+  const res = await fetch(location.href, {cache: 'reload'});
+  let html = await res.text();
+  const tag = '<script id="itrs-data" type="application/json">';
+  const i = html.indexOf(tag);
+  if (i < 0) throw new Error('data block not found in page');
+  const j = html.indexOf('</' + 'script>', i);
+  if (j < 0) throw new Error('data block not terminated');
+  const body = JSON.stringify(acEnv).replace(/</g, '\\u003c');
+  return html.slice(0, i + tag.length) + body + html.slice(j);
+}
+function acDownload(html){
+  const url = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
+  const a = document.createElement('a');
+  a.href = url; a.download = 'index.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+async function acCreate(){
+  const m = $('#acMsg');
+  const err = txt => { m.className = 'imp-msg err'; m.textContent = txt; };
+  const name = acDraft.name.trim();
+  if (!name) return err(t('acNeedName'));
+  if (!/^[A-Za-z0-9._@-]+$/.test(name)) return err(t('acBadName'));
+  if (acKnownNames().has(name)) return err(t('acDupName'));
+  if ((acDraft.pass || '').length < 12) return err(t('acShort'));
+  const tabs = REPORT_TABS.filter(x => acDraft.tabs.has(x));
+  if (!tabs.length && !acDraft.set) return err(t('acNoTabs'));
+  const w = await acWrap(acDraft.pass);
+  w.role = name; w.tabs = tabs; w.caps = {import: acDraft.imp, settings: acDraft.set};
+  acEnv.keys.push(w);
+  acNew.add(name);
+  acLast = {name, pass: acDraft.pass};
+  acDraft.name = ''; acDraft.pass = '';
+  renderAccounts();
+}
+function renderAccounts(){
+  const host = $('#tab-accounts');
+  if (!DATA._dk || !DATA._env){
+    host.innerHTML = `<div class="card"><p class="sub">${esc(t('acNoManager'))}</p></div>`;
+    return;
+  }
+  if (!acEnv) acEnv = Object.assign({}, DATA._env, {keys: (DATA._env.keys || []).slice()});
+
+  const tabChecks = REPORT_TABS.map(k =>
+    `<label class="acck"><input type="checkbox" data-actab="${k}" ${acDraft.tabs.has(k) ? 'checked' : ''}> ${esc(t(AC_TAB_LABEL[k]))}</label>`
+  ).join('');
+
+  const rows = (acEnv.keys || []).map(k => {
+    const isNew = acNew.has(k.role);
+    let scope;
+    if (Array.isArray(k.tabs)) scope = k.tabs.length ? k.tabs.map(x => t(AC_TAB_LABEL[x]) || x).join(', ') : t('acNone');
+    else scope = t('acAllTabs');
+    const caps = [];
+    if (k.caps ? k.caps.import : (k.role === 'admin' || k.role === 'superyang')) caps.push(t('acCapImport'));
+    if (k.caps ? k.caps.settings : (k.role === 'superyang')) caps.push(t('acCapSettings'));
+    const badge = isNew
+      ? `<span class="pill warn">${esc(t('acNewBadge'))}</span>`
+      : `<span class="pill">${esc(t('acPublished'))}</span>`;
+    const rm = isNew ? `<button class="btn" data-acrm="${esc(k.role)}">${esc(t('acRemove'))}</button>` : '';
+    return `<tr><td><b>${esc(k.role)}</b> ${badge}</td><td class="sub" style="padding-left:8px">${esc(scope)}${caps.length ? ' · ' + esc(caps.join(', ')) : ''}</td><td>${rm}</td></tr>`;
+  }).join('');
+
+  const created = acLast
+    ? `<div class="imp-msg ok" style="margin-top:11px">${esc(t('acCreated'))}<div class="acpw"><span>${esc(t('acPwFor'))} <b>${esc(acLast.name)}</b>:</span> <code>${esc(acLast.pass)}</code> <button class="btn" id="acCopyLast">${esc(t('acCopy'))}</button></div></div>`
+    : '';
+
+  host.innerHTML = `
+    <style>
+      #tab-accounts .acinput{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font:13px system-ui,-apple-system,"Segoe UI",sans-serif}
+      #tab-accounts .aclbl{display:block;font-size:12px;font-weight:600;color:var(--ink-3);margin:11px 0 5px}
+      #tab-accounts .acmini{font-weight:400;float:right}
+      #tab-accounts .acmini a{color:var(--accent);text-decoration:none;margin-left:8px}
+      #tab-accounts .acgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      #tab-accounts .acck{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2)}
+      #tab-accounts .actable{width:100%;border-collapse:collapse}
+      #tab-accounts .actable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+      #tab-accounts .acpw{margin-top:8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+      #tab-accounts .acpw code{background:var(--panel-2);padding:4px 9px;border-radius:7px;font-size:13.5px;letter-spacing:.5px}
+    </style>
+    <div class="card">
+      <h3>${esc(t('acTitle'))}</h3>
+      <p class="sub">${esc(t('acLead'))}</p>
+    </div>
+    <div class="grid g-2">
+      <div class="card">
+        <h3>${esc(t('acNewTitle'))}</h3>
+        <label class="aclbl">${esc(t('acName'))}</label>
+        <input type="text" id="acName" class="acinput" placeholder="${esc(t('acNamePh'))}" value="${esc(acDraft.name)}" autocomplete="off" spellcheck="false">
+        <label class="aclbl">${esc(t('acPass'))}</label>
+        <div class="row">
+          <input type="text" id="acPass" class="acinput" value="${esc(acDraft.pass)}" autocomplete="off" spellcheck="false" style="flex:1;min-width:160px">
+          <button class="btn" id="acGen">${esc(t('acGen'))}</button>
+          <button class="btn" id="acCopyPass">${esc(t('acCopy'))}</button>
+        </div>
+        <label class="aclbl">${esc(t('acTabsAllowed'))}<span class="acmini"><a href="#" id="acAll">${esc(t('acAll'))}</a><a href="#" id="acNone">${esc(t('acNone'))}</a></span></label>
+        <div class="acgrid">${tabChecks}</div>
+        <label class="aclbl">${esc(t('acCaps'))}</label>
+        <div class="acgrid">
+          <label class="acck"><input type="checkbox" id="acImp" ${acDraft.imp ? 'checked' : ''}> ${esc(t('acCapImport'))}</label>
+          <label class="acck"><input type="checkbox" id="acSet" ${acDraft.set ? 'checked' : ''}> ${esc(t('acCapSettings'))}</label>
+        </div>
+        <div id="acMsg"></div>
+        <div class="row" style="margin-top:12px"><button class="btn pri" id="acCreate">${esc(t('acCreate'))}</button></div>
+        ${created}
+      </div>
+      <div class="card">
+        <h3>${esc(t('acExisting'))}</h3>
+        <div class="scroll" style="max-height:360px"><table class="actable"><tbody>${rows}</tbody></table></div>
+        <div id="acDlMsg"></div>
+        <div class="row" style="margin-top:12px"><button class="btn pri" id="acDownload">${esc(t('acDownload'))}</button></div>
+        <p class="note">${esc(t('acDownloadHint'))}</p>
+      </div>
+    </div>`;
+
+  const nameEl = $('#acName'), passEl = $('#acPass');
+  nameEl.addEventListener('input', () => acDraft.name = nameEl.value);
+  passEl.addEventListener('input', () => acDraft.pass = passEl.value);
+  $('#acGen').addEventListener('click', () => { acDraft.pass = acGenPassword(18); passEl.value = acDraft.pass; });
+  const copyOn = (btn, getText) => btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(getText()); const o = btn.textContent; btn.textContent = t('acCopied'); setTimeout(() => btn.textContent = o, 1300); } catch (e) {}
+  });
+  copyOn($('#acCopyPass'), () => passEl.value);
+  if ($('#acCopyLast')) copyOn($('#acCopyLast'), () => acLast.pass);
+  $$('#tab-accounts [data-actab]').forEach(cb => cb.addEventListener('change', () => {
+    if (cb.checked) acDraft.tabs.add(cb.dataset.actab); else acDraft.tabs.delete(cb.dataset.actab);
+  }));
+  $('#acAll').addEventListener('click', e => { e.preventDefault(); acDraft.tabs = new Set(REPORT_TABS); renderAccounts(); });
+  $('#acNone').addEventListener('click', e => { e.preventDefault(); acDraft.tabs = new Set(); renderAccounts(); });
+  $('#acImp').addEventListener('change', e => acDraft.imp = e.target.checked);
+  $('#acSet').addEventListener('change', e => acDraft.set = e.target.checked);
+  $$('#tab-accounts [data-acrm]').forEach(b => b.addEventListener('click', () => {
+    const name = b.dataset.acrm;
+    acEnv.keys = acEnv.keys.filter(k => k.role !== name);
+    acNew.delete(name);
+    if (acLast && acLast.name === name) acLast = null;
+    renderAccounts();
+  }));
+  $('#acCreate').addEventListener('click', acCreate);
+  $('#acDownload').addEventListener('click', async () => {
+    const dm = $('#acDlMsg');
+    dm.className = 'imp-msg'; dm.textContent = '…';
+    try { acDownload(await acBuildHtml()); dm.className = 'imp-msg ok'; dm.textContent = t('acDownloaded'); }
+    catch (e) { dm.className = 'imp-msg err'; dm.textContent = String(e && e.message || e); }
+  });
 }
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
   weekly:renderWeekly, search:renderSearch, fx:renderFx, dups:renderDups,
-  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings, data:renderData};
+  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings,
+  data:renderData, accounts:renderAccounts};
 let rendered = {};
 function renderBanner(){
   const msg = {
@@ -4467,10 +4809,13 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
-  // Import mutates the dataset, so it is admin-only. Removing the button is
-  // presentational; the real boundary is that a viewer's passphrase cannot
-  // unwrap the data key at all without also being handed the admin one.
-  if (isAdmin()){
+  // Published (baked) uploads are part of the dataset every account should see,
+  // so they are applied for all roles before the first paint.
+  if (applyBakedUploads()) rebuildYearOptions();
+  // Import mutates the dataset, so it is limited to the full-access roles.
+  // Removing the button is presentational; the real boundary is that a viewer's
+  // passphrase cannot unwrap the data key at all without a full-access one.
+  if (canImport()){
     // The + button opens the Data tab, like the gear opens Settings.
     $('#importBtn').addEventListener('click', () => {
       state.tab = 'data';
@@ -4483,16 +4828,22 @@ function initControls(){
     reapplyUploads().then(n => { if (n){ rebuildYearOptions(); initMeta(); renderAll(); } })
       .catch(()=>{});
   }
-  else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
-  // The MPD role sees only these four report tabs; the rest are removed from the
-  // nav so there is nothing to click through to.
-  if (ROLE === 'mpd'){
-    const allowed = new Set(['overview', 'bop', 'timeseries', 'weekly']);
-    $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
-    if (!allowed.has(state.tab)){
-      state.tab = 'overview';
-      $('#nav button[data-tab="overview"]').setAttribute('aria-selected', 'true');
-    }
+  else { $('#importBtn').remove(); }
+  // The Settings tab is reserved for the superyang super-admin; every other
+  // user (admin included) has the gear removed so there is nothing to open.
+  if (!canSettings()) $('#settingsBtn').remove();
+  // Show only the tabs this account may see; drop the rest from the nav so there
+  // is nothing to click through to. The superyang super-admin additionally gets
+  // the Accounts provisioning tab. If the account's landing tab was removed,
+  // fall back to the first that survives — and move the visible section with it.
+  const allowed = new Set(allowedTabs());
+  if (isSuper()) allowed.add('accounts');
+  $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
+  if (!allowed.has(state.tab)){
+    const first = $('#nav button');
+    state.tab = first ? first.dataset.tab : 'overview';
+    $$('#nav button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
+    $$('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + state.tab));
   }
   const sb = $('#settingsBtn');
   if (sb) sb.addEventListener('click', () => {
@@ -4683,7 +5034,7 @@ function initInstall(){
     const enc = new TextEncoder();
     const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
     const wrappers = env.keys || [{role:'admin', salt:env.salt, iv:env.iv, key:null}];
-    let dataKey = null, role = null;
+    let dataKey = null, role = null, opened = null, keyRaw = null;
     for (const w of wrappers){
       const kek = await crypto.subtle.deriveKey(
         {name:'PBKDF2', salt:b64(w.salt), iterations:env.iter, hash:'SHA-256'},
@@ -4692,7 +5043,7 @@ function initInstall(){
         const rawKey = await crypto.subtle.decrypt(
           {name:'AES-GCM', iv:b64(w.iv)}, kek, b64(w.key));
         dataKey = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt']);
-        role = w.role;
+        role = w.role; opened = w; keyRaw = rawKey;
         break;
       } catch (e) { /* wrong passphrase for this role; try the next */ }
     }
@@ -4705,6 +5056,13 @@ function initInstall(){
     }
     const data = JSON.parse(new TextDecoder().decode(plain));
     data._role = role;
+    // Per-account permissions ride along on the wrapper that opened the payload.
+    data._tabs = opened && Array.isArray(opened.tabs) ? opened.tabs : null;
+    data._caps = opened && opened.caps ? opened.caps : null;
+    // The superyang admin alone gets the raw data key and the encrypted env, so
+    // the account manager can wrap that key under new passphrases and rebuild
+    // the published file. Both stay in memory and never leave the browser.
+    if (role === 'superyang'){ data._dk = keyRaw; data._env = env; }
     return data;
   }
 
