@@ -1065,6 +1065,14 @@ const RULES = DATA.rules || {};
    role and get full access, since there is nothing to gate. */
 const ROLE = DATA._role || 'admin';
 const isAdmin = () => ROLE === 'admin';
+// Only an authenticated (encrypted) build carries a role; an ungated local
+// build has nothing to gate and keeps full access.
+const ENCRYPTED = !!DATA._role;
+const isSuper = () => ROLE === 'superyang';
+// Import is available to the full-access roles; the Settings tab is reserved
+// for the superyang super-admin (the ungated local build keeps it too).
+const canImport = () => isAdmin() || isSuper();
+const canSettings = () => isSuper() || !ENCRYPTED;
 
 /* ===================== i18n ===================== */
 const I18N = {
@@ -4467,10 +4475,10 @@ function initControls(){
     scrollTo({top:0, behavior:'smooth'});
   });
 
-  // Import mutates the dataset, so it is admin-only. Removing the button is
-  // presentational; the real boundary is that a viewer's passphrase cannot
-  // unwrap the data key at all without also being handed the admin one.
-  if (isAdmin()){
+  // Import mutates the dataset, so it is limited to the full-access roles.
+  // Removing the button is presentational; the real boundary is that a viewer's
+  // passphrase cannot unwrap the data key at all without a full-access one.
+  if (canImport()){
     // The + button opens the Data tab, like the gear opens Settings.
     $('#importBtn').addEventListener('click', () => {
       state.tab = 'data';
@@ -4483,7 +4491,10 @@ function initControls(){
     reapplyUploads().then(n => { if (n){ rebuildYearOptions(); initMeta(); renderAll(); } })
       .catch(()=>{});
   }
-  else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
+  else { $('#importBtn').remove(); }
+  // The Settings tab is reserved for the superyang super-admin; every other
+  // user (admin included) has the gear removed so there is nothing to open.
+  if (!canSettings()) $('#settingsBtn').remove();
   // Some roles see only a subset of report tabs; the rest are removed from the
   // nav so there is nothing to click through to. 'weekly' is the Period Report.
   const LIMITED_TABS = {

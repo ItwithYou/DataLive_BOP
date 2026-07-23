@@ -1269,8 +1269,10 @@ TOO_SHORT = (
 
 # Role -> (environment variable, prompt label, what it unlocks in the UI).
 ROLES = {
+    "superyang": ("ITRS_PASSWORD_SUPERYANG", "Superyang passphrase",
+                  "super-admin: full access, data import, and Settings"),
     "admin":  ("ITRS_PASSWORD_ADMIN",  "Admin passphrase",
-               "full access, including data import"),
+               "full access and data import, without Settings"),
     "viewer": ("ITRS_PASSWORD_VIEWER", "Team passphrase",
                "read-only: every report, no import"),
     "mpd":    ("ITRS_PASSWORD_MPD",    "MPD passphrase",
@@ -1322,6 +1324,9 @@ def parse_args():
     p.add_argument("--encrypt", action="store_true",
                    help="encrypt the data payload behind a passphrase (use this "
                         "for anything published to GitHub Pages or similar)")
+    p.add_argument("--superyang-password-file",
+                   help="file holding the superyang passphrase (super-admin, "
+                        "the only role that sees Settings)")
     p.add_argument("--admin-password-file",
                    help="file holding the admin passphrase (full access)")
     p.add_argument("--viewer-password-file",
