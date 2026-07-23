@@ -1012,7 +1012,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <h3 data-t="setUsers">User accounts</h3>
       <p class="sub" data-t="setUsersSub">Who can log in and what each may see</p>
       <div class="scroll" id="setUsers"></div>
-      <p class="note" data-t="setUsersHow"></p>
+      <p class="note" id="setUsersHow" data-t="setUsersHow"></p>
     </div>
     <div class="card" style="margin-top:13px">
       <h3 data-t="setFx">Exchange rate bands</h3>
@@ -1059,7 +1059,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         <b data-t="dsDropTitle">Add a 2026 export file</b>
         <span id="dsDropSub"></span>
-        <input type="file" id="dsFile" accept=".csv,.tsv,.txt,.json,.xlsx" hidden>
+        <input type="file" id="dsFile" accept=".csv,.tsv,.txt,.json,.xlsx,.parquet" hidden>
       </div>
       <div id="dsMsg" style="margin-top:11px"></div>
     </div>
@@ -1292,7 +1292,7 @@ const I18N = {
  impBtn:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
  logout:["Log out","ອອກຈາກລະບົບ"],
  dsTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
- dsDropSub:["Excel (.xlsx), CSV, TSV or JSON — read in your browser, never uploaded anywhere","ໄຟລ໌ Excel (.xlsx), CSV, TSV ຫຼື JSON — ອ່ານໃນບຣາວເຊີ, ບໍ່ຖືກສົ່ງໄປໃສ"],
+ dsDropSub:["Parquet, Excel (.xlsx), CSV, TSV or JSON — read in your browser, never uploaded anywhere","ໄຟລ໌ Parquet, Excel (.xlsx), CSV, TSV ຫຼື JSON — ອ່ານໃນບຣາວເຊີ, ບໍ່ຖືກສົ່ງໄປໃສ"],
  dsDropTitle:["Add a data file","ເພີ່ມໄຟລ໌ຂໍ້ມູນ"],
  dsUploaded:["Uploaded on this device","ອັບໂຫຼດໃນອຸປະກອນນີ້"],
  dsBuiltIn:["Built in","ຕິດຕັ້ງມາ"],
@@ -1310,7 +1310,8 @@ const I18N = {
                "ໄຟລ໌ທີ່ອັບໂຫຼດຢູ່ໃນອຸປະກອນນີ້ ແລະ ນຳໃຊ້ຄືນເມື່ອໂຫຼດ. ລຶບເພື່ອເອົາອອກຈາກລາຍງານນີ້. ເພື່ອເຜີຍແຜ່ໃຫ້ທຸກຄົນ ໃຫ້ສ້າງໃໝ່ຈາກໄຟລ໌ຕົ້ນທາງ."],
  errFlow:["Name the file …in… or …out… so its direction is clear.","ຕັ້ງຊື່ໄຟລ໌ໃຫ້ມີ in ຫຼື out ເພື່ອບອກທິດທາງ."],
  errXlsx:["This .xlsx could not be read (unsupported compression).","ອ່ານໄຟລ໌ .xlsx ນີ້ບໍ່ໄດ້."],
- errParquet:["Parquet files are loaded through the build, not the browser. Export it to CSV or Excel first, or send the .parquet to be baked in.","ໄຟລ໌ Parquet ໂຫຼດຜ່ານການ build ບໍ່ແມ່ນຜ່ານບຣາວເຊີ. ໃຫ້ export ເປັນ CSV ຫຼື Excel ກ່ອນ ຫຼື ສົ່ງໄຟລ໌ .parquet ໃຫ້ບັນຈຸເຂົ້າ."],
+ errParquetRead:["This .parquet file could not be read.","ອ່ານໄຟລ໌ .parquet ນີ້ບໍ່ໄດ້."],
+ errParquetCodec:["This .parquet uses a compression the browser can't read (only uncompressed and Snappy). Re-save it as Snappy, CSV or Excel.","ໄຟລ໌ .parquet ນີ້ໃຊ້ການບີບອັດທີ່ບຣາວເຊີອ່ານບໍ່ໄດ້ (ຮອງຮັບແຕ່ Snappy). ໃຫ້ບັນທຶກຄືນເປັນ Snappy, CSV ຫຼື Excel."],
  errDetail:["No known column headers found in this export.","ບໍ່ພົບຫົວຖັນທີ່ຮູ້ຈັກໃນໄຟລ໌ນີ້."],
  impDropTitle:["Choose a file or drop it here","ເລືອກໄຟລ໌ ຫຼື ລາກມາວາງບ່ອນນີ້"],
  impDropSub:["CSV of transactions, or a .json data pack","CSV ຂອງທຸລະກຳ ຫຼື .json data pack"],
@@ -4206,6 +4207,177 @@ function detailToImport(rows, flow){
   return out;
 }
 
+/* ---- dependency-free Parquet reader -------------------------------------
+   The subset DuckDB / pandas / pyarrow emit: UNCOMPRESSED or SNAPPY pages,
+   PLAIN dictionary pages, RLE definition levels, RLE_DICTIONARY / PLAIN data
+   pages, DATA_PAGE v1 and v2, flat schemas. Reads only the requested columns.
+   Verified byte-for-byte against pyarrow on the ITRS history files. */
+const ITRSParquet = (function(){
+  const POW2 = []; for (let i=0;i<=53;i++) POW2[i]=Math.pow(2,i);
+  const TD = new TextDecoder();
+  const utf8 = b => TD.decode(b);
+  const u32le = (b,p) => (b[p]|(b[p+1]<<8)|(b[p+2]<<16)|(b[p+3]<<24))>>>0;
+  function snappy(src){
+    let p=0,shift=0,len=0,c; do{c=src[p++];len+=(c&0x7f)*POW2[shift];shift+=7;}while(c&0x80);
+    const out=new Uint8Array(len); let o=0;
+    while(p<src.length){ const tag=src[p++],t=tag&3;
+      if(t===0){ let n=(tag>>2)+1; if(n>60){const k=n-60;n=0;for(let i=0;i<k;i++)n+=src[p++]*POW2[8*i];n+=1;}
+        out.set(src.subarray(p,p+n),o); o+=n; p+=n;
+      } else { let length,offset;
+        if(t===1){length=((tag>>2)&7)+4;offset=((tag>>5)<<8)|src[p++];}
+        else if(t===2){length=(tag>>2)+1;offset=src[p]|(src[p+1]<<8);p+=2;}
+        else{length=(tag>>2)+1;offset=u32le(src,p);p+=4;}
+        let s=o-offset; while(length--) out[o++]=out[s++]; } }
+    return out;
+  }
+  function Thrift(buf,pos){this.b=buf;this.p=pos||0;}
+  Thrift.prototype.varint=function(){let sh=0,r=0,b;do{b=this.b[this.p++];r+=(b&0x7f)*POW2[sh];sh+=7;}while(b&0x80);return r;};
+  Thrift.prototype.zigzag=function(){const n=this.varint();return (n%2)?-(n+1)/2:n/2;};
+  Thrift.prototype.bin=function(){const n=this.varint(),s=this.p;this.p+=n;return this.b.subarray(s,s+n);};
+  Thrift.prototype.str=function(){return utf8(this.bin());};
+  Thrift.prototype.list=function(){const h=this.b[this.p++];let size=(h>>4)&0xf;const et=h&0xf;if(size===15)size=this.varint();return{size,et};};
+  Thrift.prototype.skip=function(type){switch(type){
+    case 1:case 2:break; case 3:this.p++;break; case 4:case 5:case 6:this.varint();break; case 7:this.p+=8;break;
+    case 8:{const n=this.varint();this.p+=n;break;}
+    case 9:case 10:{const l=this.list();for(let i=0;i<l.size;i++)this.skip(l.et);break;}
+    case 11:{const l=this.b[this.p++];const kt=(l>>4)&0xf,vt=l&0xf;const n=this.varint();for(let i=0;i<n;i++){this.skip(kt);this.skip(vt);}break;}
+    case 12:this.skipStruct();break; }};
+  Thrift.prototype.skipStruct=function(){let id=0;for(;;){const h=this.b[this.p++];if(h===0)return;const d=(h>>4)&0xf,t=h&0xf;id=d?id+d:this.zigzag();if(t===1||t===2)continue;this.skip(t);}};
+  Thrift.prototype.fields=function(cb){let id=0;for(;;){const h=this.b[this.p++];if(h===0)return;const d=(h>>4)&0xf,t=h&0xf;id=d?id+d:this.zigzag();
+    if(t===1){cb(id,t,true);continue;} if(t===2){cb(id,t,false);continue;} if(cb(id,t)===false)this.skip(t);}};
+  function rleHybrid(bytes,pos,bitWidth,count,out){
+    if(bitWidth===0){for(let i=0;i<count;i++)out.push(0);return pos;}
+    const byteW=(bitWidth+7)>>3; let n=0;
+    while(n<count){ let sh=0,header=0,b;do{b=bytes[pos++];header+=(b&0x7f)*POW2[sh];sh+=7;}while(b&0x80);
+      if(header&1){ let groups=header>>1,nvals=groups*8,buf=0,bits=0;
+        for(let i=0;i<nvals;i++){ while(bits<bitWidth){buf+=bytes[pos++]*POW2[bits];bits+=8;}
+          const v=buf%POW2[bitWidth]; buf=Math.floor(buf/POW2[bitWidth]); bits-=bitWidth; if(n<count){out.push(v);n++;} } }
+      else{ const runLen=header>>1;let val=0;for(let i=0;i<byteW;i++)val+=bytes[pos++]*POW2[8*i];for(let i=0;i<runLen&&n<count;i++){out.push(val);n++;} } }
+    return pos;
+  }
+  function plainDecode(bytes,count,type,typeLen){
+    const out=new Array(count); const dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength); let p=0;
+    if(type===6){for(let i=0;i<count;i++){const n=u32le(bytes,p);p+=4;out[i]=utf8(bytes.subarray(p,p+n));p+=n;}}
+    else if(type===5){for(let i=0;i<count;i++){out[i]=dv.getFloat64(p,true);p+=8;}}
+    else if(type===4){for(let i=0;i<count;i++){out[i]=dv.getFloat32(p,true);p+=4;}}
+    else if(type===1){for(let i=0;i<count;i++){out[i]=dv.getInt32(p,true);p+=4;}}
+    else if(type===2){for(let i=0;i<count;i++){out[i]=dv.getBigInt64(p,true);p+=8;}}
+    else if(type===3){for(let i=0;i<count;i++){const nanos=dv.getBigUint64(p,true);const jd=dv.getInt32(p+8,true);p+=12;out[i]=(BigInt(jd)-2440588n)*86400000000000n+nanos;}}
+    else if(type===0){for(let i=0;i<count;i++){out[i]=(bytes[p>>3]>>(p&7))&1;p++;}}
+    else if(type===7){for(let i=0;i<count;i++){out[i]=bytes.subarray(p,p+typeLen);p+=typeLen;}}
+    return out;
+  }
+  function readSchemaElem(th){const e={type:null,typeLen:0,rep:0,name:'',numChildren:0};
+    th.fields((id)=>{ if(id===1)e.type=th.zigzag();else if(id===2)e.typeLen=th.zigzag();else if(id===3)e.rep=th.zigzag();else if(id===4)e.name=th.str();else if(id===5)e.numChildren=th.zigzag();else return false;});return e;}
+  function readColumnMeta(th){const m={type:0,path:[],codec:0,numValues:0,dataPageOffset:0,dictPageOffset:0,totalComp:0,typeLen:0};
+    th.fields((id,t)=>{ if(id===1)m.type=th.zigzag();else if(id===3&&t===9){const l=th.list();m.path=[];for(let i=0;i<l.size;i++)m.path.push(th.str());}
+      else if(id===4)m.codec=th.zigzag();else if(id===5)m.numValues=th.zigzag();else if(id===7)m.totalComp=th.zigzag();
+      else if(id===9)m.dataPageOffset=th.zigzag();else if(id===11)m.dictPageOffset=th.zigzag();else return false;});return m;}
+  function parseFileMeta(buf){
+    if(buf.length<8||buf[0]!==0x50||buf[1]!==0x41||buf[2]!==0x52||buf[3]!==0x31) throw new Error('PARQUET_BAD');
+    const footLen=u32le(buf,buf.length-8); const th=new Thrift(buf,buf.length-8-footLen);
+    const meta={version:0,schema:[],numRows:0,rowGroups:[]};
+    th.fields((id,t)=>{ if(id===1&&t===5)meta.version=th.zigzag();
+      else if(id===2&&t===9){const l=th.list();for(let i=0;i<l.size;i++)meta.schema.push(readSchemaElem(th));}
+      else if(id===3&&t===6)meta.numRows=th.zigzag();
+      else if(id===4&&t===9){const l=th.list();for(let i=0;i<l.size;i++){const rg={columns:[]};th.fields((id2,t2)=>{
+        if(id2===1&&t2===9){const l2=th.list();for(let j=0;j<l2.size;j++){let cc=null;th.fields((id3,t3)=>{if(id3===3&&t3===12)cc=readColumnMeta(th);else return false;});rg.columns.push({meta:cc});}}
+        else return false;}); meta.rowGroups.push(rg);}}
+      else return false;});
+    return meta;
+  }
+  function readPageHeader(th){const h={type:0,uncomp:0,comp:0,dataPage:null,dictPage:null,dataPageV2:null};
+    th.fields((id,t)=>{ if(id===1)h.type=th.zigzag();else if(id===2)h.uncomp=th.zigzag();else if(id===3)h.comp=th.zigzag();
+      else if(id===5&&t===12){h.dataPage={};th.fields((i2)=>{if(i2===1)h.dataPage.numValues=th.zigzag();else if(i2===2)h.dataPage.encoding=th.zigzag();else if(i2===3)h.dataPage.defEnc=th.zigzag();else if(i2===4)h.dataPage.repEnc=th.zigzag();else return false;});}
+      else if(id===7&&t===12){h.dictPage={};th.fields((i2)=>{if(i2===1)h.dictPage.numValues=th.zigzag();else if(i2===2)h.dictPage.encoding=th.zigzag();else return false;});}
+      else if(id===8&&t===12){h.dataPageV2={};th.fields((i2)=>{if(i2===1)h.dataPageV2.numValues=th.zigzag();else if(i2===2)h.dataPageV2.numNulls=th.zigzag();else if(i2===3)h.dataPageV2.numRows=th.zigzag();else if(i2===4)h.dataPageV2.encoding=th.zigzag();else if(i2===5)h.dataPageV2.defLen=th.zigzag();else if(i2===6)h.dataPageV2.repLen=th.zigzag();else if(i2===7)h.dataPageV2.compressed=true;else return false;});}
+      else return false;});
+    return h;
+  }
+  function decompress(bytes,codec){ if(codec===0)return bytes; if(codec===1)return snappy(bytes); throw new Error('PARQUET_CODEC_'+codec); }
+  function bitWidth(n){let w=0;while((1<<w)<=n)w++;return w;}
+  function countEq(a,v){let c=0;for(let i=0;i<a.length;i++)if(a[i]===v)c++;return c;}
+  function readDataValues(page,p,encoding,present,meta,dict,defs,maxDef,out){
+    let decoded;
+    if(encoding===2||encoding===8){ const bw=page[p];p+=1;const idx=[];rleHybrid(page,p,bw,present,idx);decoded=new Array(present);for(let i=0;i<present;i++)decoded[i]=dict[idx[i]]; }
+    else if(encoding===0){ decoded=plainDecode(page.subarray(p),present,meta.type,meta.typeLen); }
+    else throw new Error('PARQUET_ENC_'+encoding);
+    if(!defs){for(let i=0;i<present;i++)out.push(decoded[i]);return;}
+    let di=0;for(let i=0;i<defs.length;i++)out.push(defs[i]===maxDef?decoded[di++]:null);
+  }
+  function readColumn(buf,meta,maxDef){
+    const start=(meta.dictPageOffset&&meta.dictPageOffset>0)?meta.dictPageOffset:meta.dataPageOffset;
+    let pos=start; const end=start+meta.totalComp; let dict=null; const values=[];
+    while(pos<end&&values.length<meta.numValues){
+      const th=new Thrift(buf,pos); const h=readPageHeader(th); const dataStart=th.p;
+      const raw=buf.subarray(dataStart,dataStart+h.comp); pos=dataStart+h.comp;
+      if(h.type===2){ dict=plainDecode(decompress(raw,meta.codec),h.dictPage.numValues,meta.type,meta.typeLen); continue; }
+      if(h.type===0){ const page=decompress(raw,meta.codec); const nv=h.dataPage.numValues; let p=0; let defs=null;
+        if(maxDef>0){ const dlen=u32le(page,p);p+=4;const bw=bitWidth(maxDef);defs=[];rleHybrid(page,p,bw,nv,defs);p+=dlen; }
+        const present=defs?countEq(defs,maxDef):nv; readDataValues(page,p,h.dataPage.encoding,present,meta,dict,defs,maxDef,values); continue; }
+      if(h.type===3){ const nv=h.dataPageV2.numValues,nn=h.dataPageV2.numNulls; const repLen=h.dataPageV2.repLen||0,defLen=h.dataPageV2.defLen||0;
+        const levels=raw.subarray(0,repLen+defLen); let valBytes=raw.subarray(repLen+defLen);
+        if(h.dataPageV2.compressed!==false&&meta.codec!==0)valBytes=decompress(valBytes,meta.codec);
+        let defs=null; if(maxDef>0){const bw=bitWidth(maxDef);defs=[];rleHybrid(levels,repLen,bw,nv,defs);}
+        readDataValues(valBytes,0,h.dataPageV2.encoding,nv-nn,meta,dict,defs,maxDef,values); continue; }
+    }
+    if(values.length>meta.numValues)values.length=meta.numValues;
+    return values;
+  }
+  function parseParquet(uint8,wanted){
+    const buf=uint8 instanceof Uint8Array?uint8:new Uint8Array(uint8);
+    const meta=parseFileMeta(buf); const leaf={};
+    for(const e of meta.schema) if(e.type!==null&&e.type!==undefined) leaf[e.name]={maxDef:e.rep===0?0:1};
+    const want=wanted?new Set(wanted):null; const columns={};
+    for(const rg of meta.rowGroups) for(const cc of rg.columns){ const m=cc.meta; if(!m)continue;
+      const name=m.path[m.path.length-1]; if(want&&!want.has(name))continue;
+      const vals=readColumn(buf,m,(leaf[name]||{maxDef:1}).maxDef);
+      if(!columns[name])columns[name]=vals; else{const d=columns[name];for(let i=0;i<vals.length;i++)d.push(vals[i]);} }
+    return {numRows:meta.numRows,columns};
+  }
+  return {parseParquet};
+})();
+
+/* Parquet timestamps arrive as raw integers whose unit (ns / us / ms / s / days)
+   varies by writer; dates are always recent, so the magnitude fixes the unit. */
+function pqDate(v){
+  if(v==null||v==='') return '';
+  let ms;
+  if(typeof v==='bigint'){ const a=v<0n?-v:v;
+    if(a>100000000000000000n)ms=Number(v/1000000n);
+    else if(a>100000000000000n)ms=Number(v/1000n);
+    else if(a>100000000000n)ms=Number(v);
+    else if(a>100000000n)ms=Number(v)*1000;
+    else ms=Number(v)*86400000;
+  } else { const n=Number(v); if(!isFinite(n))return ''; if(n>1e11)ms=n;else if(n>1e8)ms=n*1000;else ms=n*86400000; }
+  const d=new Date(ms); return isNaN(d.getTime())?'':d.toISOString().slice(0,10);
+}
+const pqStr = (col,i) => { const v=col?col[i]:null; return v==null?'':String(v).replace(/^'/,''); };
+const pqNum = (col,i) => { const v=col?col[i]:null; return (v==null||v==='')?'':String(v); };
+/** Decoded Parquet columns -> the [header,...rows] shape buildImport() reads.
+    flow (Receive/Payment) is taken from the file name, like the xlsx path. */
+function parquetToImport(columns, flow){
+  const n = (columns.Banks || columns.Date_of_Transaction || []).length;
+  const header = ['Flow','Pur_5','Banks','Date_of_Transaction','Date_of_Submission',
+    'Purpose_Code','Country_Code','Currency_Code','Exchange_Rates_USD','Amount_USD','Amount_Kip',
+    'Transfer_Method','LSIC_Code','Transferor_Name','Recipient_Name','Transferor_TIN','Recipient_TIN','Supporting_Documents'];
+  const flowStr = flow === REC ? 'Receive' : 'Payment';
+  const out = [header];
+  const C = columns, tx = C.Date_of_Transaction || [], sub = C.Date_of_Submission || [], pur = C.Purpose_Code || [];
+  for (let i = 0; i < n; i++){
+    const pc = pqStr(pur, i);
+    if (!tx[i] && !(C.Banks && C.Banks[i])) continue;        // skip wholly empty tail rows
+    out.push([flowStr, pc.slice(0,6), pqStr(C.Banks,i), pqDate(tx[i]), pqDate(sub[i]),
+      pc, pqStr(C.Country_Code,i), pqStr(C.Currency_Code,i), pqNum(C.Exchange_Rates_USD,i),
+      pqNum(C.Amount_USD,i), pqNum(C.Amount_Kip,i), pqStr(C.Transfer_Method,i), pqStr(C.LSIC_Code,i),
+      pqStr(C.Transferor_Name,i), pqStr(C.Recipient_Name,i), pqStr(C.Transferor_TIN,i), pqStr(C.Recipient_TIN,i), pqStr(C.Supporting_Documents,i)]);
+  }
+  return out;
+}
+const PARQUET_COLS = ['Banks','Date_of_Transaction','Date_of_Submission','Purpose_Code','Country_Code',
+  'Currency_Code','Exchange_Rates_USD','Amount_USD','Amount_Kip','Transfer_Method','LSIC_Code',
+  'Transferor_Name','Recipient_Name','Transferor_TIN','Recipient_TIN','Supporting_Documents'];
+
 async function reapplyUploads(){
   const ups = await idbAll();
   for (const u of ups){
@@ -4410,8 +4582,16 @@ async function processDataFile(f){
   msg.innerHTML = `<div class="imp-msg warn"><span class="spin"></span>${esc(t('impReading'))} ${esc(f.name)}</div>`;
   try {
     let rows, flow = null;
-    if (/\.parquet$/i.test(f.name)) throw new Error(t('errParquet'));
-    if (/\.xlsx$/i.test(f.name)){
+    if (/\.parquet$/i.test(f.name)){
+      const nm = f.name.toLowerCase();
+      flow = /_p_|_p\.|payment|out|ໂອນອອກ/.test(nm) ? PAY
+           : /_r_|_r\.|receive|recieve|\bin\b|ໂອນເຂົ້າ/.test(nm) ? REC : null;
+      if (flow === null) throw new Error(t('errFlow'));
+      let columns;
+      try { columns = ITRSParquet.parseParquet(new Uint8Array(await f.arrayBuffer()), PARQUET_COLS).columns; }
+      catch (e){ throw new Error(/CODEC/.test(e.message) ? t('errParquetCodec') : t('errParquetRead')); }
+      rows = parquetToImport(columns, flow);
+    } else if (/\.xlsx$/i.test(f.name)){
       const nm = f.name.toLowerCase();
       flow = /out|payment|ໂອນອອກ/.test(nm) ? PAY
            : /in|receive|recieve|ໂອນເຂົ້າ/.test(nm) ? REC : null;
