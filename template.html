@@ -512,7 +512,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 @media (max-width:639px){
   .banner{display:none}
   .note{display:none}
-  #roleTag,#installBtn{display:none}
+  #installBtn{display:none}
   .card>.sub{margin-bottom:9px}
   footer{font-size:10px}
   .modal-card .lead{font-size:11.5px}
@@ -684,7 +684,6 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <p data-t="appSub">Lao PDR — International Transactions Reporting System</p>
     </div>
     <div class="hdr-right">
-      <span class="pill" id="roleTag" style="margin-right:2px"></span>
       <button class="iconbtn" id="settingsBtn" type="button" title="Settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
@@ -1231,8 +1230,8 @@ const I18N = {
  impBtn:["Import data","ນຳເຂົ້າຂໍ້ມູນ"],
  roleAdmin:["Admin","ຜູ້ຄຸ້ມຄອງ"], roleViewer:["Team","ທີມງານ"],
  impTitle:["Data sources","ແຫຼ່ງຂໍ້ມູນ"],
- impLead:["The files below make up the report. Upload a new export (.xlsx) or CSV to add or replace data — it is read in your browser, kept on this device, and re-applied every time you open the report. The built-in data is never changed.",
-          "ໄຟລ໌ຂ້າງລຸ່ມນີ້ປະກອບເປັນລາຍງານ. ອັບໂຫຼດໄຟລ໌ export ໃໝ່ (.xlsx) ຫຼື CSV ເພື່ອເພີ່ມ ຫຼື ແທນທີ່ຂໍ້ມູນ — ຖືກອ່ານໃນບຣາວເຊີ, ເກັບໄວ້ໃນອຸປະກອນນີ້, ແລະ ນຳໃຊ້ຄືນທຸກຄັ້ງທີ່ເປີດລາຍງານ. ຂໍ້ມູນຕິດຕັ້ງມາບໍ່ຖືກປ່ຽນ."],
+ impLead:["The report is built from 2017–2025. Upload your 2026 export files (.xlsx) — daily, weekly or monthly — to add the current year. Each upload is read in your browser, kept on this device, re-applied every time you open the report, and can be removed anytime. The built-in years are never changed.",
+          "ລາຍງານນີ້ສ້າງຈາກຂໍ້ມູນປີ 2017–2025. ອັບໂຫຼດໄຟລ໌ export ປີ 2026 (.xlsx) — ລາຍວັນ, ລາຍອາທິດ ຫຼື ລາຍເດືອນ — ເພື່ອເພີ່ມປີປັດຈຸບັນ. ແຕ່ລະໄຟລ໌ຖືກອ່ານໃນບຣາວເຊີ, ເກັບໄວ້ໃນອຸປະກອນນີ້, ນຳໃຊ້ຄືນທຸກຄັ້ງທີ່ເປີດ ແລະ ລຶບໄດ້ທຸກເວລາ. ຂໍ້ມູນປີທີ່ຕິດຕັ້ງມາບໍ່ຖືກປ່ຽນ."],
  impBuiltIn:["Built in","ຕິດຕັ້ງມາ"], impUploaded:["Uploaded on this device","ອັບໂຫຼດໃນອຸປະກອນນີ້"],
  impRemove:["Remove","ລຶບ"],
  impLocalNote:["Uploaded files stay on this device and are re-applied on load. Remove one to take it out of the report here. To publish for everyone, rebuild from the source files.",
@@ -4297,8 +4296,6 @@ function applyI18n(){
   lb.setAttribute('aria-label', lb.title);
   lb.classList.toggle('lao', !isLo());
   if (initImport.paint) initImport.paint();
-  const rt = $('#roleTag');
-  if (rt) rt.textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
   // Option labels just changed language; repaint any enhanced dropdown.
   ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
     const el = $(s); if (el && el._sel) el._sel.refresh();
@@ -4421,9 +4418,6 @@ function initControls(){
     renderTab();
     scrollTo({top:0, behavior:'smooth'});
   });
-  $('#roleTag').textContent = isAdmin() ? t('roleAdmin') : t('roleViewer');
-  $('#roleTag').className = 'pill ' + (isAdmin() ? '' : 'ok');
-
   // Must run after the options above are populated.
   enhanceSelect($('#yFrom'));
   enhanceSelect($('#yTo'));

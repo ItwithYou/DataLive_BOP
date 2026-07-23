@@ -2,18 +2,15 @@
  "_README": [
   "Bank spellings that mean the same bank but differ by more than case or",
   "punctuation, so the build cannot merge them safely on its own.",
-  "",
   "Key = a spelling seen in the data, value = the spelling to merge it into.",
-  "Case and punctuation are already ignored, so \"K-Bank\" and \"kbank\" need no entry.",
-  "",
-  "The entries below were confirmed by the BOP team on 2026-07-23.",
-  "Still unconfirmed and deliberately left separate: tcb ($22.3m), BOA ($1.3m),",
-  "ICB ($928.5m). ICB is large enough that guessing would matter."
+  "Confirmed by the BOP team. TCB and BOA await an officer assignment rather",
+  "than a merge; BYB and BOL are in the officer list with no officer by choice."
  ],
  "aliases": {
   "sacombank": "SACOM",
   "ICBC": "ICBCV",
   "AYB": "AYBVT",
-  "Ayb vc": "AYBVT"
+  "Ayb vc": "AYBVT",
+  "ICB": "ICBCV"
  }
 }

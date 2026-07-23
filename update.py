@@ -72,16 +72,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="d_from", default="2026-01-01")
     ap.add_argument("--to", dest="d_to", default=date.today().isoformat())
-    ap.add_argument("--no-import", action="store_true", help="skip the Excel import")
+    ap.add_argument("--import", dest="do_import", action="store_true",
+                    help="bake the export files into parquet before building (rarely needed)")
     ap.add_argument("--no-push", action="store_true", help="commit but do not push")
     ap.add_argument("--local", action="store_true", help="rebuild the local file only")
     a = ap.parse_args()
 
     py = sys.executable
 
-    if not a.no_import:
-        run([py, "import_2026.py", "--from", a.d_from, "--to", a.d_to],
-            f"Importing {a.d_from} to {a.d_to}", capture=True)
+    # The published base is 2017-2025. The current year is added by uploading the
+    # export files in the dashboard's Data sources panel, on each device, where
+    # each file can also be removed - so no import happens here by default. Pass
+    # --import only if you want to bake the export files into the base instead.
+    if a.do_import:
+        run([py, "import_detail.py"], "Baking the export files into parquet", capture=True)
 
     if a.local:
         run([py, "build_dashboard.py"], "Rebuilding local dashboard", capture=True)
