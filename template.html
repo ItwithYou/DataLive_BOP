@@ -4484,14 +4484,19 @@ function initControls(){
       .catch(()=>{});
   }
   else { $('#importBtn').remove(); $('#settingsBtn').remove(); }
-  // The MPD role sees only these four report tabs; the rest are removed from the
-  // nav so there is nothing to click through to.
-  if (ROLE === 'mpd'){
-    const allowed = new Set(['overview', 'bop', 'timeseries', 'weekly']);
+  // Some roles see only a subset of report tabs; the rest are removed from the
+  // nav so there is nothing to click through to. 'weekly' is the Period Report.
+  const LIMITED_TABS = {
+    mpd:    ['overview', 'bop', 'timeseries', 'weekly'],
+    epitrs: ['weekly'],
+  };
+  if (LIMITED_TABS[ROLE]){
+    const tabs = LIMITED_TABS[ROLE];
+    const allowed = new Set(tabs);
     $$('#nav button').forEach(b => { if (!allowed.has(b.dataset.tab)) b.remove(); });
     if (!allowed.has(state.tab)){
-      state.tab = 'overview';
-      $('#nav button[data-tab="overview"]').setAttribute('aria-selected', 'true');
+      state.tab = tabs[0];
+      $(`#nav button[data-tab="${tabs[0]}"]`).setAttribute('aria-selected', 'true');
     }
   }
   const sb = $('#settingsBtn');

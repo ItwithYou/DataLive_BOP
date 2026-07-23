@@ -1275,6 +1275,8 @@ ROLES = {
                "read-only: every report, no import"),
     "mpd":    ("ITRS_PASSWORD_MPD",    "MPD passphrase",
                "limited: Overview, Balance of Payments, Time Series, Period Report"),
+    "epitrs": ("ITRS_PASSWORD_EPITRS", "EPitrs passphrase",
+               "limited: Period Report only"),
 }
 
 
@@ -1326,6 +1328,8 @@ def parse_args():
                    help="file holding the team passphrase (read-only)")
     p.add_argument("--mpd-password-file",
                    help="file holding the MPD passphrase (limited tab access)")
+    p.add_argument("--epitrs-password-file",
+                   help="file holding the EPitrs passphrase (Period Report only)")
     p.add_argument("--out", help="output path (default: ITRS_Dashboard.html, "
                                  "or docs/index.html with --encrypt --publish)")
     p.add_argument("--publish", action="store_true",
