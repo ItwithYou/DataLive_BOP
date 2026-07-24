@@ -374,6 +374,54 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
    height available too (it sits under the chart, so it needs less headroom). */
 #tsTable{max-height:calc(100vh - 240px);min-height:420px}
 
+/* ---- currency converter -------------------------------------------------
+   Two linked amount fields, one per currency: typing in either drives the
+   other, so there is no direction to set. Each field is one tall glass slab
+   with the amount left and the currency right, joined by a swap badge. */
+.conv{margin-top:6px}
+.conv-cap{font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-3);
+  font-weight:700;margin:0 0 6px 2px}
+.conv-row{display:flex;align-items:stretch;border:1px solid var(--glass-edge);border-radius:13px;
+  background:var(--panel-2);overflow:hidden;box-shadow:inset 0 1px 0 var(--glass-hi);
+  transition:border-color .18s ease, box-shadow .18s ease}
+.conv-row:focus-within{border-color:var(--accent);
+  box-shadow:inset 0 1px 0 var(--glass-hi), 0 0 0 3px var(--accent-soft)}
+/* `input.conv-amt`, not `.conv-amt`: the base sheet styles inputs via
+   input[type="text"], and an attribute selector outranks a single class. */
+input.conv-amt{flex:1 1 auto;min-width:0;width:100%;border:0;outline:none;background:transparent;
+  color:var(--ink);font-size:26px;font-weight:660;letter-spacing:-.7px;padding:14px 15px;
+  min-height:0;border-radius:0;box-shadow:none;
+  font-variant-numeric:tabular-nums;line-height:1.15}
+input.conv-amt:focus{border:0;box-shadow:none}
+input.conv-amt::placeholder{color:var(--ink-3);font-weight:500}
+.conv-side{display:flex;align-items:center;flex:0 0 auto;min-width:126px;
+  border-left:1px solid var(--line);background:color-mix(in srgb,var(--panel-solid) 55%,transparent)}
+.conv-fixed{padding:0 15px;font-size:15.5px;font-weight:660;color:var(--ink-2);white-space:nowrap}
+/* the enhanced dropdown sits flush inside the slab, without a second border */
+.conv-side .sel{width:100%}
+.conv-side .sel-btn{border:0;background:transparent;border-radius:0;min-height:100%;
+  padding:0 14px;font-size:15.5px;font-weight:660;color:var(--ink);box-shadow:none;max-width:none}
+.conv-side .sel-btn:hover,.conv-side .sel-btn[aria-expanded="true"]{border:0;box-shadow:none;
+  background:var(--accent-soft)}
+/* swap badge straddling the two slabs */
+.conv-div{display:flex;align-items:center;justify-content:center;margin:-11px 0;position:relative;z-index:2;
+  pointer-events:none}
+.conv-swap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--glass-edge);background:var(--panel-solid);color:var(--accent);
+  font-size:15px;line-height:1;box-shadow:var(--sh)}
+.conv-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:15px;flex-wrap:wrap}
+.conv-rate{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:right}
+.conv-quick{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.conv-quick button{border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink-2);
+  border-radius:20px;padding:5px 13px;font-size:12px;font-weight:640;cursor:pointer;min-height:30px;
+  font-variant-numeric:tabular-nums;transition:color .15s,border-color .15s,background .15s}
+.conv-quick button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+@media(max-width:520px){
+  input.conv-amt{font-size:22px;padding:12px 13px}
+  .conv-side{min-width:112px}
+}
+
 .chart{width:100%;display:block;overflow:visible}
 .chart text{font-size:10px;fill:var(--ink-3)}
 .chart .grid-line{stroke:var(--line-2);stroke-width:1}
@@ -922,26 +970,35 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div class="grid g-2">
       <div class="card">
         <h3 data-t="rtCalc">Converter</h3>
-        <p class="sub" data-t="rtCalcSub">Uses the rate from the source selected above.</p>
-        <div class="row" style="margin-bottom:9px">
-          <div class="ctl"><label data-t="rtAmount">Amount</label>
-            <input type="text" id="rtAmt" inputmode="decimal" value="1"
-              style="padding:8px 11px;border-radius:8px;border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink);min-height:34px;width:130px;font-variant-numeric:tabular-nums"></div>
-          <div class="ctl"><label data-t="rtCurrency">Currency</label><select id="rtCcy"></select></div>
-          <div class="ctl"><label data-t="rtSide">Rate</label>
+        <p class="sub" data-t="rtCalcSub">Type in either box — the other follows instantly.</p>
+        <div class="conv">
+          <div class="conv-cap" data-t="rtFrom">Foreign currency</div>
+          <div class="conv-row">
+            <input type="text" id="rtAmt" class="conv-amt" inputmode="decimal" autocomplete="off"
+                   spellcheck="false" value="1" aria-label="Foreign amount">
+            <div class="conv-side"><select id="rtCcy" aria-label="Currency"></select></div>
+          </div>
+          <div class="conv-div"><span class="conv-swap">&#8645;</span></div>
+          <div class="conv-row">
+            <input type="text" id="rtLak" class="conv-amt" inputmode="decimal" autocomplete="off"
+                   spellcheck="false" value="0" aria-label="Kip amount">
+            <div class="conv-side"><span class="conv-fixed">&#127473;&#127462; LAK</span></div>
+          </div>
+          <div class="conv-foot">
             <div class="seg" id="rtSideSeg">
               <button data-v="buy" aria-pressed="true" data-t="rtBuy">Buy</button>
               <button data-v="sell" aria-pressed="false" data-t="rtSell">Sell</button>
-            </div></div>
+            </div>
+            <div class="conv-rate" id="rtRate"></div>
+          </div>
+          <div class="conv-quick" id="rtQuick">
+            <button type="button" data-v="1">1</button>
+            <button type="button" data-v="100">100</button>
+            <button type="button" data-v="1000">1,000</button>
+            <button type="button" data-v="10000">10,000</button>
+            <button type="button" data-v="100000">100,000</button>
+          </div>
         </div>
-        <div class="row" style="margin-bottom:11px">
-          <div class="ctl"><label data-t="rtDir">Direction</label>
-            <div class="seg" id="rtDirSeg">
-              <button data-v="toLak" aria-pressed="true" data-t="rtToLak">To Kip</button>
-              <button data-v="fromLak" aria-pressed="false" data-t="rtFromLak">From Kip</button>
-            </div></div>
-        </div>
-        <div id="rtResult"></div>
       </div>
       <div class="card"><h3 data-t="rtTable">Rate table</h3>
         <p class="sub" data-t="rtTableSub">Kip per 1 unit of the currency</p>
@@ -1261,7 +1318,7 @@ const I18N = {
  rtCalcSub:["Uses the rate from the source selected above.","ໃຊ້ອັດຕາຈາກແຫຼ່ງທີ່ເລືອກຂ້າງເທິງ."],
  rtAmount:["Amount","ຈຳນວນ"], rtCurrency:["Currency","ສະກຸນເງິນ"], rtName:["Name","ຊື່"],
  rtSide:["Rate","ອັດຕາ"], rtBuy:["Buy","ຮັບຊື້"], rtSell:["Sell","ຂາຍອອກ"],
- rtDir:["Direction","ທິດທາງ"], rtToLak:["To Kip","ເປັນກີບ"], rtFromLak:["From Kip","ຈາກກີບ"],
+ rtFrom:["Foreign currency","ສະກຸນເງິນຕ່າງປະເທດ"],
  rtTable:["Rate table","ຕາຕະລາງອັດຕາ"], rtTableSub:["Kip per 1 unit of the currency","ກີບຕໍ່ 1 ໜ່ວຍສະກຸນເງິນ"],
  rtAsOf:["Rates as of","ອັດຕາ ວັນທີ"], rtFetched:["fetched","ດຶງເມື່ອ"],
  rtLoading:["Loading today's rates…","ກຳລັງໂຫຼດອັດຕາມື້ນີ້…"],
@@ -1630,7 +1687,7 @@ const state = {
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
   rptRow:'bank', rptCol:'country', rptDir:'net',
-  rateSrc:'bol', rateCcy:'USD', rateSide:'buy', rateDir:'toLak',
+  rateSrc:'bol', rateCcy:'USD', rateSide:'buy',
   wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
@@ -2638,17 +2695,17 @@ const rtSrc = () => (RATES && RATES.sources && RATES.sources[state.rateSrc]) || 
     JPY 139.03) must keep their decimals or the quote looks wrong. */
 const rtFmt = v => v >= 1000 ? int(Math.round(v)) : v.toFixed(2);
 function renderRates(){
-  const meta = $('#rtMeta'), tbl = $('#rtTable'), res = $('#rtResult');
+  const meta = $('#rtMeta'), tbl = $('#rtTable'), rate = $('#rtRate');
   if (!RATES){
     tbl.innerHTML = `<p class="empty">${esc(t('rtLoading'))}</p>`;
-    meta.textContent = ''; res.innerHTML = '';
+    meta.textContent = ''; rate.textContent = '';
     loadRates();
     return;
   }
   const src = rtSrc();
   if (!src){
     tbl.innerHTML = `<p class="empty">${esc(t('rtNoSource'))}</p>`;
-    meta.textContent = ''; res.innerHTML = '';
+    meta.textContent = ''; rate.textContent = '';
     return;
   }
   const codes = Object.keys(src.rates).sort();
@@ -2659,7 +2716,7 @@ function renderRates(){
   // The first two letters of an ISO-4217 currency code are its ISO-3166
   // country code (USD->US, THB->TH, CHF->CH, EUR->EU), so the flag comes free.
   codes.forEach(c => { const r = src.rates[c], fl = flagOf(c.slice(0,2));
-    h += `<tr><td><b>${esc(c)}</b></td><td class="name">${esc((fl ? fl + ' ' : '') + r.name)}</td>`
+    h += `<tr><td><b>${esc(c)}</b></td><td class="name" style="text-align:left">${esc((fl ? fl + ' ' : '') + r.name)}</td>`
        + `<td class="num">${esc(rtFmt(r.buy))}</td><td class="num">${esc(rtFmt(r.sell))}</td></tr>`; });
   tbl.innerHTML = h + '</tbody></table>';
   const sel = $('#rtCcy');
@@ -2670,23 +2727,22 @@ function renderRates(){
       return `<option value="${c}"${c===state.rateCcy?' selected':''}>${esc((fl ? fl + ' ' : '') + c)}</option>`; }).join('');
     if (sel._sel) sel._sel.refresh();
   }
-  rtCalc();
+  rtCalc('ccy');
 }
-function rtCalc(){
-  const src = rtSrc(); if (!src) return;
-  const r = src.rates[state.rateCcy]; if (!r) return;
+/** Recompute the box the user is NOT typing in, so the caret never jumps.
+    `src` says which side was edited: 'ccy' (foreign) or 'lak'. */
+function rtCalc(from){
+  const s = rtSrc(); if (!s) return;
+  const r = s.rates[state.rateCcy]; if (!r) return;
   const rate = state.rateSide === 'buy' ? r.buy : r.sell;
-  const amt = parseFloat(String($('#rtAmt').value).replace(/[, ]/g, '')) || 0;
-  const toLak = state.rateDir === 'toLak';
-  const out = toLak ? amt * rate : (rate ? amt / rate : 0);
-  const from = toLak ? state.rateCcy : 'LAK', to = toLak ? 'LAK' : state.rateCcy;
+  const a = $('#rtAmt'), l = $('#rtLak');
+  const val = el => parseFloat(String(el.value).replace(/[^\d.]/g, '')) || 0;
   const nf = (v, dp) => v.toLocaleString('en-US', {maximumFractionDigits:dp});
-  $('#rtResult').innerHTML =
-    `<div style="font-size:13px;color:var(--ink-3)">${esc(nf(amt,4))} ${esc(from)} =</div>`
-  + `<div style="font-size:27px;font-weight:670;letter-spacing:-.7px;margin-top:2px;font-variant-numeric:tabular-nums">`
-  + `${esc(nf(out, to==='LAK' ? 0 : 4))} <span style="font-size:15px;color:var(--ink-3)">${esc(to)}</span></div>`
-  + `<p class="note" style="margin-top:8px">1 ${esc(state.rateCcy)} = ${esc(rtFmt(rate))} LAK · `
-  + `${esc(state.rateSide==='buy' ? t('rtBuy') : t('rtSell'))} · ${esc(state.rateSrc.toUpperCase())}</p>`;
+  if (from === 'lak') a.value = rate ? nf(val(l) / rate, 4) : '0';
+  else                l.value = nf(val(a) * rate, 0);
+  $('#rtRate').innerHTML = `1 ${esc(state.rateCcy)} = <b>${esc(rtFmt(rate))}</b> LAK`
+    + ` · ${esc(state.rateSide === 'buy' ? t('rtBuy') : t('rtSell'))}`
+    + ` · ${esc(state.rateSrc.toUpperCase())}`;
 }
 function rtCsv(){
   const src = rtSrc(); if (!src) return;
@@ -5349,10 +5405,15 @@ function initControls(){
   $('#rptCsv').addEventListener('click', rptCsv);
   // Daily rates: source / side / direction / amount all just recompute.
   segBind('#rtSrcSeg',  v => { state.rateSrc = v; $('#rtCcy').dataset.src = ''; renderRates(); });
-  segBind('#rtSideSeg', v => { state.rateSide = v; rtCalc(); });
-  segBind('#rtDirSeg',  v => { state.rateDir = v; rtCalc(); });
-  $('#rtCcy').addEventListener('change', e => { state.rateCcy = e.target.value; rtCalc(); });
-  $('#rtAmt').addEventListener('input', rtCalc);
+  segBind('#rtSideSeg', v => { state.rateSide = v; rtCalc('ccy'); });
+  $('#rtCcy').addEventListener('change', e => { state.rateCcy = e.target.value; rtCalc('ccy'); });
+  $('#rtAmt').addEventListener('input', () => rtCalc('ccy'));
+  $('#rtLak').addEventListener('input', () => rtCalc('lak'));
+  $('#rtQuick').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $('#rtAmt').value = (+b.dataset.v).toLocaleString('en-US');
+    rtCalc('ccy');
+  });
   $('#rtCsv').addEventListener('click', rtCsv);
   // Access (permissions) editor buttons.
   $('#permSave').addEventListener('click', permSaveClick);
