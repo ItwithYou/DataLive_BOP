@@ -746,6 +746,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="bop" aria-selected="false" data-t="tabBop">Balance of Payments</button>
     <button data-tab="timeseries" aria-selected="false" data-t="tabTs">Time Series</button>
     <button data-tab="weekly" aria-selected="false" data-t="tabWeekly">Weekly Report</button>
+    <button data-tab="report" aria-selected="false" data-t="tabReport">Report</button>
     <button data-tab="search" aria-selected="false" data-t="tabSearch">Search</button>
     <button data-tab="fx" aria-selected="false" data-t="tabFx">Exchange rate</button>
     <button data-tab="dups" aria-selected="false" data-t="tabDups">Duplicates</button>
@@ -846,6 +847,38 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div class="card"><h3 data-t="tsTable">Series table</h3>
       <p class="sub" data-t="tsTableSub">USD millions. Tap a row to isolate it in the chart.</p>
       <div class="scroll" id="tsTable"></div></div>
+  </section>
+
+  <section class="tab" id="tab-report">
+    <div class="card">
+      <h3 data-t="rptTitle">Custom report builder</h3>
+      <p class="sub" data-t="rptSub">Cross any two of bank, country, currency, sector, BOP item or time — build any table and export it. Uses the period, bank, measure (value/count) and basis chosen at the top.</p>
+      <div class="row" style="margin-bottom:11px">
+        <div class="ctl"><label data-t="rptRow">Rows</label>
+          <select id="rptRow">
+            <option value="bank" data-t="dimBank">Bank</option>
+            <option value="country" data-t="dimCountry">Country</option>
+            <option value="currency" data-t="dimCurrency">Currency</option>
+            <option value="sector" data-t="dimPurpose">Purpose</option>
+            <option value="line" data-t="dimLine">BOP item</option>
+            <option value="month" data-t="rptMonth">Month</option>
+            <option value="quarter" data-t="rptQuarter">Quarter</option>
+            <option value="year" data-t="rptYear">Year</option>
+          </select></div>
+        <div class="ctl"><label data-t="rptCol">Columns</label>
+          <select id="rptCol"></select></div>
+        <div class="ctl"><label data-t="rptDir">Direction</label>
+          <div class="seg" id="rptDirSeg">
+            <button data-v="net" aria-pressed="true" data-t="flowNet">Net</button>
+            <button data-v="in" aria-pressed="false" data-t="flowIn">Receive</button>
+            <button data-v="out" aria-pressed="false" data-t="flowOut">Payment</button>
+            <button data-v="gross" aria-pressed="false" data-t="rptGross">Gross</button>
+          </div></div>
+        <div class="ctl"><label>&nbsp;</label><button class="btn" id="rptCsv" data-t="csv">Download CSV</button></div>
+      </div>
+      <p class="note" id="rptNote"></p>
+      <div class="scroll" id="rptTable"></div>
+    </div>
   </section>
 
   <section class="tab" id="tab-weekly">
@@ -1100,6 +1133,13 @@ const I18N = {
  mUsd:["Value","ມູນຄ່າ"], mCount:["Count","ຈຳນວນ"], allBanks:["All banks","ທຸກທະນາຄານ"],
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
  tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
+ tabReport:["Report","ບົດລາຍງານ"],
+ rptTitle:["Custom report builder","ສ້າງບົດລາຍງານຕາມໃຈ"],
+ rptSub:["Cross any two of bank, country, currency, sector, BOP item or time — build any table and export it. Uses the period, bank, measure and basis chosen at the top.","ຈັບຄູ່ສອງມິຕິ: ທະນາຄານ, ປະເທດ, ສະກຸນເງິນ, ຂະແໜງ, ລາຍການ BOP ຫຼື ເວລາ — ສ້າງຕາຕະລາງໃດກໍໄດ້ ແລ້ວສົ່ງອອກ. ໃຊ້ໄລຍະ, ທະນາຄານ, ໜ່ວຍວັດ ແລະ ຖານທີ່ເລືອກຢູ່ດ້ານເທິງ."],
+ rptRow:["Rows","ແຖວ"], rptCol:["Columns","ຖັນ"], rptDir:["Direction","ທິດທາງ"],
+ rptGross:["Gross","ລວມ"], rptMonth:["Month","ເດືອນ"], rptQuarter:["Quarter","ໄຕມາດ"], rptYear:["Year","ປີ"],
+ rptOthers:["Others","ອື່ນໆ"],
+ rptInvalid:["Pick a time or bank column for this breakdown — two different dimensions can't be crossed without a rebuild.","ເລືອກຖັນເປັນເວລາ ຫຼື ທະນາຄານ — ສອງມິຕິທີ່ຕ່າງກັນຈັບຄູ່ບໍ່ໄດ້ຖ້າບໍ່ build ໃໝ່."],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
  tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
@@ -1423,6 +1463,7 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
+  rptRow:'bank', rptCol:'month', rptDir:'net',
   wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
@@ -2228,6 +2269,148 @@ function tsCsv(){
   const out = [[TS_META[state.tsDim].key.replace('dim',''), ...keys, 'Total']];
   rows.forEach(r => out.push([r.full, ...r.values.map(v=>v.toFixed(4)), r.total.toFixed(4)]));
   downloadCsv(`ITRS_${state.tsDim}_${state.tsFreq}_${flowName}.csv`, out);
+}
+
+/* ===================== Custom report builder (admin only) ================
+   A free pivot over the pre-aggregated ts* cubes. tsBank is
+   [month,flow,bank,use,n,usd]; tsCountry/tsCurrency/tsPurpose/tsLine are
+   [month,flow,dim,use,bank,n,usd] — so they carry BOTH a dimension and bank,
+   which lets us cross bank against any of them, or any dim against time/flow.
+   Crossing two different NON-bank dimensions has no cube and is not offered. */
+const RPT_DIM = {
+  bank:    {cube:null,         label:ix=>BANKS[ix],                          full:ix=>BANKS[ix],                       lao:false},
+  country: {cube:'tsCountry',  label:ix=>countryLabel(dims.countries[ix]),   full:ix=>countryFull(dims.countries[ix]), lao:true},
+  currency:{cube:'tsCurrency', label:ix=>dims.currencies[ix],                full:ix=>dims.currencies[ix],             lao:false},
+  sector:  {cube:'tsPurpose',  label:ix=>purposeLabel(PURPOSES[ix]),         full:ix=>purposeLabel(PURPOSES[ix]),      lao:true},
+  line:    {cube:'tsLine',     label:ix=>(isLo()?LINES[ix].lo:LINES[ix].en), full:ix=>(isLo()?LINES[ix].lo:LINES[ix].en), lao:true},
+};
+const RPT_TIME = f => f==='month' || f==='quarter' || f==='year';
+function rptColLabel(field){
+  const map = {bank:'dimBank', country:'dimCountry', currency:'dimCurrency', sector:'dimPurpose',
+    line:'dimLine', month:'rptMonth', quarter:'rptQuarter', year:'rptYear', flow:'rptDir', total:'total'};
+  return t(map[field] || field);
+}
+function rptValidCols(rowF){
+  const c = ['total'];
+  if (!RPT_TIME(rowF)) c.push('month','quarter','year');
+  c.push('flow');
+  if (rowF === 'bank') c.push('country','currency','sector','line');
+  else if (RPT_DIM[rowF]) c.push('bank');                 // a non-bank dimension row
+  else c.push('bank','country','currency','sector','line'); // a time row
+  return c;
+}
+function rptMode(rowF, colF){                              // 'bank' | a non-bank dim key | null(unsupported)
+  const nb = [rowF, colF].filter(f => RPT_DIM[f] && f !== 'bank');
+  if (nb.length >= 2) return null;
+  return nb.length ? nb[0] : 'bank';
+}
+function rptBucket(field){
+  const mIdx = monthsInRange();
+  if (field === 'month') return {of:i=>MONTHS[i], keys:mIdx.map(i=>MONTHS[i])};
+  if (field === 'quarter'){ const of=i=>{const m=MONTHS[i];return m.slice(0,4)+' Q'+(Math.floor((+m.slice(5,7)-1)/3)+1);}; return {of, keys:[...new Set(mIdx.map(of))]}; }
+  const of = i => MONTHS[i].slice(0,4); return {of, keys:[...new Set(mIdx.map(of))]};
+}
+function rptKeyLabel(field, key){
+  if (field === 'flow') return key==='in' ? t('flowIn') : t('flowOut');
+  if (RPT_TIME(field) || field==='total') return String(key);
+  if (RPT_DIM[field]) return RPT_DIM[field].label(key);
+  return String(key);
+}
+function buildReportMatrix(){
+  const rowF = state.rptRow, colF = state.rptCol, dir = state.rptDir;
+  const mode = rptMode(rowF, colF);
+  if (!mode) return {invalid:true};
+  const cube = cubes[mode==='bank' ? 'tsBank' : RPT_DIM[mode].cube] || [];
+  const bankIx = mode==='bank' ? 2 : 4, dimIx = 2, valIx = (mode==='bank' ? 4 : 5) + vIdx();
+  const rowBucket = RPT_TIME(rowF) ? rptBucket(rowF) : null;
+  const colBucket = RPT_TIME(colF) ? rptBucket(colF) : null;
+  const keyOf = (field, r, isRec) =>
+      field==='total' ? 'total'
+    : field==='flow'  ? (isRec ? 'in' : 'out')
+    : RPT_TIME(field) ? (field===rowF ? rowBucket : colBucket).of(r[0])
+    : field==='bank'  ? r[bankIx]
+    : r[dimIx];
+  const acc = new Map(), colTot = new Map();
+  for (const r of cube){
+    const y = yOfMonth[r[0]]; if (y < state.yFrom || y > state.yTo) continue;
+    if (!useOK(r[3])) continue;
+    const isRec = r[1] === REC;
+    if (dir==='in' && !isRec) continue;
+    if (dir==='out' && isRec) continue;
+    if (state.bank >= 0 && r[bankIx] !== state.bank) continue;
+    let v = r[valIx]; if (dir==='net' && !isRec) v = -v;
+    const rk = keyOf(rowF, r, isRec), ck = keyOf(colF, r, isRec);
+    let m = acc.get(rk); if (!m){ m = new Map(); acc.set(rk, m); }
+    m.set(ck, (m.get(ck)||0) + v);
+    colTot.set(ck, (colTot.get(ck)||0) + v);
+  }
+  let cols;
+  if (colF === 'total') cols = [];                          // the Total column already carries it
+  else if (RPT_TIME(colF)) cols = colBucket.keys.filter(k => colTot.has(k));
+  else if (colF === 'flow') cols = ['in','out'].filter(k => colTot.has(k));
+  else cols = [...colTot.keys()].sort((a,b)=>Math.abs(colTot.get(b))-Math.abs(colTot.get(a)));
+  const CAP = 12; let others = null;
+  if (RPT_DIM[colF] && cols.length > CAP){ others = cols.slice(CAP); cols = cols.slice(0, CAP); }
+  const rows = [];
+  for (const [rk, m] of acc){
+    const cells = cols.map(c => m.get(c)||0);
+    let other = 0; if (others) for (const c of others) other += m.get(c)||0;
+    const total = [...m.values()].reduce((a,b)=>a+b,0);
+    rows.push({key:rk, label:rptKeyLabel(rowF, rk), full:RPT_DIM[rowF]?RPT_DIM[rowF].full(rk):rptKeyLabel(rowF,rk),
+      lao:RPT_DIM[rowF] ? RPT_DIM[rowF].lao : false, cells, other, total});
+  }
+  if (RPT_TIME(rowF)) rows.sort((a,b)=>String(a.key).localeCompare(String(b.key)));
+  else if (rowF === 'flow') rows.sort((a,b)=> a.key==='in' ? -1 : 1);
+  else rows.sort((a,b)=>Math.abs(b.total)-Math.abs(a.total));
+  return {cols, rawCols:cols, colLabels:cols.map(c=>rptKeyLabel(colF, c)), hasOthers:!!others, othersCount:others?others.length:0, rows};
+}
+function rptSyncCols(){
+  const valid = rptValidCols(state.rptRow);
+  if (!valid.includes(state.rptCol)) state.rptCol = RPT_TIME(state.rptRow) ? 'total' : 'month';
+  const sel = $('#rptCol');
+  sel.innerHTML = valid.map(v => `<option value="${v}"${v===state.rptCol?' selected':''}>${esc(rptColLabel(v))}</option>`).join('');
+  if (sel._sel) sel._sel.refresh();
+}
+function renderReport(){
+  if (!isAdmin()){ $('#rptTable').innerHTML = ''; return; }   // admin-only, defence in depth
+  const M = buildReportMatrix();
+  const host = $('#rptTable');
+  if (M.invalid){ host.innerHTML = `<p class="empty">${esc(t('rptInvalid'))}</p>`; $('#rptNote').textContent=''; return; }
+  if (!M.rows.length){ host.innerHTML = `<p class="empty">${esc(t('noData'))}</p>`; $('#rptNote').textContent=''; return; }
+  const isVal = state.meas === 'usd';
+  const fmt = v => v ? (isVal ? v.toFixed(2) : int(Math.round(v))) : '—';
+  const CAPR = 80, shown = M.rows.slice(0, CAPR);
+  let h = `<table><thead><tr><th style="text-align:left">${esc(rptColLabel(state.rptRow))}</th>`
+    + M.colLabels.map(c=>`<th>${esc(c)}</th>`).join('')
+    + (M.hasOthers ? `<th>${esc(t('rptOthers'))}</th>` : '')
+    + `<th>${esc(t('total'))}</th></tr></thead><tbody>`;
+  shown.forEach(r => {
+    h += `<tr><td class="name ${r.lao?'lao':''}">${esc(r.label)}</td>`
+      + r.cells.map(v=>`<td class="num ${v<0?'neg':''}">${fmt(v)}</td>`).join('')
+      + (M.hasOthers ? `<td class="num ${r.other<0?'neg':''}">${fmt(r.other)}</td>` : '')
+      + `<td class="num"><b>${fmt(r.total)}</b></td></tr>`;
+  });
+  const colSums = M.cols.map((_,i)=>M.rows.reduce((a,r)=>a+r.cells[i],0));
+  const otherSum = M.hasOthers ? M.rows.reduce((a,r)=>a+r.other,0) : 0;
+  const grand = M.rows.reduce((a,r)=>a+r.total,0);
+  h += `<tr class="total"><td>${esc(t('total'))}</td>`
+    + colSums.map(v=>`<td class="num">${fmt(v)}</td>`).join('')
+    + (M.hasOthers ? `<td class="num">${fmt(otherSum)}</td>` : '')
+    + `<td class="num">${fmt(grand)}</td></tr>`;
+  host.innerHTML = h + '</tbody></table>';
+  const unit = isVal ? (isLo()?'ໜ່ວຍ: ລ້ານ USD':'Unit: USD millions') : (isLo()?'ໜ່ວຍ: ຈຳນວນທຸລະກຳ':'Unit: transaction count');
+  const dirTxt = {net:t('flowNet'), in:t('flowIn'), out:t('flowOut'), gross:t('rptGross')}[state.rptDir];
+  const capNote = M.rows.length>CAPR ? ` · ${t('showingTop')} ${CAPR} ${t('of')} ${int(M.rows.length)}` : '';
+  const othNote = M.hasOthers ? ` · +${t('rptOthers')} (${int(M.othersCount)})` : '';
+  $('#rptNote').textContent = `${unit} · ${dirTxt}${capNote}${othNote}`;
+}
+function rptCsv(){
+  const M = buildReportMatrix();
+  if (M.invalid || !M.rows.length) return;
+  const head = [rptColLabel(state.rptRow), ...M.colLabels, ...(M.hasOthers?[t('rptOthers')]:[]), 'Total'];
+  const out = [head];
+  M.rows.forEach(r => out.push([r.full, ...r.cells.map(v=>v.toFixed(4)), ...(M.hasOthers?[r.other.toFixed(4)]:[]), r.total.toFixed(4)]));
+  downloadCsv(`ITRS_report_${state.rptRow}_by_${state.rptCol}_${state.rptDir}.csv`, out);
 }
 
 /* ===================== Weekly Report ===================== */
@@ -4633,7 +4816,7 @@ function renderData(){
   renderDsUploads();
 }
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
-  weekly:renderWeekly, search:renderSearch, fx:renderFx, dups:renderDups,
+  weekly:renderWeekly, report:renderReport, search:renderSearch, fx:renderFx, dups:renderDups,
   officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings, data:renderData};
 let rendered = {};
 function renderBanner(){
@@ -4724,6 +4907,13 @@ function initControls(){
   });
   $('#tsDim').addEventListener('change', e => { state.tsDim = e.target.value; state.tsPick = null; renderTimeSeries(); });
   $('#tsCsv').addEventListener('click', tsCsv);
+  // Custom report builder: rows/columns/direction. Columns are re-derived from
+  // the chosen rows so only buildable combinations are ever offered.
+  rptSyncCols();
+  $('#rptRow').addEventListener('change', e => { state.rptRow = e.target.value; rptSyncCols(); renderReport(); });
+  $('#rptCol').addEventListener('change', e => { state.rptCol = e.target.value; renderReport(); });
+  segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
+  $('#rptCsv').addEventListener('click', rptCsv);
   $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
   $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
   $('#fxCsv').addEventListener('click', () => $('#fxTable')._csv && $('#fxTable')._csv());
@@ -4806,6 +4996,14 @@ function initControls(){
   } else $('#importBtn').remove();
   if (!canSettings) $('#settingsBtn').remove();
 
+  // The Report builder exposes a free pivot over the whole dataset; it is super
+  // admin only, like the gross->BOP reconciliation card. Remove it for everyone
+  // else — including members granted "all" report tabs.
+  if (!isAdmin()){
+    const rb = $('#nav button[data-tab="report"]'); if (rb) rb.remove();
+    if (state.tab === 'report') state.tab = 'overview';
+  }
+
   // A non-admin account sees only the report tabs it was granted; the rest are
   // removed from the nav so there is nothing to click through to.
   if (!isAdmin() && grants){
@@ -4829,6 +5027,8 @@ function initControls(){
   enhanceSelect($('#yTo'));
   enhanceSelect($('#bankSel'));
   enhanceSelect($('#tsDim'));
+  enhanceSelect($('#rptRow'));
+  enhanceSelect($('#rptCol'));
 
   ITRSTheme.bind($('#themeBtn'), isLo()
     ? {toLight:'ປ່ຽນເປັນໂໝດແຈ້ງ', toDark:'ປ່ຽນເປັນໂໝດມືດ'}
