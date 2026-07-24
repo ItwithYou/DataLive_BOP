@@ -1009,17 +1009,21 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
   <section class="tab" id="tab-report">
     <div class="card">
       <h3 data-t="rptTitle">Custom report builder</h3>
-      <p class="sub" data-t="rptSub">Cross any two of bank, country, currency, sector, BOP item or time — build any table and export it. Uses the period, bank, measure (value/count) and basis chosen at the top.</p>
+      <p class="sub" data-t="rptSub">Pick what runs down the left, what runs across the top — normally the date range — and narrow the whole table to one country, currency, purpose or BOP item. Uses the period, bank, measure and basis chosen at the top.</p>
       <div class="row" style="margin-bottom:11px">
-        <div class="ctl"><label data-t="rptRow">Rows</label>
-          <select id="rptRow">
-            <option value="bank" data-t="dimBank">Bank</option>
+        <div class="ctl"><label data-t="rptFilterDim">Only show</label>
+          <select id="rptFilterDim">
+            <option value="none" data-t="rptNoFilter">Everything</option>
             <option value="country" data-t="dimCountry">Country</option>
             <option value="currency" data-t="dimCurrency">Currency</option>
             <option value="sector" data-t="dimPurpose">Purpose</option>
             <option value="line" data-t="dimLine">BOP item</option>
           </select></div>
-        <div class="ctl"><label data-t="rptCol">Columns</label>
+        <div class="ctl" id="rptFilterValWrap" style="display:none"><label>&nbsp;</label>
+          <select id="rptFilterVal"></select></div>
+        <div class="ctl"><label data-t="rptRow">Rows (left)</label>
+          <select id="rptRow"></select></div>
+        <div class="ctl"><label data-t="rptCol">Columns (top)</label>
           <select id="rptCol"></select></div>
         <div class="ctl"><label data-t="rptDir">Direction</label>
           <div class="seg" id="rptDirSeg">
@@ -1324,12 +1328,14 @@ const I18N = {
  rtLoading:["Loading today's rates…","ກຳລັງໂຫຼດອັດຕາມື້ນີ້…"],
  rtNoSource:["This source has no rates published yet.","ແຫຼ່ງນີ້ຍັງບໍ່ມີອັດຕາເຜີຍແຜ່."],
  rptTitle:["Custom report builder","ສ້າງບົດລາຍງານຕາມໃຈ"],
- rptSub:["Choose what goes down the side (Rows) and across the top (Columns) — bank, country, currency, sector or BOP item — to build any matrix you need, then export it. The period, bank, measure and basis chosen at the top apply.","ເລືອກສິ່ງທີ່ຢູ່ດ້ານຂ້າງ (ແຖວ) ແລະ ດ້ານເທິງ (ຖັນ) — ທະນາຄານ, ປະເທດ, ສະກຸນເງິນ, ຂະແໜງ ຫຼື ລາຍການ BOP — ເພື່ອສ້າງຕາຕະລາງໄຂວ້ຕາມຕ້ອງການ ແລ້ວສົ່ງອອກ. ໄລຍະ, ທະນາຄານ, ໜ່ວຍວັດ ແລະ ຖານທີ່ເລືອກຢູ່ດ້ານເທິງຈະຖືກນຳໃຊ້."],
- rptRow:["Rows","ແຖວ"], rptCol:["Columns","ຖັນ"], rptDir:["Direction","ທິດທາງ"],
+ rptSub:["Narrow the table to one country, currency, purpose or BOP item, choose what runs down the left, and keep the date range across the top. Export anything you build. The period, bank, measure and basis chosen at the top apply.","ຈຳກັດຕາຕະລາງໃຫ້ເປັນປະເທດ, ສະກຸນເງິນ, ຈຸດປະສົງ ຫຼື ລາຍການ BOP ດຽວ, ເລືອກສິ່ງທີ່ຢູ່ດ້ານຊ້າຍ ແລະ ໃຫ້ໄລຍະວັນທີຢູ່ດ້ານເທິງ. ສົ່ງອອກໄດ້ທຸກຢ່າງທີ່ສ້າງ. ໄລຍະ, ທະນາຄານ, ໜ່ວຍວັດ ແລະ ຖານທີ່ເລືອກຢູ່ດ້ານເທິງຈະຖືກນຳໃຊ້."],
+ rptRow:["Rows (left)","ແຖວ (ຊ້າຍ)"], rptCol:["Columns (top)","ຖັນ (ເທິງ)"], rptDir:["Direction","ທິດທາງ"],
+ rptFilterDim:["Only show","ສະແດງສະເພາະ"], rptNoFilter:["Everything","ທັງໝົດ"],
  rptGross:["Gross","ລວມ"], rptMonth:["Month","ເດືອນ"], rptQuarter:["Quarter","ໄຕມາດ"], rptYear:["Year","ປີ"],
  rptOthers:["Others","ອື່ນໆ"],
  rptAllBanks:["all banks (a two-dimension cross can't filter to one bank)","ທຸກທະນາຄານ (ການຈັບຄູ່ສອງມິຕິ ຕອງເປັນທະນາຄານດຽວບໍ່ໄດ້)"],
- rptInvalid:["Pick a time or bank column for this breakdown — two different dimensions can't be crossed without a rebuild.","ເລືອກຖັນເປັນເວລາ ຫຼື ທະນາຄານ — ສອງມິຕິທີ່ຕ່າງກັນຈັບຄູ່ບໍ່ໄດ້ຖ້າບໍ່ build ໃໝ່."],
+ rptYearOnly:["by year (crossing two dimensions is stored yearly)","ຕາມປີ (ການຈັບຄູ່ສອງມິຕິ ເກັບເປັນລາຍປີ)"],
+ rptInvalid:["That combination needs three dimensions at once — drop the filter or change a row or column.","ການປະສົມນີ້ຕ້ອງການສາມມິຕິພ້ອມກັນ — ຍົກເລີກຕົວກັ່ນຕອງ ຫຼື ປ່ຽນແຖວ ຫຼື ຖັນ."],
  tabPerms:["Access","ສິດເຂົ້າເຖິງ"],
  permTitle:["User access","ສິດການເຂົ້າໃຊ້ຂອງຜູ້ໃຊ້"],
  permSub:["Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.","ເລືອກແຖບທີ່ແຕ່ລະຄົນເຫັນໄດ້. ຜູ້ຄຸ້ມຄອງເຫັນທັງໝົດ ພ້ອມທັງອັບໂຫຼດຂໍ້ມູນ, ຕັ້ງຄ່າ ແລະ ໜ້ານີ້."],
@@ -1686,7 +1692,7 @@ const state = {
   yFrom:0, yTo:YEARS.length-1, basis:'bop', meas:'usd', bank:-1, tab:'overview',
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
-  rptRow:'bank', rptCol:'country', rptDir:'net',
+  rptRow:'line', rptCol:'year', rptDir:'net', rptFilterDim:'none', rptFilterVal:-1,
   rateSrc:'bol', rateCcy:'USD', rateSide:'buy',
   wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
@@ -2538,23 +2544,54 @@ function rptColLabel(field){
     line:'dimLine', month:'rptMonth', quarter:'rptQuarter', year:'rptYear', flow:'rptDir', total:'total'};
   return t(map[field] || field);
 }
-function rptValidCols(rowF){
-  // Rows and Columns are both plain dimension pickers: the Report is a pure
-  // matrix, so the user chooses what goes down the side and what goes across
-  // the top. Time is deliberately NOT mixed in here — the period selector at
-  // the top sets the range, and the Time Series tab is the time view.
-  const c = [];
-  ['bank','country','currency','sector','line'].forEach(d => { if (d !== rowF) c.push(d); });
+const RPT_ROWS = ['bank','country','currency','sector','line'];
+/* How many dimensions a view costs. Every cube carries at most TWO dimensions,
+   and the filter spends one of them: "China, by currency" is already
+   country+currency, so nothing is left for a third axis. Bank is free-ish — the
+   ts* cubes carry it alongside their dimension — but the cross cubes have no
+   bank axis at all, so bank cannot join a dim x dim view. */
+function rptDimCost(fields){
+  const used = fields.filter(f => RPT_DIM[f]);
+  const nb = used.filter(f => f !== 'bank');
+  return {used, nb, bank: used.length > nb.length};
+}
+function rptValidCols(rowF, fDim){
+  // Time across the top is the normal shape of this report, so it comes first:
+  // the period bar at the top sets the range and those buckets become the
+  // columns. Crossing two dimensions is still allowed, but the cross cubes are
+  // built by YEAR, so a dim x dim view can only be columned by year.
+  const {used, nb, bank} = rptDimCost([rowF, fDim]);
+  const c = nb.length >= 2 ? ['year'] : ['month','quarter','year'];
   c.push('total','flow');
+  RPT_ROWS.forEach(d => {
+    if (used.includes(d)) return;
+    const x = rptDimCost(used.concat(d));
+    if (x.used.length > 2) return;                       // no cube carries three
+    if (x.nb.length >= 2 && (x.bank || !RPT_CROSS[x.nb.slice().sort().join('|')])) return;
+    c.push(d);
+  });
   return c;
 }
-function rptMode(rowF, colF){          // 'bank' | dim key | {cross} | null(unsupported)
-  const nb = [rowF, colF].filter(f => RPT_DIM[f] && f !== 'bank');
-  if (nb.length >= 2){
+function rptMode(rowF, colF, fDim){    // 'bank' | dim key | {cross} | null(unsupported)
+  const {nb, bank} = rptDimCost([rowF, colF, fDim]);
+  if (nb.length > 2) return null;
+  if (nb.length === 2){
+    if (bank) return null;                               // cross cubes have no bank axis
     const cc = RPT_CROSS[nb.slice().sort().join('|')];
     return cc ? {cross: cc} : null;
   }
   return nb.length ? nb[0] : 'bank';
+}
+const RPT_FILTER_N = {country:()=>dims.countries.length, currency:()=>dims.currencies.length,
+                      sector:()=>PURPOSES.length, line:()=>LINES.length};
+function rptFilterIx(){                // the values of the filter dimension, in menu order
+  const d = state.rptFilterDim; if (!RPT_FILTER_N[d]) return [];
+  const ix = []; for (let i = 0, n = RPT_FILTER_N[d](); i < n; i++) ix.push(i);
+  // Long flat lists (236 countries, ~140 currencies) are searched by name;
+  // purposes and BOP items have a meaningful published order, so keep it.
+  if (d === 'country' || d === 'currency')
+    ix.sort((a,b) => RPT_DIM[d].full(a).localeCompare(RPT_DIM[d].full(b)));
+  return ix;
 }
 function rptBucket(field){
   const mIdx = monthsInRange();
@@ -2570,7 +2607,9 @@ function rptKeyLabel(field, key){
 }
 function buildReportMatrix(){
   const rowF = state.rptRow, colF = state.rptCol, dir = state.rptDir;
-  const mode = rptMode(rowF, colF);
+  const fDim = RPT_DIM[state.rptFilterDim] ? state.rptFilterDim : null;
+  const fVal = state.rptFilterVal;
+  const mode = rptMode(rowF, colF, fDim);
   if (!mode) return {invalid:true};
   const cc = mode && mode.cross ? mode.cross : null;       // a dim x dim cross cube
   const cube = cc ? (cubes[cc.cube] || [])
@@ -2578,8 +2617,16 @@ function buildReportMatrix(){
   const bankIx = mode==='bank' ? 2 : 4;
   const valIx = cc ? (5 + vIdx()) : ((mode==='bank' ? 4 : 5) + vIdx());
   const useIx = cc ? 4 : 3;
-  const rowBucket = RPT_TIME(rowF) ? rptBucket(rowF) : null;
-  const colBucket = RPT_TIME(colF) ? rptBucket(colF) : null;
+  // Cross cubes are stored per YEAR, so their r[0] is a year index, not a month
+  // index — a month/quarter bucket would silently read MONTHS[yearIndex] and
+  // produce nonsense. rptValidCols only offers `year` in that case; this keeps
+  // the two in step no matter how the state got there.
+  const yearBucket = () => {
+    const keys = []; for (let y = state.yFrom; y <= state.yTo; y++) keys.push(String(YEARS[y]));
+    return {of: yi => String(YEARS[yi]), keys};
+  };
+  const mkBucket = f => !RPT_TIME(f) ? null : (cc ? yearBucket() : rptBucket(f));
+  const rowBucket = mkBucket(rowF), colBucket = mkBucket(colF);
   const crossKey = cc ? ((field, r) => field === cc.a ? r[2] : r[3]) : null;
   const keyOf = (field, r, isRec) =>
       field==='total' ? 'total'
@@ -2593,6 +2640,7 @@ function buildReportMatrix(){
     const y = cc ? r[0] : yOfMonth[r[0]];                  // cross cubes key on the year index
     if (y < state.yFrom || y > state.yTo) continue;
     if (!useOK(r[useIx])) continue;
+    if (fDim && keyOf(fDim, r, false) !== fVal) continue;  // "only show China"
     const isRec = r[1] === REC;
     if (dir==='in' && !isRec) continue;
     if (dir==='out' && isRec) continue;
@@ -2621,17 +2669,38 @@ function buildReportMatrix(){
   if (RPT_TIME(rowF)) rows.sort((a,b)=>String(a.key).localeCompare(String(b.key)));
   else if (rowF === 'flow') rows.sort((a,b)=> a.key==='in' ? -1 : 1);
   else rows.sort((a,b)=>Math.abs(b.total)-Math.abs(a.total));
-  return {cols, rawCols:cols, colLabels:cols.map(c=>rptKeyLabel(colF, c)), hasOthers:!!others, othersCount:others?others.length:0, rows, bankIgnored: !!cc && state.bank >= 0};
+  return {cols, rawCols:cols, colLabels:cols.map(c=>rptKeyLabel(colF, c)), hasOthers:!!others,
+    othersCount:others?others.length:0, rows, bankIgnored: !!cc && state.bank >= 0,
+    filter: fDim ? {dim:rptColLabel(fDim), val:RPT_DIM[fDim].full(fVal)} : null,
+    yearOnly: !!cc && RPT_TIME(colF)};
 }
-function rptSyncCols(){
-  const valid = rptValidCols(state.rptRow);
-  if (!valid.includes(state.rptCol)) state.rptCol = valid[0];
-  const sel = $('#rptCol');
-  sel.innerHTML = valid.map(v => `<option value="${v}"${v===state.rptCol?' selected':''}>${esc(rptColLabel(v))}</option>`).join('');
+function rptFill(sel, opts, cur){
+  sel.innerHTML = opts.map(o =>
+    `<option value="${esc(String(o.v))}"${o.v===cur?' selected':''}>${esc(o.l)}</option>`).join('');
   if (sel._sel) sel._sel.refresh();
+}
+/* Keeps the three pickers legal against each other. Filtering by the same
+   dimension you are breaking down by would leave a single row, so the filtered
+   dimension drops out of Rows; Columns is then narrowed to whatever a cube can
+   actually serve for that pair. */
+function rptSyncCols(){
+  const fDim = state.rptFilterDim;
+  const rows = RPT_ROWS.filter(d => d !== fDim);
+  if (!rows.includes(state.rptRow)) state.rptRow = rows[0];
+  rptFill($('#rptRow'), rows.map(v => ({v, l:rptColLabel(v)})), state.rptRow);
+  const ix = rptFilterIx();
+  $('#rptFilterValWrap').style.display = ix.length ? '' : 'none';
+  if (ix.length){
+    if (!ix.includes(state.rptFilterVal)) state.rptFilterVal = ix[0];
+    rptFill($('#rptFilterVal'), ix.map(v => ({v, l:RPT_DIM[fDim].label(v)})), state.rptFilterVal);
+  }
+  const valid = rptValidCols(state.rptRow, fDim);
+  if (!valid.includes(state.rptCol)) state.rptCol = valid[0];
+  rptFill($('#rptCol'), valid.map(v => ({v, l:rptColLabel(v)})), state.rptCol);
 }
 function renderReport(){
   if (!canTab('report')){ $('#rptTable').innerHTML = ''; return; }  // grant-gated, defence in depth
+  rptSyncCols();                       // also re-labels the pickers after a language switch
   const M = buildReportMatrix();
   const host = $('#rptTable');
   if (M.invalid){ host.innerHTML = `<p class="empty">${esc(t('rptInvalid'))}</p>`; $('#rptNote').textContent=''; return; }
@@ -2662,15 +2731,22 @@ function renderReport(){
   const capNote = M.rows.length>CAPR ? ` · ${t('showingTop')} ${CAPR} ${t('of')} ${int(M.rows.length)}` : '';
   const othNote = M.hasOthers ? ` · +${t('rptOthers')} (${int(M.othersCount)})` : '';
   const bankNote = M.bankIgnored ? ` · ${t('rptAllBanks')}` : '';
-  $('#rptNote').textContent = `${unit} · ${dirTxt}${capNote}${othNote}${bankNote}`;
+  const filNote = M.filter ? ` · ${M.filter.dim}: ${M.filter.val}` : '';
+  const yrNote = M.yearOnly ? ` · ${t('rptYearOnly')}` : '';
+  $('#rptNote').textContent = `${unit} · ${dirTxt}${filNote}${capNote}${othNote}${bankNote}${yrNote}`;
 }
 function rptCsv(){
   const M = buildReportMatrix();
   if (M.invalid || !M.rows.length) return;
   const head = [rptColLabel(state.rptRow), ...M.colLabels, ...(M.hasOthers?[t('rptOthers')]:[]), 'Total'];
-  const out = [head];
+  const out = [];
+  // The filter is the whole point of the table, so it has to survive the export
+  // — a bare "China only" sheet is indistinguishable from a broken one.
+  if (M.filter) out.push([`${M.filter.dim}: ${M.filter.val}`]);
+  out.push(head);
   M.rows.forEach(r => out.push([r.full, ...r.cells.map(v=>v.toFixed(4)), ...(M.hasOthers?[r.other.toFixed(4)]:[]), r.total.toFixed(4)]));
-  downloadCsv(`ITRS_report_${state.rptRow}_by_${state.rptCol}_${state.rptDir}.csv`, out);
+  const tag = M.filter ? `_${String(M.filter.val).replace(/[^A-Za-z0-9]+/g,'')}` : '';
+  downloadCsv(`ITRS_report_${state.rptRow}_by_${state.rptCol}${tag}_${state.rptDir}.csv`, out);
 }
 
 /* ===================== Daily exchange rates ==============================
@@ -4646,7 +4722,9 @@ function enhanceSelect(sel, o){
   const menu = document.createElement('div');
   menu.className = 'sel-menu';
   menu.setAttribute('role', 'listbox');
-  const searchable = sel.options.length > 10;
+  // o.search forces the box on for a select that is filled later — the option
+  // count is read once, here, so a list that starts empty would never get one.
+  const searchable = !!o.search || sel.options.length > 10;
   menu.innerHTML = (searchable ? '<input class="find" type="search" autocomplete="off" spellcheck="false">' : '')
                  + '<div class="sel-list"></div>';
   document.body.appendChild(menu);
@@ -5396,10 +5474,13 @@ function initControls(){
   });
   $('#tsDim').addEventListener('change', e => { state.tsDim = e.target.value; state.tsPick = null; renderTimeSeries(); });
   $('#tsCsv').addEventListener('click', tsCsv);
-  // Custom report builder: rows/columns/direction. Columns are re-derived from
-  // the chosen rows so only buildable combinations are ever offered.
+  // Custom report builder: filter / rows / columns / direction. Rows and columns
+  // are re-derived from the others so only buildable combinations are offered.
   rptSyncCols();
-  $('#rptRow').addEventListener('change', e => { state.rptRow = e.target.value; rptSyncCols(); renderReport(); });
+  $('#rptFilterDim').addEventListener('change', e => { state.rptFilterDim = e.target.value;
+    state.rptFilterVal = -1; renderReport(); });
+  $('#rptFilterVal').addEventListener('change', e => { state.rptFilterVal = +e.target.value; renderReport(); });
+  $('#rptRow').addEventListener('change', e => { state.rptRow = e.target.value; renderReport(); });
   $('#rptCol').addEventListener('change', e => { state.rptCol = e.target.value; renderReport(); });
   segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
   $('#rptCsv').addEventListener('click', rptCsv);
@@ -5533,6 +5614,8 @@ function initControls(){
   enhanceSelect($('#tsDim'));
   enhanceSelect($('#rptRow'));
   enhanceSelect($('#rptCol'));
+  enhanceSelect($('#rptFilterDim'));
+  enhanceSelect($('#rptFilterVal'), {search:true});   // 236 countries — needs the finder
   enhanceSelect($('#rtCcy'));
 
   ITRSTheme.bind($('#themeBtn'), isLo()
