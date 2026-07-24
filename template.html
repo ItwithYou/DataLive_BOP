@@ -334,6 +334,15 @@ tbody tr:hover{background:var(--panel-2)}
 .bar-cell span{position:relative}
 tr.total td{font-weight:680;background:var(--panel-2);border-top:1.5px solid var(--line)}
 tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
+/* Frozen panes for wide series tables: the header row (already sticky) and the
+   first label column both stay put while the months scroll — like a spreadsheet
+   freeze. The corner cell sits above both. */
+.freeze thead th{z-index:2}
+.freeze th:first-child,.freeze td:first-child{position:sticky;left:0;z-index:1;
+  background:var(--panel-solid);box-shadow:2px 0 6px -3px rgba(16,24,40,.22)}
+.freeze thead th:first-child{z-index:3}
+.freeze tr.total td:first-child{background:var(--panel-2)}
+.freeze tbody tr:hover td:first-child{background:var(--panel-2)}
 
 .chart{width:100%;display:block;overflow:visible}
 .chart text{font-size:10px;fill:var(--ink-3)}
@@ -862,7 +871,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     </div>
     <div class="card"><h3 data-t="tsTable">Series table</h3>
       <p class="sub" data-t="tsTableSub">USD millions. Tap a row to isolate it in the chart.</p>
-      <div class="scroll" id="tsTable"></div></div>
+      <div class="scroll freeze" id="tsTable"></div></div>
   </section>
 
   <section class="tab" id="tab-report">
@@ -893,7 +902,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <div class="ctl"><label>&nbsp;</label><button class="btn" id="rptCsv" data-t="csv">Download CSV</button></div>
       </div>
       <p class="note" id="rptNote"></p>
-      <div class="scroll" id="rptTable"></div>
+      <div class="scroll freeze" id="rptTable"></div>
     </div>
   </section>
 
