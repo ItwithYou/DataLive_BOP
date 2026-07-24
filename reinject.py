@@ -27,6 +27,23 @@ import build_dashboard as B   # reuse encrypt_payload, read_roles, TEMPLATE, ROL
 HERE = Path(__file__).resolve().parent
 PACK = HERE / "ITRS_data_pack.json"
 OUT = HERE / "docs" / "index.html"
+SW = HERE / "docs" / "sw.js"
+
+
+def bump_sw():
+    """Increment the service-worker cache tag (itrs-vNN) so installed clients
+    fetch the new build instead of serving the old one from cache. Done here so
+    no one has to remember it."""
+    import re
+    if not SW.exists():
+        return None
+    txt = SW.read_text(encoding="utf-8")
+    m = re.search(r"itrs-v(\d+)", txt)
+    if not m:
+        return None
+    new = f"itrs-v{int(m.group(1)) + 1}"
+    SW.write_text(txt[:m.start()] + new + txt[m.end():], encoding="utf-8")
+    return new
 
 
 def main():
@@ -54,7 +71,8 @@ def main():
     OUT.write_text(html.replace("__ITRS_DATA__", enc.replace("<", "\\u003c")),
                    encoding="utf-8")
     print(f"Wrote {OUT}  ({OUT.stat().st_size/1048576:.1f} MB)  [encrypted, from pack]")
-    print("Remember to bump docs/sw.js CACHE before publishing.")
+    tag = bump_sw()
+    print(f"Bumped service-worker cache to {tag}." if tag else "Note: could not bump docs/sw.js cache.")
 
 
 if __name__ == "__main__":

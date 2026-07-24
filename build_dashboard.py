@@ -1303,8 +1303,8 @@ def encrypt_payload(blob, accounts):
                         "tabs": acc.get("tabs", "all"), "salt": b64(salt),
                         "iv": b64(wiv), "key": b64(AESGCM(kek).encrypt(wiv, data_key, None))})
 
-    print(f"  payload {len(blob)/1048576:.1f} MB → gzip {len(raw)/1048576:.1f} MB "
-          f"→ encrypted {len(ct)/1048576:.1f} MB")
+    print(f"  payload {len(blob)/1048576:.1f} MB -> gzip {len(raw)/1048576:.1f} MB "
+          f"-> encrypted {len(ct)/1048576:.1f} MB")
     print(f"  accounts: {', '.join(a['name'] + (' [admin]' if a.get('admin') else '') for a in accounts)}")
     return json.dumps({
         "enc": "AES-GCM-256", "kdf": "PBKDF2-SHA256", "iter": KDF_ITERATIONS,
