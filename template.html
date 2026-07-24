@@ -1182,6 +1182,11 @@ const RULES = DATA.rules || {};
    live access overlay (access.json) may adjust it before the UI is gated. */
 let ROLE = DATA._role || 'admin';
 const isAdmin = () => ROLE === 'admin';
+/** Whether this account may see a given tab: admin sees everything, otherwise
+    it must be in the granted tabs ("all" or the list). Used by tabs that are
+    grantable but sensitive, so the render is gated as well as the nav button. */
+const canTab = id => isAdmin() || DATA._tabs === 'all'
+  || (Array.isArray(DATA._tabs) && DATA._tabs.indexOf(id) >= 0);
 
 /* ===================== i18n ===================== */
 const I18N = {
@@ -2494,7 +2499,7 @@ function rptSyncCols(){
   if (sel._sel) sel._sel.refresh();
 }
 function renderReport(){
-  if (!isAdmin()){ $('#rptTable').innerHTML = ''; return; }   // admin-only, defence in depth
+  if (!canTab('report')){ $('#rptTable').innerHTML = ''; return; }  // grant-gated, defence in depth
   const M = buildReportMatrix();
   const host = $('#rptTable');
   if (M.invalid){ host.innerHTML = `<p class="empty">${esc(t('rptInvalid'))}</p>`; $('#rptNote').textContent=''; return; }
@@ -2547,9 +2552,12 @@ const PERM_TABS = () => [
   {id:'search',     label:t('tabSearch')},   {id:'fx',       label:t('tabFx')},
   {id:'dups',       label:t('tabDups')},     {id:'officers', label:t('tabOfficers')},
   {id:'banks',      label:t('tabBanks')},    {id:'quality',  label:t('tabQuality')},
+  {id:'report',     label:t('tabReport')},
   {id:'data',       label:isLo()?'ຈັດການຂໍ້ມູນ':'Data'},
   {id:'settings',   label:isLo()?'ຕັ້ງຄ່າ':'Settings'},
 ];
+/* The Access tab itself (perms) is deliberately NOT grantable: whoever can edit
+   permissions could grant themselves anything, so it stays super-admin only. */
 let permWork = null;
 function permInit(){
   const ids = PERM_TABS().map(x=>x.id);
@@ -5269,12 +5277,12 @@ function initControls(){
   } else $('#importBtn').remove();
   if (!canSettings) $('#settingsBtn').remove();
 
-  // The Report builder and the Access editor are super-admin only, like the
-  // gross->BOP reconciliation card — removed for everyone else, including
-  // members granted "all" tabs.
+  // The Access editor is super-admin only and is NOT grantable: whoever can edit
+  // permissions could grant themselves anything. The Report builder IS grantable
+  // (it appears in the Access tab), so it is left to the normal tabs filter below.
   if (!isAdmin()){
-    ['report','perms'].forEach(tid => { const b = $(`#nav button[data-tab="${tid}"]`); if (b) b.remove(); });
-    if (state.tab === 'report' || state.tab === 'perms') state.tab = 'overview';
+    const pb = $('#nav button[data-tab="perms"]'); if (pb) pb.remove();
+    if (state.tab === 'perms') state.tab = 'overview';
   }
 
   // A non-admin account sees only the report tabs it was granted; the rest are
