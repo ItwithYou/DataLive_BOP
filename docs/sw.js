@@ -8,7 +8,7 @@
  * Bump CACHE when publishing a rebuild, otherwise phones that already have it
  * installed will keep serving the previous copy from cache.
  */
-const CACHE = 'itrs-v38';
+const CACHE = 'itrs-v42';
 const SHELL = [
   './',
   './index.html',

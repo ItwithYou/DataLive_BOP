@@ -51,3 +51,6 @@ ITRS_data_pack.json
 # Login accounts (passwords) - never commit
 config/users.json
 config/permissions.json
+
+# The persisted data key that the payload is encrypted under - never commit
+config/.data_key

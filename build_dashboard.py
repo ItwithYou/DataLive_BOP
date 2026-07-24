@@ -1270,26 +1270,40 @@ def load_accounts(args):
              "password": pw} for r, pw in roles.items()]
 
 
-def encrypt_payload(blob, accounts):
-    """gzip, encrypt once under a random data key, then wrap that key per role.
+DATA_KEY_FILE = CONFIG / ".data_key"
 
-    ``roles`` maps a role name to its passphrase. The payload is encrypted a
-    single time with a random 256-bit data key; that key is then separately
-    wrapped under a PBKDF2 key derived from each passphrase. So:
 
-      * no passphrase, and no hash of one, is stored anywhere in the file;
-      * adding or changing a role re-wraps a 32-byte key, it does not
-        re-encrypt megabytes;
-      * GCM's auth tag is the check -- the browser tries each wrapped key and
-        the one that authenticates identifies the role. A wrong passphrase
-        simply fails to unwrap.
+def _data_key():
+    """The 256-bit key the payload is encrypted under. It is PERSISTED (base64,
+    gitignored) and reused across rebuilds. That stability is what lets the
+    in-app Access editor add users or change passwords: those new wrappers wrap
+    THIS key, and they must keep unlocking the payload after a later rebuild."""
+    if DATA_KEY_FILE.exists():
+        return base64.b64decode(DATA_KEY_FILE.read_text().strip())
+    key = secrets.token_bytes(32)
+    DATA_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    DATA_KEY_FILE.write_text(base64.b64encode(key).decode("ascii"), encoding="utf-8")
+    return key
+
+
+def encrypt_payload(blob, accounts, accounts_out=None):
+    """gzip, encrypt once under the (persisted) data key, then wrap that key per
+    account. So: no passphrase or hash is stored anywhere; adding or changing an
+    account re-wraps a 32-byte key, it does not re-encrypt megabytes; GCM's auth
+    tag is the check — the browser tries each wrapped key and the one that
+    authenticates names who signed in.
+
+    If ``accounts_out`` is given and does not yet exist, the wrappers are also
+    written there (docs/accounts.json) — the small public file the app reads for
+    login and edits live. Seed-only: an existing file (managed by the app) is
+    never overwritten.
     """
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
     raw = gzip.compress(blob.encode("utf-8"), 9)
-    data_key = secrets.token_bytes(32)
+    data_key = _data_key()
     iv = secrets.token_bytes(12)
     ct = AESGCM(data_key).encrypt(iv, raw, None)
     b64 = lambda b: base64.b64encode(b).decode("ascii")
@@ -1310,6 +1324,12 @@ def encrypt_payload(blob, accounts):
     print(f"  payload {len(blob)/1048576:.1f} MB -> gzip {len(raw)/1048576:.1f} MB "
           f"-> encrypted {len(ct)/1048576:.1f} MB")
     print(f"  accounts: {', '.join(a['name'] + (' [admin]' if a.get('admin') else '') for a in accounts)}")
+    # Externalise the wrappers to the small public login file the app reads and
+    # edits live — seed only, so app-managed changes are never clobbered.
+    if accounts_out is not None and not Path(accounts_out).exists():
+        Path(accounts_out).write_text(
+            json.dumps({"iter": KDF_ITERATIONS, "keys": wrapped}, ensure_ascii=False, indent=2),
+            encoding="utf-8")
     return json.dumps({
         "enc": "AES-GCM-256", "kdf": "PBKDF2-SHA256", "iter": KDF_ITERATIONS,
         "gz": True, "iv": b64(iv), "ct": b64(ct), "keys": wrapped,
@@ -1472,7 +1492,7 @@ def main():
 
     if args.encrypt:
         print("Encrypting ...")
-        blob = encrypt_payload(blob, accounts)
+        blob = encrypt_payload(blob, accounts, accounts_out=HERE / "docs" / "accounts.json")
 
     out = Path(args.out) if args.out else (
         HERE / "docs" / "index.html" if args.publish else OUTPUT)

@@ -1,0 +1,43 @@
+{
+  "iter": 310000,
+  "keys": [
+    {
+      "name": "Super admin",
+      "admin": true,
+      "tabs": "all",
+      "salt": "dHxdqvi41h2n5rm3UysP5g==",
+      "iv": "q4z9v4aE0Fk0Qls8",
+      "key": "670johuKo8c9bcAr8aIQvzIp/Xo4cQtemyOLQw9YH5CzkDbW13YQD63u4eItJjYR"
+    },
+    {
+      "name": "BOP team",
+      "admin": false,
+      "tabs": [
+        "overview",
+        "bop",
+        "timeseries",
+        "weekly",
+        "banks",
+        "quality",
+        "data",
+        "settings"
+      ],
+      "salt": "YWRDnOL8WwPIQrs/UH3SUw==",
+      "iv": "CLDGizNX5Ff8BAKe",
+      "key": "8/ZVpLzRjt4la7nPWXTWQbfGU1ByDBXwICSXceQt65NN6Cf82NtxWJZrEgFMGWW3"
+    },
+    {
+      "name": "MPD",
+      "admin": false,
+      "tabs": [
+        "overview",
+        "bop",
+        "timeseries",
+        "weekly"
+      ],
+      "salt": "UL6XLr4e2Gb6qGA6Q7QX0Q==",
+      "iv": "lN8rtR/LXu2gv3Gy",
+      "key": "LfTm3y+SIJ8fevHi3T9uP2RXVMWHcRnENRfW+qIw8N1OXtnkaQ+5VlNtuogFaK8G"
+    }
+  ]
+}

@@ -81,7 +81,7 @@ def main():
 
     accounts = B.load_accounts(a)
     print(f"Re-encrypting cached pack ({len(blob)/1048576:.1f} MB) into the current template ...")
-    enc = B.encrypt_payload(blob, accounts)
+    enc = B.encrypt_payload(blob, accounts, accounts_out=HERE / "docs" / "accounts.json")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html.replace("__ITRS_DATA__", enc.replace("<", "\\u003c")),
                    encoding="utf-8")

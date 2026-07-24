@@ -1191,8 +1191,21 @@ const I18N = {
  permTokBad:["The GitHub key was refused. Check it has \"Contents: read and write\" on this repository, then reconnect.","GitHub key ຖືກປະຕິເສດ. ກວດວ່າມີສິດ \"Contents: read and write\" ໃນ repository ນີ້ ແລ້ວເຊື່ອມຕໍ່ໃໝ່."],
  permRepo404:["Couldn't reach the repository. Check the key's access, then reconnect.","ເຂົ້າ repository ບໍ່ໄດ້. ກວດສິດຂອງ key ແລ້ວເຊື່ອມຕໍ່ໃໝ່."],
  permPublishErr:["Could not publish","ເຜີຍແຜ່ບໍ່ໄດ້"],
- permBanner:["Set who sees which tabs, then click Save & publish — everyone updates in about a minute, live. Turn this on once with \"Connect\" below. Passwords are not here: to see or change one, open config/users.json on your computer — never in the app, so no one who logs in can read anyone else's password.","ຕັ້ງວ່າໃຜເຫັນແຖບໃດ, ແລ້ວກົດ Save & publish — ທຸກຄົນຈະອັບເດດພາຍໃນປະມານ 1 ນາທີ ແບບສົດ. ເປີດໃຊ້ຄັ້ງດຽວດ້ວຍ \"Connect\" ຂ້າງລຸ່ມ. ລະຫັດຜ່ານບໍ່ຢູ່ນີ້: ເພື່ອເບິ່ງ ຫຼື ປ່ຽນ ໃຫ້ເປີດ config/users.json ໃນຄອມພິວເຕີ — ບໍ່ຢູ່ໃນແອັບ ເພື່ອບໍ່ໃຫ້ຜູ້ເຂົ້າໃຊ້ອ່ານລະຫັດຜ່ານຂອງຄົນອື່ນ."],
- permHow:["Save & publish sends the change straight to everyone — no file, no commands. It uses the one-time connection below.","Save & publish ສົ່ງການປ່ຽນແປງໄປຫາທຸກຄົນໂດຍກົງ — ບໍ່ມີໄຟລ໌, ບໍ່ມີຄຳສັ່ງ. ໃຊ້ການເຊື່ອມຕໍ່ຄັ້ງດຽວຂ້າງລຸ່ມ."],
+ permSetPw:["Set password","ຕັ້ງລະຫັດຜ່ານ"],
+ permRemove:["Remove","ລຶບ"],
+ permAddUser:["+ Add user","+ ເພີ່ມຜູ້ໃຊ້"],
+ permPwSet:["new password set","ຕັ້ງລະຫັດຜ່ານໃໝ່ແລ້ວ"],
+ permNewUser:["new user","ຜູ້ໃຊ້ໃໝ່"],
+ permSetPwPrompt:["Type the new password (at least 12 characters). You set it, so you'll know it.","ພິມລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 12 ຕົວ). ທ່ານຕັ້ງເອງ ຈຶ່ງຈະຮູ້."],
+ permPwShort:["Password must be at least 12 characters.","ລະຫັດຜ່ານຕ້ອງຢ່າງໜ້ອຍ 12 ຕົວ."],
+ permPwPending:["Password ready — click Save & publish to apply it.","ລະຫັດຜ່ານພ້ອມແລ້ວ — ກົດ Save & publish ເພື່ອນຳໃຊ້."],
+ permNoSelfRemove:["You can't remove your own account here.","ທ່ານລຶບບັນຊີຂອງຕົນເອງຢູ່ນີ້ບໍ່ໄດ້."],
+ permRemoveConfirm:["Remove this person's login?","ລຶບການເຂົ້າສູ່ລະບົບຂອງຄົນນີ້?"],
+ permAddNamePrompt:["Name for the new user","ຊື່ຂອງຜູ້ໃຊ້ໃໝ່"],
+ permNameExists:["That name is already used.","ຊື່ນີ້ຖືກໃຊ້ແລ້ວ."],
+ permNeedPw:["Set a password first for:","ຕັ້ງລະຫັດຜ່ານກ່ອນສຳລັບ:"],
+ permBanner:["Set who sees which tabs, set or reset passwords, add or remove people — then click Save & publish. Everyone updates in about a minute, live. Turn this on once with \"Connect\" below. An existing password can't be shown (no app can) — set a new one to change it; you'll know it because you type it.","ຕັ້ງວ່າໃຜເຫັນແຖບໃດ, ຕັ້ງ/ຣີເຊັດລະຫັດຜ່ານ, ເພີ່ມ/ລຶບຄົນ — ແລ້ວກົດ Save & publish. ທຸກຄົນອັບເດດພາຍໃນປະມານ 1 ນາທີ ແບບສົດ. ເປີດໃຊ້ຄັ້ງດຽວດ້ວຍ \"Connect\" ຂ້າງລຸ່ມ. ລະຫັດຜ່ານເກົ່າສະແດງບໍ່ໄດ້ (ບໍ່ມີແອັບໃດເຮັດໄດ້) — ຕັ້ງອັນໃໝ່ເພື່ອປ່ຽນ; ທ່ານພິມເອງ ຈຶ່ງຮູ້."],
+ permHow:["Save & publish sends every change — access, passwords, new users — straight to everyone. No file, no commands. It uses the one-time connection below.","Save & publish ສົ່ງທຸກການປ່ຽນແປງ — ສິດ, ລະຫັດຜ່ານ, ຜູ້ໃຊ້ໃໝ່ — ໄປຫາທຸກຄົນໂດຍກົງ. ບໍ່ມີໄຟລ໌, ບໍ່ມີຄຳສັ່ງ. ໃຊ້ການເຊື່ອມຕໍ່ຄັ້ງດຽວຂ້າງລຸ່ມ."],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
  tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
@@ -2500,17 +2513,24 @@ function renderPerms(){
   $('#permNote').innerHTML = '<span>&#128273;</span><div>' + esc(t('permBanner')) + '</div>';
   $$('[data-t="permHow"]').forEach(el => el.textContent = t('permHow'));
   const tabs = PERM_TABS();
+  const canManage = Array.isArray(DATA._dataKey);        // password ops need the data key (admin session)
   $('#permList').innerHTML = permWork.map((u,ui) => `
     <div class="perm-user">
       <div class="perm-hd">
         <span class="nm">${esc(u.name)}</span>
         <label class="perm-admin"><input type="checkbox" class="pm-admin" data-u="${ui}" ${u.admin?'checked':''}>${esc(t('permAdminFull'))}</label>
+        ${u.newPw ? `<span class="pill ok">${esc(t('permPwSet'))}</span>` : ''}
+        ${u.isNew ? `<span class="pill">${esc(t('permNewUser'))}</span>` : ''}
       </div>
       <div class="perm-chips ${u.admin?'dim':''}">
         ${tabs.map(x=>{ const on=u.admin||u.tabs.has(x.id);
           return `<button type="button" class="perm-chip pm-tab" data-u="${ui}" data-tab="${x.id}" aria-pressed="${on}"><span class="ck">${on?'✓':'+'}</span>${esc(x.label)}</button>`;}).join('')}
       </div>
-    </div>`).join('');
+      ${canManage ? `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn pm-setpw" data-u="${ui}">${esc(t('permSetPw'))}</button>
+        <button class="btn pm-remove" data-u="${ui}">${esc(t('permRemove'))}</button></div>` : ''}
+    </div>`).join('')
+    + (canManage ? `<div class="perm-user"><button class="btn pri" id="permAddUser">${esc(t('permAddUser'))}</button></div>` : '');
   $$('#permList .pm-admin').forEach(cb => cb.addEventListener('change', e => {
     const u = permWork[+e.target.dataset.u]; u.admin = e.target.checked;
     if (u.admin) PERM_TABS().forEach(x => u.tabs.add(x.id));
@@ -2523,7 +2543,41 @@ function renderPerms(){
     const on = u.tabs.has(id);
     b.setAttribute('aria-pressed', on); b.querySelector('.ck').textContent = on ? '✓' : '+';
   }));
+  $$('#permList .pm-setpw').forEach(b => b.addEventListener('click', () => permSetPassword(+b.dataset.u)));
+  $$('#permList .pm-remove').forEach(b => b.addEventListener('click', () => permRemoveUser(+b.dataset.u)));
+  const add = $('#permAddUser'); if (add) add.addEventListener('click', permAddUser);
   renderPermConnect();
+}
+/** Set/reset a user's password. The admin types the NEW value (so they know it
+    and can pass it on); it is sealed into a wrapper on publish, never shown or
+    stored. Existing saved passwords are never displayed — no app can. */
+function permSetPassword(ui){
+  const u = permWork[ui];
+  const pw = prompt(t('permSetPwPrompt') + ' — ' + u.name);
+  if (pw == null) return;
+  if (pw.trim().length < 12){ alert(t('permPwShort')); return; }
+  u.newPw = pw.trim();
+  renderPerms();
+  const m = $('#permMsg'); if (m){ m.style.color = 'var(--ink-2)'; m.textContent = t('permPwPending'); }
+}
+function permRemoveUser(ui){
+  const u = permWork[ui];
+  if (u.name === DATA._userName){ alert(t('permNoSelfRemove')); return; }
+  if (!confirm(t('permRemoveConfirm') + ' ' + u.name + '?')) return;
+  permWork.splice(ui, 1);
+  renderPerms();
+}
+function permAddUser(){
+  const name = prompt(t('permAddNamePrompt'));
+  if (name == null || !name.trim()) return;
+  const nm = name.trim();
+  if (permWork.some(u => u.name === nm)){ alert(t('permNameExists')); return; }
+  const pw = prompt(t('permSetPwPrompt') + ' — ' + nm);
+  if (pw == null) return;
+  if (pw.trim().length < 12){ alert(t('permPwShort')); return; }
+  permWork.push({name:nm, admin:false, tabs:new Set(['overview']), newPw:pw.trim(), isNew:true});
+  renderPerms();
+  const m = $('#permMsg'); if (m){ m.style.color = 'var(--ink-2)'; m.textContent = t('permPwPending'); }
 }
 /** The "connect publishing" area: paste the GitHub key once (kept only in this
     browser), or show that it is connected. */
@@ -2557,12 +2611,15 @@ async function permSaveClick(){
   }
   if (msg){ msg.style.color = 'var(--ink-2)'; msg.innerHTML = '<span class="spin"></span> ' + esc(t('permPublishing')); }
   try {
-    await ghPublishAccess();
+    await ghPublishAccounts();
+    permWork.forEach(u => { delete u.newPw; });        // published; clear pending passwords
+    renderPerms();
     if (msg){ msg.style.color = 'var(--in)'; msg.textContent = t('permPublished'); }
   } catch(e){
     if (!msg) return;
     msg.style.color = 'var(--bad)';
     msg.textContent = e.message === 'NO_TOKEN' ? t('permNeedConnect')
+      : /^NEED_PW:/.test(e.message) ? (t('permNeedPw') + ' ' + e.message.slice(8))
       : /GH_401|GH_403/.test(e.message) ? t('permTokBad')
       : /GH_404/.test(e.message) ? t('permRepo404')
       : t('permPublishErr') + ' (' + e.message + ')';
@@ -5214,51 +5271,56 @@ function initMeta(){
     : `Data ${esc(meta.dateMin)} to ${esc(meta.dateMax)} · ${int(meta.rows)} records · updated ${esc(meta.generated)}`;
 }
 
-/* ---- live access overlay + publisher -----------------------------------
-   Who-sees-what is served as a small PUBLIC file, docs/access.json, so the
-   super admin can change it in the Access tab and have it reach everyone
-   without a rebuild. It is NOT a security boundary: every account decrypts
-   the same payload, and tabs are only a UI filter — the password is the wall.
-   So this file carries no secrets and is safe to serve in the clear. */
-const GH_REPO = 'ItwithYou/DataLive_BOP', GH_PATH = 'docs/access.json', GH_BRANCH = 'main';
+/* ---- live accounts (login + access) publisher --------------------------
+   The login wrappers live in a small public file, docs/accounts.json, which the
+   gate reads (see unlock). The Access tab rebuilds it — change access, set a
+   password, add or remove a user — and commits it to the repo with the admin's
+   GitHub token (kept only in this browser). Each wrapper is the data key sealed
+   under one password (PBKDF2 + AES-GCM); no password is ever stored, and a
+   wrapper is useless without its password, so the file is safe in the clear —
+   exactly like the wrappers already baked into the published page. */
+const GH_REPO = 'ItwithYou/DataLive_BOP', GH_ACCOUNTS = 'docs/accounts.json', GH_BRANCH = 'main';
 const ghToken = () => { try { return localStorage.getItem('itrs-gh-token') || ''; } catch(e){ return ''; } };
 const ghSetToken = tok => { try { tok ? localStorage.setItem('itrs-gh-token', tok) : localStorage.removeItem('itrs-gh-token'); } catch(e){} };
-async function applyAccessOverlay(){
-  try {
-    const r = await Promise.race([
-      fetch('access.json?v=' + Date.now(), {cache:'no-store'}),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2500)),
-    ]);
-    if (!r || !r.ok) return;
-    const map = (await r.json() || {}).users;
-    if (!map) return;
-    DATA._accessLive = map;
-    const me = map[DATA._userName];
-    if (me){
-      if (typeof me.admin === 'boolean') DATA._admin = me.admin;
-      if (me.tabs !== undefined) DATA._tabs = me.tabs;
-      DATA._role = DATA._admin ? 'admin' : 'viewer';
-      ROLE = DATA._role;
+const _b64 = bytes => btoa(String.fromCharCode.apply(null, bytes));
+/** Seal the data key under `password` -> a wrapper the gate can unlock. Matches
+    the Python build byte-for-byte: 16-byte salt, 12-byte IV, PBKDF2-SHA256,
+    AES-GCM. */
+async function deriveWrapper(name, password, admin, tabs){
+  const iter = DATA._iter || 310000;
+  const dk = new Uint8Array(DATA._dataKey);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  const kek = await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['encrypt']);
+  const sealed = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, kek, dk));
+  return {name, admin:!!admin, tabs, salt:_b64(salt), iv:_b64(iv), key:_b64(sealed)};
+}
+/** Rebuild accounts.json from the Access-tab editor state — reusing each user's
+    existing wrapper crypto unless their password was set/reset (u.newPw). */
+async function accountsConfig(){
+  const ids = PERM_TABS().map(x => x.id);
+  const existing = {}; (DATA._wrappers || []).forEach(w => { existing[w.name] = w; });
+  const keys = [];
+  for (const u of permWork){
+    const tabs = u.admin ? 'all' : (ids.every(id => u.tabs.has(id)) ? 'all' : ids.filter(id => u.tabs.has(id)));
+    if (u.newPw){
+      keys.push(await deriveWrapper(u.name, u.newPw, u.admin, tabs));
+    } else {
+      const w = existing[u.name];
+      if (!w) throw new Error('NEED_PW:' + u.name);   // a new user with no password yet
+      keys.push({name:u.name, admin:!!u.admin, tabs, salt:w.salt, iv:w.iv, key:w.key});
     }
-    if (Array.isArray(DATA._users)) DATA._users.forEach(u => { const e = map[u.name]; if (e){ u.admin = !!e.admin; u.tabs = e.tabs; } });
-  } catch(e){ /* offline or not set up yet: keep the built-in access */ }
+  }
+  return {iter: DATA._iter || 310000, keys};
 }
-/** The access map the app would publish, from the Access-tab editor state. */
-function accessMap(){
-  const ids = PERM_TABS().map(x => x.id), out = {};
-  permWork.forEach(u => { out[u.name] = u.admin
-    ? {admin:true, tabs:'all'}
-    : {admin:false, tabs: ids.every(id => u.tabs.has(id)) ? 'all' : ids.filter(id => u.tabs.has(id))}; });
-  return {users: out};
-}
-/** Commit docs/access.json straight to the repo with the admin's token, so a
-    Save in the app publishes to everyone. The token lives only in this browser
-    (localStorage), never in the page or the repo. */
-async function ghPublishAccess(){
+/** Commit a JSON file to the repo with the admin's token. */
+async function ghCommit(path, obj){
   const token = ghToken();
   if (!token) throw new Error('NO_TOKEN');
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(accessMap(), null, 2))));
-  const api = `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
+  const api = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
   const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json'};
   let sha;
   const cur = await fetch(api + '?ref=' + GH_BRANCH, {headers, cache:'no-store'});
@@ -5269,8 +5331,10 @@ async function ghPublishAccess(){
   if (!put.ok) throw new Error('GH_' + put.status);
   return true;
 }
+async function ghPublishAccounts(){ return ghCommit(GH_ACCOUNTS, await accountsConfig()); }
 
-await applyAccessOverlay();     // adjust this account's access before the UI is gated
+// Access + identity now come from accounts.json at the gate (see unlock), so no
+// post-unlock overlay is needed here.
 initControls();
 applyI18n();
 initMeta();
@@ -5418,17 +5482,41 @@ function initInstall(){
   /* The payload is encrypted once under a random data key; that key is wrapped
      separately for each role. Try every wrapper: the one that authenticates
      both proves the passphrase and tells us which role was used. */
+  // The live login wrappers (accounts.json) — fetched once, so in-app user and
+  // password changes take effect without a rebuild. Missing/offline -> null,
+  // and unlock falls back to the wrappers baked into the page.
+  let _liveAcc, _liveAccDone = false;
+  async function fetchLiveAccounts(){
+    if (_liveAccDone) return _liveAcc;
+    _liveAccDone = true;
+    try {
+      const r = await Promise.race([
+        fetch('accounts.json?v=' + Date.now(), {cache:'no-store'}),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 2500)),
+      ]);
+      if (r && r.ok){ const j = await r.json(); if (j && Array.isArray(j.keys) && j.keys.length) _liveAcc = j; }
+    } catch (e) { /* keep the baked wrappers */ }
+    return _liveAcc;
+  }
   async function unlock(pw){
     const enc = new TextEncoder();
     const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
-    const wrappers = env.keys || [{role:'admin', salt:env.salt, iv:env.iv, key:null}];
-    let dataKey = null, acct = null;
+    const baked = env.keys || [{role:'admin', salt:env.salt, iv:env.iv, key:null}];
+    const live = await fetchLiveAccounts();
+    const iter = (live && live.iter) || env.iter;    // same KDF cost for both today
+    // Live wrappers are authoritative (in-app changes apply live). The ORIGINAL
+    // admin wrapper is always appended as a recovery key, so a broken or missing
+    // accounts.json can never lock the super admin out.
+    const recovery = baked.filter(w => w.admin === true || w.role === 'admin');
+    const wrappers = (live && Array.isArray(live.keys) && live.keys.length)
+      ? live.keys.concat(recovery) : baked;
+    let dataKey = null, rawKey = null, acct = null;
     for (const w of wrappers){
       const kek = await crypto.subtle.deriveKey(
-        {name:'PBKDF2', salt:b64(w.salt), iterations:env.iter, hash:'SHA-256'},
+        {name:'PBKDF2', salt:b64(w.salt), iterations:iter, hash:'SHA-256'},
         base, {name:'AES-GCM', length:256}, false, ['decrypt']);
       try {
-        const rawKey = await crypto.subtle.decrypt(
+        rawKey = await crypto.subtle.decrypt(
           {name:'AES-GCM', iv:b64(w.iv)}, kek, b64(w.key));
         dataKey = await crypto.subtle.importKey('raw', rawKey, 'AES-GCM', false, ['decrypt']);
         acct = w;
@@ -5443,16 +5531,25 @@ function initInstall(){
       plain = await new Response(stream).arrayBuffer();
     }
     const data = JSON.parse(new TextDecoder().decode(plain));
-    // Identity + permissions come from the wrapper that unwrapped. Old files
-    // carried only a role; new ones carry name / admin / tabs.
     const admin = acct.admin === true || acct.role === 'admin';
     data._role = admin ? 'admin' : 'viewer';
     data._admin = admin;
     data._tabs = acct.tabs || 'all';
     data._userName = acct.name || '';
-    // The super admin can list every account, read from the public wrappers
-    // (which hold names and access levels, never passwords).
-    data._users = (env.keys || []).map(k =>
+    // Retain the raw data key + KDF cost + current wrappers for the admin only,
+    // so the Access tab can rebuild accounts.json (add user / set password /
+    // change access) — keeping each unchanged user's existing wrapper crypto.
+    if (admin){
+      data._dataKey = Array.from(new Uint8Array(rawKey));
+      data._iter = iter;
+      const src = (live && Array.isArray(live.keys) && live.keys.length) ? live.keys : baked;
+      data._wrappers = src.map(w => ({name:w.name||w.role||'', admin:w.admin===true||w.role==='admin',
+        tabs:w.tabs||'all', salt:w.salt, iv:w.iv, key:w.key}));
+    }
+    // The account list for the Access grid comes from the live wrappers when
+    // present (so app-added users show), else the baked ones.
+    const source = (live && Array.isArray(live.keys) && live.keys.length) ? live.keys : baked;
+    data._users = source.map(k =>
       ({name: k.name || k.role || '', admin: k.admin === true || k.role === 'admin',
         tabs: k.tabs || 'all'}));
     return data;
