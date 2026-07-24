@@ -337,6 +337,11 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 /* Frozen panes for wide series tables: the header row (already sticky) and the
    first label column both stay put while the months scroll — like a spreadsheet
    freeze. The corner cell sits above both. */
+/* A sticky first column anchors to the scrollport's PADDING edge, so .scroll's
+   horizontal padding leaves a strip where scrolled cells show to the LEFT of the
+   frozen column. Zero that padding (and the bleed margin) on freeze tables so
+   the wall sits flush against the container edge. */
+.freeze{margin-left:0;margin-right:0;padding-left:0;padding-right:0}
 .freeze thead th{z-index:2}
 /* The frozen first column must stay FULLY OPAQUE in every state, or the columns
    sliding behind it show through. --panel-solid is opaque; hover and the total
@@ -358,6 +363,9 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
    height available (filling the screen) rather than a short fixed box — the
    frozen header and first column keep it readable while it scrolls inside. */
 #rptTable{max-height:calc(100vh - 400px);min-height:360px}
+/* The series table is the point of the Time Series tab, so let it use the
+   height available too (it sits under the chart, so it needs less headroom). */
+#tsTable{max-height:calc(100vh - 240px);min-height:420px}
 
 .chart{width:100%;display:block;overflow:visible}
 .chart text{font-size:10px;fill:var(--ink-3)}
