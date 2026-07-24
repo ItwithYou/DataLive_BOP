@@ -761,32 +761,37 @@ def build_cubes(con, dims):
     # line, as a matrix. No bank axis (that would multiply the size) — a bank
     # filter is ignored for these cross views. `sector` matches the tsPurpose
     # definition (purpose_ix with pur5 <= 4 chars) so the indexes line up.
-    yjoin = "FROM txf t JOIN year_lk y ON y.yr = t.yr"
+    # Keyed by MONTH, not year: the report has to offer month/quarter/year
+    # columns for a crossed view exactly as it does for a single dimension, and
+    # coarser buckets are just sums of months. Costs roughly 145k extra rows
+    # (~31k -> ~175k) — the cheapest of the three ways to get there, and the
+    # only one that keeps every view on one granularity.
+    xjoin = "FROM txf t JOIN month_lk mo ON mo.ym = t.ym"
     _SEC = "t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4"
     cubes["crossCountryCurrency"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, c.ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} JOIN country_lk c ON c.code = t.country
+        SELECT mo.ix, t.flow_ix, c.ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} JOIN country_lk c ON c.code = t.country
                 JOIN curr_lk cu ON cu.code = t.currency
         GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["crossCountrySector"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, c.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} JOIN country_lk c ON c.code = t.country
+        SELECT mo.ix, t.flow_ix, c.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} JOIN country_lk c ON c.code = t.country
         WHERE {_SEC} GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["crossCountryLine"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, c.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} JOIN country_lk c ON c.code = t.country
+        SELECT mo.ix, t.flow_ix, c.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} JOIN country_lk c ON c.code = t.country
         WHERE t.line_ix >= 0 GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["crossCurrencySector"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, cu.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} JOIN curr_lk cu ON cu.code = t.currency
+        SELECT mo.ix, t.flow_ix, cu.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} JOIN curr_lk cu ON cu.code = t.currency
         WHERE {_SEC} GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["crossCurrencyLine"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, cu.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} JOIN curr_lk cu ON cu.code = t.currency
+        SELECT mo.ix, t.flow_ix, cu.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} JOIN curr_lk cu ON cu.code = t.currency
         WHERE t.line_ix >= 0 GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
     cubes["crossSectorLine"] = fetch_cube(con, f"""
-        SELECT y.ix, t.flow_ix, t.purpose_ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
-        {yjoin} WHERE {_SEC} AND t.line_ix >= 0
+        SELECT mo.ix, t.flow_ix, t.purpose_ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {xjoin} WHERE {_SEC} AND t.line_ix >= 0
         GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
     # [date, flow, currency, useFlag, usdMillions]
@@ -1269,15 +1274,22 @@ def load_accounts(args):
         # Overrides from the in-app Access editor set admin/tabs per user by
         # name. Passwords stay here in users.json and are never touched. Two
         # sources, applied in order (later wins): config/permissions.json (the
-        # old downloaded file) and docs/access.json (the LIVE file the app
-        # publishes). So a full rebuild keeps whatever access is live.
+        # old downloaded file) and docs/accounts.json — the file the Access tab
+        # actually publishes, and therefore the live truth. Reading the live one
+        # LAST is what stops a rebuild from quietly reverting access someone
+        # granted in the app. (docs/access.json was an earlier draft of this and
+        # is deliberately no longer consulted: it went stale the moment the app
+        # started writing accounts.json, and applying it would undo real grants.)
         for path, label in ((CONFIG / "permissions.json", "permissions.json"),
-                            (HERE / "docs" / "access.json", "docs/access.json")):
+                            (HERE / "docs" / "accounts.json", "docs/accounts.json")):
             if not path.exists():
                 continue
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-                lst = data.get("users", data) if isinstance(data, dict) else data
+                if isinstance(data, dict):
+                    lst = data.get("users") or data.get("keys") or data
+                else:
+                    lst = data
                 amap = {p["name"]: p for p in lst} if isinstance(lst, list) else lst
                 hit = 0
                 for a in accounts:
@@ -1452,6 +1464,14 @@ def parse_args():
 
 
 def main():
+    # Windows still hands Python a cp1252 stdout when the output is piped, and a
+    # single non-ASCII character in a progress line then kills the run AFTER all
+    # the work is done. Never let a print be the thing that fails a 20-minute build.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
     args = parse_args()
     if args.publish and not args.encrypt:
         sys.exit("Refusing to build an unencrypted file for publishing.\n"

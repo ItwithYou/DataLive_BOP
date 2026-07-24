@@ -261,6 +261,8 @@ select option{background:var(--panel-solid);color:var(--ink)}
 .sel-opt:hover,.sel-opt.cursor{background:var(--accent-soft);color:var(--ink)}
 .sel-opt[aria-selected="true"]{color:var(--ink);font-weight:640}
 .sel-opt[aria-selected="true"] .tick{opacity:1}
+.sel-more{padding:8px 10px 4px;font-size:11px;color:var(--ink-3);text-align:center;
+  border-top:1px solid var(--line);margin-top:4px}
 .sel-empty{padding:14px 10px;font-size:12.5px;color:var(--ink-3);text-align:center}
 @media(max-width:560px){
   .sel-menu{left:12px!important;right:12px!important;max-width:none;width:auto}
@@ -396,19 +398,33 @@ input.conv-amt:focus{border:0;box-shadow:none}
 input.conv-amt::placeholder{color:var(--ink-3);font-weight:500}
 .conv-side{display:flex;align-items:center;flex:0 0 auto;min-width:126px;
   border-left:1px solid var(--line);background:color-mix(in srgb,var(--panel-solid) 55%,transparent)}
-.conv-fixed{padding:0 15px;font-size:15.5px;font-weight:660;color:var(--ink-2);white-space:nowrap}
 /* the enhanced dropdown sits flush inside the slab, without a second border */
 .conv-side .sel{width:100%}
 .conv-side .sel-btn{border:0;background:transparent;border-radius:0;min-height:100%;
   padding:0 14px;font-size:15.5px;font-weight:660;color:var(--ink);box-shadow:none;max-width:none}
 .conv-side .sel-btn:hover,.conv-side .sel-btn[aria-expanded="true"]{border:0;box-shadow:none;
   background:var(--accent-soft)}
-/* swap badge straddling the two slabs */
-.conv-div{display:flex;align-items:center;justify-content:center;margin:-11px 0;position:relative;z-index:2;
-  pointer-events:none}
+/* Divider between the two slabs: the "To" caption, a rule, and the swap button
+   sharing one line — so the button never lands on top of the label. */
+.conv-mid{display:flex;align-items:center;gap:10px;margin:13px 0 6px}
+.conv-mid .conv-cap{margin:0}
+.conv-hr{flex:1 1 auto;height:1px;background:var(--line)}
 .conv-swap{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--glass-edge);background:var(--panel-solid);color:var(--accent);
-  font-size:15px;line-height:1;box-shadow:var(--sh)}
+  border:1px solid var(--glass-edge);background:var(--panel-solid);color:var(--accent);cursor:pointer;
+  font-size:15px;line-height:1;box-shadow:var(--sh);padding:0;flex:0 0 auto;
+  transition:transform .22s ease, border-color .18s ease, background .18s ease}
+.conv-swap:hover{border-color:var(--accent);background:var(--accent-soft)}
+.conv-swap:active{transform:scale(.92)}
+.conv-swap.spin{transform:rotate(180deg)}
+/* rich currency rows in the dropdown: flag, code, name, today's rate */
+.sel-menu.wide{max-width:min(94vw,430px)}
+.sel-opt .rich{flex:1 1 auto;min-width:0}
+.c-row{display:flex;align-items:baseline;gap:9px;width:100%}
+.c-code{font-weight:700;letter-spacing:.2px;flex:0 0 auto;min-width:36px}
+.c-name{color:var(--ink-2);font-size:12px;flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-rate{color:var(--ink-3);font-size:11.5px;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.sel-opt:hover .c-name,.sel-opt.cursor .c-name,.sel-opt:hover .c-rate,.sel-opt.cursor .c-rate{color:var(--ink-2)}
 .conv-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-top:15px;flex-wrap:wrap}
 .conv-rate{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:right}
@@ -972,17 +988,22 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
         <h3 data-t="rtCalc">Converter</h3>
         <p class="sub" data-t="rtCalcSub">Type in either box — the other follows instantly.</p>
         <div class="conv">
-          <div class="conv-cap" data-t="rtFrom">Foreign currency</div>
+          <div class="conv-cap" data-t="rtFrom">From</div>
           <div class="conv-row">
             <input type="text" id="rtAmt" class="conv-amt" inputmode="decimal" autocomplete="off"
-                   spellcheck="false" value="1" aria-label="Foreign amount">
-            <div class="conv-side"><select id="rtCcy" aria-label="Currency"></select></div>
+                   spellcheck="false" value="1" aria-label="Amount to convert">
+            <div class="conv-side"><select id="rtCcy" aria-label="Convert from"></select></div>
           </div>
-          <div class="conv-div"><span class="conv-swap">&#8645;</span></div>
+          <div class="conv-mid">
+            <span class="conv-cap" data-t="rtTo">To</span>
+            <span class="conv-hr"></span>
+            <button type="button" class="conv-swap" id="rtSwap"
+                    aria-label="Swap currencies">&#8645;</button>
+          </div>
           <div class="conv-row">
             <input type="text" id="rtLak" class="conv-amt" inputmode="decimal" autocomplete="off"
-                   spellcheck="false" value="0" aria-label="Kip amount">
-            <div class="conv-side"><span class="conv-fixed">&#127473;&#127462; LAK</span></div>
+                   spellcheck="false" value="0" aria-label="Converted amount">
+            <div class="conv-side"><select id="rtCcy2" aria-label="Convert to"></select></div>
           </div>
           <div class="conv-foot">
             <div class="seg" id="rtSideSeg">
@@ -1319,10 +1340,11 @@ const I18N = {
  rtSub:["Published rates against the Kip, refreshed daily from the Bank of Lao PDR and BCEL.","ອັດຕາທີ່ປະກາດທຽບກັບເງິນກີບ, ດຶງມາໃໝ່ທຸກວັນຈາກ ທະນາຄານແຫ່ງ ສປປ ລາວ ແລະ BCEL."],
  rtSource:["Source","ແຫຼ່ງ"], rtBol:["BOL","ທຫລ"], rtBcel:["BCEL","BCEL"],
  rtCalc:["Converter","ຄິດໄລ່ແລກປ່ຽນ"],
- rtCalcSub:["Uses the rate from the source selected above.","ໃຊ້ອັດຕາຈາກແຫຼ່ງທີ່ເລືອກຂ້າງເທິງ."],
+ rtCalcSub:["Convert between any two currencies. Type in either box.","ແປງລະຫວ່າງສອງສະກຸນເງິນໃດກໍໄດ້. ພິມໃນຊ່ອງໃດກໍໄດ້."],
  rtAmount:["Amount","ຈຳນວນ"], rtCurrency:["Currency","ສະກຸນເງິນ"], rtName:["Name","ຊື່"],
  rtSide:["Rate","ອັດຕາ"], rtBuy:["Buy","ຮັບຊື້"], rtSell:["Sell","ຂາຍອອກ"],
- rtFrom:["Foreign currency","ສະກຸນເງິນຕ່າງປະເທດ"],
+ rtFrom:["From","ຈາກ"], rtTo:["To","ເປັນ"],
+ rtViaLak:["cross rate via Kip","ອັດຕາໄຂວ້ຜ່ານກີບ"],
  rtTable:["Rate table","ຕາຕະລາງອັດຕາ"], rtTableSub:["Kip per 1 unit of the currency","ກີບຕໍ່ 1 ໜ່ວຍສະກຸນເງິນ"],
  rtAsOf:["Rates as of","ອັດຕາ ວັນທີ"], rtFetched:["fetched","ດຶງເມື່ອ"],
  rtLoading:["Loading today's rates…","ກຳລັງໂຫຼດອັດຕາມື້ນີ້…"],
@@ -1331,10 +1353,11 @@ const I18N = {
  rptSub:["Narrow the table to one country, currency, purpose or BOP item, choose what runs down the left, and keep the date range across the top. Export anything you build. The period, bank, measure and basis chosen at the top apply.","ຈຳກັດຕາຕະລາງໃຫ້ເປັນປະເທດ, ສະກຸນເງິນ, ຈຸດປະສົງ ຫຼື ລາຍການ BOP ດຽວ, ເລືອກສິ່ງທີ່ຢູ່ດ້ານຊ້າຍ ແລະ ໃຫ້ໄລຍະວັນທີຢູ່ດ້ານເທິງ. ສົ່ງອອກໄດ້ທຸກຢ່າງທີ່ສ້າງ. ໄລຍະ, ທະນາຄານ, ໜ່ວຍວັດ ແລະ ຖານທີ່ເລືອກຢູ່ດ້ານເທິງຈະຖືກນຳໃຊ້."],
  rptRow:["Rows (left)","ແຖວ (ຊ້າຍ)"], rptCol:["Columns (top)","ຖັນ (ເທິງ)"], rptDir:["Direction","ທິດທາງ"],
  rptFilterDim:["Only show","ສະແດງສະເພາະ"], rptNoFilter:["Everything","ທັງໝົດ"],
+ rptAllValues:["All","ທັງໝົດ"],
+ selMore:["Type to find {n} more","ພິມເພື່ອຄົ້ນຫາອີກ {n} ລາຍການ"],
  rptGross:["Gross","ລວມ"], rptMonth:["Month","ເດືອນ"], rptQuarter:["Quarter","ໄຕມາດ"], rptYear:["Year","ປີ"],
  rptOthers:["Others","ອື່ນໆ"],
  rptAllBanks:["all banks (a two-dimension cross can't filter to one bank)","ທຸກທະນາຄານ (ການຈັບຄູ່ສອງມິຕິ ຕອງເປັນທະນາຄານດຽວບໍ່ໄດ້)"],
- rptYearOnly:["by year (crossing two dimensions is stored yearly)","ຕາມປີ (ການຈັບຄູ່ສອງມິຕິ ເກັບເປັນລາຍປີ)"],
  rptInvalid:["That combination needs three dimensions at once — drop the filter or change a row or column.","ການປະສົມນີ້ຕ້ອງການສາມມິຕິພ້ອມກັນ — ຍົກເລີກຕົວກັ່ນຕອງ ຫຼື ປ່ຽນແຖວ ຫຼື ຖັນ."],
  tabPerms:["Access","ສິດເຂົ້າເຖິງ"],
  permTitle:["User access","ສິດການເຂົ້າໃຊ້ຂອງຜູ້ໃຊ້"],
@@ -1693,7 +1716,7 @@ const state = {
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
   rptRow:'line', rptCol:'year', rptDir:'net', rptFilterDim:'none', rptFilterVal:-1,
-  rateSrc:'bol', rateCcy:'USD', rateSide:'buy',
+  rateSrc:'bol', rateCcy:'USD', rateCcy2:'LAK', rateSide:'buy',
   wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
@@ -2524,7 +2547,9 @@ const RPT_DIM = {
   line:    {cube:'tsLine',     label:ix=>(isLo()?LINES[ix].lo:LINES[ix].en), full:ix=>(isLo()?LINES[ix].lo:LINES[ix].en), lao:true},
 };
 /* Cross cubes let ANY two non-bank dimensions be crossed as a matrix. Each is
-   [year, flow, dimA, dimB, use, count, usd]; `a`/`b` name which dim sits in
+   [month, flow, dimA, dimB, use, count, usd] — the SAME time key as the ts
+   cubes, so month/quarter/year columns work identically whether or not a second
+   dimension is in play; `a`/`b` name which dim sits in
    r[2]/r[3]. Keyed by [rowF,colF].sort().join('|') — JS's default sort is
    LEXICOGRAPHIC ('line' < 'sector' since 'l' < 's'), which is NOT the same as
    the a/b order in the underlying SQL cube; the key only has to match the sort,
@@ -2558,11 +2583,10 @@ function rptDimCost(fields){
 function rptValidCols(rowF, fDim){
   // Time across the top is the normal shape of this report, so it comes first:
   // the period bar at the top sets the range and those buckets become the
-  // columns. Crossing two dimensions is still allowed, but the cross cubes are
-  // built by YEAR, so a dim x dim view can only be columned by year.
-  const {used, nb, bank} = rptDimCost([rowF, fDim]);
-  const c = nb.length >= 2 ? ['year'] : ['month','quarter','year'];
-  c.push('total','flow');
+  // columns. Every cube is keyed by month, so all three grains are always on
+  // offer — filtered or not, crossed or not.
+  const {used} = rptDimCost([rowF, fDim]);
+  const c = ['month','quarter','year','total','flow'];   // time always, at every grain
   RPT_ROWS.forEach(d => {
     if (used.includes(d)) return;
     const x = rptDimCost(used.concat(d));
@@ -2584,13 +2608,30 @@ function rptMode(rowF, colF, fDim){    // 'bank' | dim key | {cross} | null(unsu
 }
 const RPT_FILTER_N = {country:()=>dims.countries.length, currency:()=>dims.currencies.length,
                       sector:()=>PURPOSES.length, line:()=>LINES.length};
-function rptFilterIx(){                // the values of the filter dimension, in menu order
+/* Rank a filter dimension by how much actually moves through it, under the
+   period / bank / basis / measure chosen at the top — so the picker leads with
+   the handful that matter and the tail stays behind the search box. */
+function rptRank(dim){
+  const cube = cubes[RPT_DIM[dim].cube] || [];   // ts cube: [month,flow,dim,use,bank,n,usd]
+  const vi = 5 + vIdx(), tot = new Map();
+  for (const r of cube){
+    const y = yOfMonth[r[0]];
+    if (y < state.yFrom || y > state.yTo) continue;
+    if (!useOK(r[3])) continue;
+    if (state.bank >= 0 && r[4] !== state.bank) continue;
+    // Gross, not net: a country with huge two-way flow that nets to nothing is
+    // still one of the biggest, and ranking it last would be absurd.
+    tot.set(r[2], (tot.get(r[2]) || 0) + Math.abs(r[vi]));
+  }
+  return tot;
+}
+const RPT_ALL = -1;                    // the "All" row: dimension chosen, nothing excluded
+function rptFilterIx(){                // filter values, biggest first
   const d = state.rptFilterDim; if (!RPT_FILTER_N[d]) return [];
-  const ix = []; for (let i = 0, n = RPT_FILTER_N[d](); i < n; i++) ix.push(i);
-  // Long flat lists (236 countries, ~140 currencies) are searched by name;
-  // purposes and BOP items have a meaningful published order, so keep it.
-  if (d === 'country' || d === 'currency')
-    ix.sort((a,b) => RPT_DIM[d].full(a).localeCompare(RPT_DIM[d].full(b)));
+  const rank = rptRank(d), ix = [];
+  for (let i = 0, n = RPT_FILTER_N[d](); i < n; i++) ix.push(i);
+  ix.sort((a,b) => (rank.get(b)||0) - (rank.get(a)||0)
+                || RPT_DIM[d].full(a).localeCompare(RPT_DIM[d].full(b)));
   return ix;
 }
 function rptBucket(field){
@@ -2607,8 +2648,8 @@ function rptKeyLabel(field, key){
 }
 function buildReportMatrix(){
   const rowF = state.rptRow, colF = state.rptCol, dir = state.rptDir;
-  const fDim = RPT_DIM[state.rptFilterDim] ? state.rptFilterDim : null;
   const fVal = state.rptFilterVal;
+  const fDim = (RPT_DIM[state.rptFilterDim] && fVal >= 0) ? state.rptFilterDim : null;
   const mode = rptMode(rowF, colF, fDim);
   if (!mode) return {invalid:true};
   const cc = mode && mode.cross ? mode.cross : null;       // a dim x dim cross cube
@@ -2617,16 +2658,8 @@ function buildReportMatrix(){
   const bankIx = mode==='bank' ? 2 : 4;
   const valIx = cc ? (5 + vIdx()) : ((mode==='bank' ? 4 : 5) + vIdx());
   const useIx = cc ? 4 : 3;
-  // Cross cubes are stored per YEAR, so their r[0] is a year index, not a month
-  // index — a month/quarter bucket would silently read MONTHS[yearIndex] and
-  // produce nonsense. rptValidCols only offers `year` in that case; this keeps
-  // the two in step no matter how the state got there.
-  const yearBucket = () => {
-    const keys = []; for (let y = state.yFrom; y <= state.yTo; y++) keys.push(String(YEARS[y]));
-    return {of: yi => String(YEARS[yi]), keys};
-  };
-  const mkBucket = f => !RPT_TIME(f) ? null : (cc ? yearBucket() : rptBucket(f));
-  const rowBucket = mkBucket(rowF), colBucket = mkBucket(colF);
+  const rowBucket = RPT_TIME(rowF) ? rptBucket(rowF) : null;
+  const colBucket = RPT_TIME(colF) ? rptBucket(colF) : null;
   const crossKey = cc ? ((field, r) => field === cc.a ? r[2] : r[3]) : null;
   const keyOf = (field, r, isRec) =>
       field==='total' ? 'total'
@@ -2637,7 +2670,7 @@ function buildReportMatrix(){
     : r[2];
   const acc = new Map(), colTot = new Map();
   for (const r of cube){
-    const y = cc ? r[0] : yOfMonth[r[0]];                  // cross cubes key on the year index
+    const y = yOfMonth[r[0]];                              // every cube keys on the month index
     if (y < state.yFrom || y > state.yTo) continue;
     if (!useOK(r[useIx])) continue;
     if (fDim && keyOf(fDim, r, false) !== fVal) continue;  // "only show China"
@@ -2671,8 +2704,7 @@ function buildReportMatrix(){
   else rows.sort((a,b)=>Math.abs(b.total)-Math.abs(a.total));
   return {cols, rawCols:cols, colLabels:cols.map(c=>rptKeyLabel(colF, c)), hasOthers:!!others,
     othersCount:others?others.length:0, rows, bankIgnored: !!cc && state.bank >= 0,
-    filter: fDim ? {dim:rptColLabel(fDim), val:RPT_DIM[fDim].full(fVal)} : null,
-    yearOnly: !!cc && RPT_TIME(colF)};
+    filter: fDim ? {dim:rptColLabel(fDim), val:RPT_DIM[fDim].full(fVal)} : null};
 }
 function rptFill(sel, opts, cur){
   sel.innerHTML = opts.map(o =>
@@ -2685,16 +2717,22 @@ function rptFill(sel, opts, cur){
    actually serve for that pair. */
 function rptSyncCols(){
   const fDim = state.rptFilterDim;
-  const rows = RPT_ROWS.filter(d => d !== fDim);
+  // "All" means the dimension is chosen but nothing is excluded, so the filter
+  // costs nothing: the dimension goes back on offer as a row, and columns open
+  // up again exactly as if no filter were set.
+  const active = (RPT_DIM[fDim] && state.rptFilterVal >= 0) ? fDim : null;
+  const rows = RPT_ROWS.filter(d => d !== active);
   if (!rows.includes(state.rptRow)) state.rptRow = rows[0];
   rptFill($('#rptRow'), rows.map(v => ({v, l:rptColLabel(v)})), state.rptRow);
   const ix = rptFilterIx();
   $('#rptFilterValWrap').style.display = ix.length ? '' : 'none';
   if (ix.length){
-    if (!ix.includes(state.rptFilterVal)) state.rptFilterVal = ix[0];
-    rptFill($('#rptFilterVal'), ix.map(v => ({v, l:RPT_DIM[fDim].label(v)})), state.rptFilterVal);
+    if (state.rptFilterVal >= 0 && !ix.includes(state.rptFilterVal)) state.rptFilterVal = RPT_ALL;
+    rptFill($('#rptFilterVal'),
+      [{v:RPT_ALL, l:t('rptAllValues')}].concat(ix.map(v => ({v, l:RPT_DIM[fDim].label(v)}))),
+      state.rptFilterVal);
   }
-  const valid = rptValidCols(state.rptRow, fDim);
+  const valid = rptValidCols(state.rptRow, active);
   if (!valid.includes(state.rptCol)) state.rptCol = valid[0];
   rptFill($('#rptCol'), valid.map(v => ({v, l:rptColLabel(v)})), state.rptCol);
 }
@@ -2732,8 +2770,7 @@ function renderReport(){
   const othNote = M.hasOthers ? ` · +${t('rptOthers')} (${int(M.othersCount)})` : '';
   const bankNote = M.bankIgnored ? ` · ${t('rptAllBanks')}` : '';
   const filNote = M.filter ? ` · ${M.filter.dim}: ${M.filter.val}` : '';
-  const yrNote = M.yearOnly ? ` · ${t('rptYearOnly')}` : '';
-  $('#rptNote').textContent = `${unit} · ${dirTxt}${filNote}${capNote}${othNote}${bankNote}${yrNote}`;
+  $('#rptNote').textContent = `${unit} · ${dirTxt}${filNote}${capNote}${othNote}${bankNote}`;
 }
 function rptCsv(){
   const M = buildReportMatrix();
@@ -2795,28 +2832,65 @@ function renderRates(){
     h += `<tr><td><b>${esc(c)}</b></td><td class="name" style="text-align:left">${esc((fl ? fl + ' ' : '') + r.name)}</td>`
        + `<td class="num">${esc(rtFmt(r.buy))}</td><td class="num">${esc(rtFmt(r.sell))}</td></tr>`; });
   tbl.innerHTML = h + '</tbody></table>';
-  const sel = $('#rtCcy');
-  if (sel.dataset.src !== state.rateSrc){          // rebuild only when the source changes
-    sel.dataset.src = state.rateSrc;
-    if (codes.indexOf(state.rateCcy) < 0) state.rateCcy = codes.indexOf('USD') >= 0 ? 'USD' : codes[0];
-    sel.innerHTML = codes.map(c => { const fl = flagOf(c.slice(0,2));
-      return `<option value="${c}"${c===state.rateCcy?' selected':''}>${esc((fl ? fl + ' ' : '') + c)}</option>`; }).join('');
+  // Kip is not in the published table (every rate IS quoted in Kip), so it is
+  // prepended by hand — without it the converter could not do LAK at all.
+  const list = ['LAK'].concat(codes);
+  // The rate shown against each option is side-specific, so Buy/Sell has to
+  // invalidate the list too — keying the guard on source alone left the menu
+  // quoting buy rates while the calculator used sell.
+  const stamp = state.rateSrc + '|' + state.rateSide;
+  [['#rtCcy','rateCcy'], ['#rtCcy2','rateCcy2']].forEach(([id, key]) => {
+    const sel = $(id);
+    if (sel.dataset.src === stamp) return;
+    sel.dataset.src = stamp;
+    if (list.indexOf(state[key]) < 0) state[key] = list.indexOf('USD') >= 0 ? 'USD' : list[0];
+    sel.innerHTML = list.map(c => {
+      const fl = flagOf(c.slice(0,2)), r = src.rates[c];
+      const name = c === 'LAK' ? 'Lao Kip' : (r ? r.name : c);
+      return `<option value="${esc(c)}" data-name="${esc(name)}"`
+        + ` data-rate="${esc(c === 'LAK' ? '' : rtFmt(state.rateSide === 'buy' ? r.buy : r.sell))}"`
+        + ` data-search="${esc(name)}"${c===state[key]?' selected':''}>`
+        + `${esc((fl ? fl + ' ' : '') + c)}</option>`;
+    }).join('');
     if (sel._sel) sel._sel.refresh();
-  }
+  });
   rtCalc('ccy');
 }
+/** Kip per one unit, on the chosen side of the board. Kip itself is 1 — that is
+    what makes the same formula work for LAK->X, X->LAK and X->Y alike. */
+function rtLakPer(code){
+  if (code === 'LAK') return 1;
+  const s = rtSrc(); if (!s) return 0;
+  const r = s.rates[code]; if (!r) return 0;
+  return state.rateSide === 'buy' ? r.buy : r.sell;
+}
 /** Recompute the box the user is NOT typing in, so the caret never jumps.
-    `src` says which side was edited: 'ccy' (foreign) or 'lak'. */
+    `from` says which side was edited: 'ccy' (top) or 'lak' (bottom). */
 function rtCalc(from){
-  const s = rtSrc(); if (!s) return;
-  const r = s.rates[state.rateCcy]; if (!r) return;
-  const rate = state.rateSide === 'buy' ? r.buy : r.sell;
+  if (!rtSrc()) return;
+  const A = state.rateCcy, B = state.rateCcy2;
+  const ra = rtLakPer(A), rb = rtLakPer(B);
   const a = $('#rtAmt'), l = $('#rtLak');
   const val = el => parseFloat(String(el.value).replace(/[^\d.]/g, '')) || 0;
   const nf = (v, dp) => v.toLocaleString('en-US', {maximumFractionDigits:dp});
-  if (from === 'lak') a.value = rate ? nf(val(l) / rate, 4) : '0';
-  else                l.value = nf(val(a) * rate, 0);
-  $('#rtRate').innerHTML = `1 ${esc(state.rateCcy)} = <b>${esc(rtFmt(rate))}</b> LAK`
+  // Kip amounts are whole; anything else keeps 4 places, or 250 THB of a
+  // 1,000-Kip conversion would round away to nothing.
+  const dp = c => c === 'LAK' ? 0 : 4;
+  if (!ra || !rb){ (from === 'lak' ? a : l).value = '0'; return; }
+  if (from === 'lak') a.value = nf(val(l) * rb / ra, dp(A));
+  else                l.value = nf(val(a) * ra / rb, dp(B));
+  // Two DIFFERENT foreign currencies have no published pair — the rate is
+  // derived through Kip, and saying so is the difference between a quote and a
+  // guess. (A to itself is 1 by construction; calling that a cross rate is noise.)
+  const cross = A !== 'LAK' && B !== 'LAK' && A !== B;
+  const one = ra / rb;
+  // 1 LAK = 0.0015 THB reads as a rounding artefact; significant figures keep a
+  // sub-unit rate meaningful without padding a big one with dead zeros.
+  const oneTxt = one >= 1000 ? int(Math.round(one))
+               : one >= 1    ? one.toFixed(4)
+               : (+one.toPrecision(4)).toString();
+  $('#rtRate').innerHTML = `1 ${esc(A)} = <b>${esc(oneTxt)}</b> ${esc(B)}`
+    + (cross ? ` · ${esc(t('rtViaLak'))}` : '')
     + ` · ${esc(state.rateSide === 'buy' ? t('rtBuy') : t('rtSell'))}`
     + ` · ${esc(state.rateSrc.toUpperCase())}`;
 }
@@ -4385,6 +4459,19 @@ function dimIx(arr, val, make){
   arr.push(make ? make(val) : val);
   return arr.length - 1;
 }
+/* Every cube whose r[0] is a calendar index, split by which calendar. An upload
+   that introduces an EARLIER period re-sorts MONTHS/YEARS underneath the baked
+   rows, so each of these has to have its r[0] rewritten or its numbers land in
+   the wrong month and year — silently, since the rows still look well formed.
+   A cube missing from the right list is a misdating bug, so the lists live here
+   next to the remap rather than inline: add a cube, classify it here.
+   (Everything else is not calendar-indexed: the day* cubes carry real dates,
+   entities and exceptions carry rows.) */
+const MONTH_CUBES = ['month','tsBank','tsCountry','tsCurrency','tsPurpose','tsLine',
+  'crossCountryCurrency','crossCountrySector','crossCountryLine',
+  'crossCurrencySector','crossCurrencyLine','crossSectorLine'];
+const YEAR_CUBES = ['country','currency','bank','purpose','method','size','flags',
+  'lag','quality','completeness','concentration'];
 /** Add months/years, then remap every affected cube if order changed. */
 function extendPeriods(newMonths){
   const before = MONTHS.slice();
@@ -4400,10 +4487,9 @@ function extendPeriods(newMonths){
   const yMap = {}; yBefore.forEach((y,i) => yMap[i] = YEARS.indexOf(y));
   const mChanged = before.some((m,i) => mMap[i] !== i);
   const yChanged = yBefore.some((y,i) => yMap[i] !== i);
-  if (mChanged) ['month','tsBank','tsCountry','tsCurrency','tsPurpose']
+  if (mChanged) MONTH_CUBES
     .forEach(k => (cubes[k]||[]).forEach(r => { r[0] = mMap[r[0]] ?? r[0]; }));
-  if (yChanged) ['country','currency','bank','purpose','method','size','flags',
-    'lag','quality','completeness','concentration']
+  if (yChanged) YEAR_CUBES
     .forEach(k => (cubes[k]||[]).forEach(r => { r[0] = yMap[r[0]] ?? r[0]; }));
 }
 /** Merge aggregated deltas into a cube keyed on its leading dimensions. */
@@ -4720,7 +4806,7 @@ function enhanceSelect(sel, o){
 
   // On <body>, so it is never clipped by the horizontally scrolling controls.
   const menu = document.createElement('div');
-  menu.className = 'sel-menu';
+  menu.className = 'sel-menu' + (o.wide ? ' wide' : '');
   menu.setAttribute('role', 'listbox');
   // o.search forces the box on for a select that is filled later — the option
   // count is read once, here, so a list that starts empty would never get one.
@@ -4737,20 +4823,41 @@ function enhanceSelect(sel, o){
     const q = (filter || '').trim().toUpperCase();
     list.innerHTML = '';
     items = [];
-    [...sel.options].forEach(op => {
-      if (q && !op.textContent.toUpperCase().includes(q)) return;
+    // data-search lets an option be found by more than its visible label —
+    // typing "dollar" or "baht" should reach USD and THB.
+    let pool = [...sel.options];
+    if (q) pool = pool.filter(op =>
+      (op.textContent + ' ' + (op.dataset.search || '')).toUpperCase().includes(q));
+    let hidden = 0;
+    // Until something is typed, a long list shows only its leading few (the
+    // caller decides the order, so those are the ones worth having) plus the
+    // current selection, which must stay visible or the tick vanishes.
+    if (!q && o.cap && pool.length > o.cap){
+      const keep = pool.slice(0, o.cap);
+      const cur = pool.find(op => op.value === sel.value);
+      if (cur && keep.indexOf(cur) < 0) keep.push(cur);
+      hidden = pool.length - keep.length;
+      pool = keep;
+    }
+    pool.forEach(op => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'sel-opt' + (o.lao ? ' lao' : '');
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', String(op.value === sel.value));
-      b.innerHTML = `${TICK}<span>${esc(op.textContent)}</span>`;
+      // o.row builds a richer line than the flat label; it is responsible for
+      // escaping what it interpolates.
+      b.innerHTML = TICK + (o.row ? `<span class="rich">${o.row(op)}</span>`
+                                  : `<span>${esc(op.textContent)}</span>`);
       b.addEventListener('click', () => { choose(op.value); });
       list.appendChild(b);
       items.push({el:b, value:op.value});
     });
     if (!items.length)
       list.innerHTML = `<div class="sel-empty">${esc(t('noData'))}</div>`;
+    else if (hidden)
+      list.insertAdjacentHTML('beforeend',
+        `<div class="sel-more">${esc(t('selMore').replace('{n}', int(hidden)))}</div>`);
     cursor = items.findIndex(i => i.value === sel.value);
     markCursor();
   }
@@ -5419,8 +5526,11 @@ function applyI18n(){
   const lo = $('#logoutBtn');
   if (lo){ lo.title = t('logout'); lo.setAttribute('aria-label', t('logout')); }
   const ib = $('#importBtn'); if (ib) ib.title = t('impBtn');
-  // Option labels just changed language; repaint any enhanced dropdown.
-  ['#yFrom','#yTo','#bankSel','#tsDim'].forEach(s => {
+  // Option labels just changed language; repaint any enhanced dropdown. The
+  // ones the render path refills (#rptRow, #rptCol, #rptFilterVal) come right
+  // anyway — #rptFilterDim is static markup, so nothing else would repaint its
+  // button and it would sit there in the old language.
+  ['#yFrom','#yTo','#bankSel','#tsDim','#rptFilterDim'].forEach(s => {
     const el = $(s); if (el && el._sel) el._sel.refresh();
   });
 }
@@ -5485,9 +5595,22 @@ function initControls(){
   segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
   $('#rptCsv').addEventListener('click', rptCsv);
   // Daily rates: source / side / direction / amount all just recompute.
-  segBind('#rtSrcSeg',  v => { state.rateSrc = v; $('#rtCcy').dataset.src = ''; renderRates(); });
-  segBind('#rtSideSeg', v => { state.rateSide = v; rtCalc('ccy'); });
+  segBind('#rtSrcSeg',  v => { state.rateSrc = v; renderRates(); });
+  segBind('#rtSideSeg', v => { state.rateSide = v; renderRates(); });
   $('#rtCcy').addEventListener('change', e => { state.rateCcy = e.target.value; rtCalc('ccy'); });
+  $('#rtCcy2').addEventListener('change', e => { state.rateCcy2 = e.target.value; rtCalc('ccy'); });
+  $('#rtSwap').addEventListener('click', e => {
+    const c = state.rateCcy; state.rateCcy = state.rateCcy2; state.rateCcy2 = c;
+    $('#rtCcy').value = state.rateCcy; $('#rtCcy2').value = state.rateCcy2;
+    // Swap the amounts too, so the answer becomes the question: 2,500 USD ->
+    // 83,771 THB reversed should read 83,771 THB -> 2,500 USD, not re-convert
+    // whatever number happened to be sitting in the top box.
+    const a = $('#rtAmt'), l = $('#rtLak'), keep = a.value;
+    a.value = l.value; l.value = keep;
+    rtCalc('ccy');
+    const b = e.currentTarget;                       // half-turn, once per press
+    b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin');
+  });
   $('#rtAmt').addEventListener('input', () => rtCalc('ccy'));
   $('#rtLak').addEventListener('input', () => rtCalc('lak'));
   $('#rtQuick').addEventListener('click', e => {
@@ -5615,8 +5738,15 @@ function initControls(){
   enhanceSelect($('#rptRow'));
   enhanceSelect($('#rptCol'));
   enhanceSelect($('#rptFilterDim'));
-  enhanceSelect($('#rptFilterVal'), {search:true});   // 236 countries — needs the finder
-  enhanceSelect($('#rtCcy'));
+  // All + the five biggest; the other 230-odd countries are one keystroke away.
+  enhanceSelect($('#rptFilterVal'), {search:true, cap:6});
+  // Currency pickers show flag, code, name and today's rate on each line.
+  const ccyRow = op => `<span class="c-row"><span class="c-code">${esc(op.textContent)}</span>`
+    + `<span class="c-name">${esc(op.dataset.name || '')}</span>`
+    + (op.dataset.rate ? `<span class="c-rate">${esc(op.dataset.rate)}</span>` : '')
+    + `</span>`;
+  enhanceSelect($('#rtCcy'),  {row:ccyRow, wide:true, search:true});
+  enhanceSelect($('#rtCcy2'), {row:ccyRow, wide:true, search:true});
 
   ITRSTheme.bind($('#themeBtn'), isLo()
     ? {toLight:'ປ່ຽນເປັນໂໝດແຈ້ງ', toDark:'ປ່ຽນເປັນໂໝດມືດ'}

@@ -29,20 +29,10 @@ HERE = Path(__file__).resolve().parent
 PACK = HERE / "ITRS_data_pack.json"
 OUT = HERE / "docs" / "index.html"
 SW = HERE / "docs" / "sw.js"
-ACCESS = HERE / "docs" / "access.json"
-
-
-def seed_access(accounts):
-    """Create docs/access.json (the live who-sees-what file the Access tab
-    publishes) from the current accounts — but only if it is missing, so a file
-    the app has since published is never overwritten."""
-    if ACCESS.exists():
-        return False
-    users = {a["name"]: {"admin": bool(a.get("admin")), "tabs": a.get("tabs", "all")}
-             for a in accounts}
-    ACCESS.write_text(json.dumps({"users": users}, ensure_ascii=False, indent=2),
-                      encoding="utf-8")
-    return True
+# docs/accounts.json — written by encrypt_payload below and by the app's Access
+# tab — is the one live record of who sees what. There used to be a second file,
+# docs/access.json, seeded here; it is gone on purpose. Two files meant the
+# rebuild could apply a stale one and quietly revoke access someone had granted.
 
 
 def bump_sw():
@@ -88,8 +78,6 @@ def main():
     print(f"Wrote {OUT}  ({OUT.stat().st_size/1048576:.1f} MB)  [encrypted, from pack]")
     tag = bump_sw()
     print(f"Bumped service-worker cache to {tag}." if tag else "Note: could not bump docs/sw.js cache.")
-    if seed_access(accounts):
-        print("Seeded docs/access.json (the live access file the app publishes).")
 
 
 if __name__ == "__main__":
