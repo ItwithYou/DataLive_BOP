@@ -6,7 +6,16 @@
     },
     "BOP team": {
       "admin": false,
-      "tabs": "all"
+      "tabs": [
+        "overview",
+        "bop",
+        "timeseries",
+        "weekly",
+        "banks",
+        "quality",
+        "data",
+        "settings"
+      ]
     },
     "MPD": {
       "admin": false,
