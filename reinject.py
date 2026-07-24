@@ -19,6 +19,7 @@ Regenerate the pack with a full build (`build_dashboard.py --publish --encrypt
 that alters the cubes, etc.). The pack is plaintext and stays out of git.
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -28,6 +29,20 @@ HERE = Path(__file__).resolve().parent
 PACK = HERE / "ITRS_data_pack.json"
 OUT = HERE / "docs" / "index.html"
 SW = HERE / "docs" / "sw.js"
+ACCESS = HERE / "docs" / "access.json"
+
+
+def seed_access(accounts):
+    """Create docs/access.json (the live who-sees-what file the Access tab
+    publishes) from the current accounts — but only if it is missing, so a file
+    the app has since published is never overwritten."""
+    if ACCESS.exists():
+        return False
+    users = {a["name"]: {"admin": bool(a.get("admin")), "tabs": a.get("tabs", "all")}
+             for a in accounts}
+    ACCESS.write_text(json.dumps({"users": users}, ensure_ascii=False, indent=2),
+                      encoding="utf-8")
+    return True
 
 
 def bump_sw():
@@ -73,6 +88,8 @@ def main():
     print(f"Wrote {OUT}  ({OUT.stat().st_size/1048576:.1f} MB)  [encrypted, from pack]")
     tag = bump_sw()
     print(f"Bumped service-worker cache to {tag}." if tag else "Note: could not bump docs/sw.js cache.")
+    if seed_access(accounts):
+        print("Seeded docs/access.json (the live access file the app publishes).")
 
 
 if __name__ == "__main__":

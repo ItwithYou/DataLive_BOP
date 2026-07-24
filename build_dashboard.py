@@ -1232,18 +1232,22 @@ def load_accounts(args):
         pws = [a["password"] for a in accounts]
         if len(set(pws)) != len(pws):
             sys.exit("Two users share a password; each must be unique.")
-        # Optional overrides from the in-app Access editor: a permissions.json
-        # (downloaded from the Access tab) sets admin/tabs per user by name.
-        # Passwords stay here in users.json and are never touched by it.
-        ppath = CONFIG / "permissions.json"
-        if ppath.exists():
+        # Overrides from the in-app Access editor set admin/tabs per user by
+        # name. Passwords stay here in users.json and are never touched. Two
+        # sources, applied in order (later wins): config/permissions.json (the
+        # old downloaded file) and docs/access.json (the LIVE file the app
+        # publishes). So a full rebuild keeps whatever access is live.
+        for path, label in ((CONFIG / "permissions.json", "permissions.json"),
+                            (HERE / "docs" / "access.json", "docs/access.json")):
+            if not path.exists():
+                continue
             try:
-                perms = json.loads(ppath.read_text(encoding="utf-8"))
-                plist = perms.get("users", perms) if isinstance(perms, dict) else perms
-                pmap = {p["name"]: p for p in plist} if isinstance(plist, list) else plist
+                data = json.loads(path.read_text(encoding="utf-8"))
+                lst = data.get("users", data) if isinstance(data, dict) else data
+                amap = {p["name"]: p for p in lst} if isinstance(lst, list) else lst
                 hit = 0
                 for a in accounts:
-                    o = pmap.get(a.get("name"))
+                    o = amap.get(a.get("name"))
                     if not o:
                         continue
                     if "admin" in o:
@@ -1251,9 +1255,9 @@ def load_accounts(args):
                     if "tabs" in o:
                         a["tabs"] = o["tabs"]
                     hit += 1
-                print(f"Applied permissions.json to {hit} user(s).")
+                print(f"Applied {label} to {hit} user(s).")
             except Exception as e:  # a malformed override must never break a build
-                print(f"Ignoring permissions.json ({e}).")
+                print(f"Ignoring {label} ({e}).")
         return accounts
     # Fallback: the fixed three roles from passphrase files/env.
     roles = read_roles(args)

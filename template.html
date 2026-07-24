@@ -904,10 +904,12 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <p class="sub" data-t="permSub">Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.</p>
       <div id="permList"></div>
       <div class="row" style="margin-top:15px">
-        <button class="btn pri" id="permDownload" data-t="permDownload">Save</button>
+        <button class="btn pri" id="permSave" data-t="permSave">Save &amp; publish</button>
         <button class="btn" id="permReset" data-t="permReset">Reset to current</button>
       </div>
-      <p class="note" data-t="permHow" style="margin-top:11px"></p>
+      <p id="permMsg" style="margin-top:10px;font-size:12.5px;min-height:1px"></p>
+      <div id="permConnect" style="margin-top:8px"></div>
+      <p class="note" data-t="permHow" style="margin-top:8px"></p>
     </div>
   </section>
 
@@ -1143,12 +1145,13 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
 <script id="itrs-data" type="application/json">__ITRS_DATA__</script>
 <script>
 "use strict";
-function bootApp(DATA){
+async function bootApp(DATA){
 const {meta, dims, cubes, exceptions, entities} = DATA;
 const RULES = DATA.rules || {};
 /* Which wrapped key opened the payload. Unencrypted local builds have no
-   role and get full access, since there is nothing to gate. */
-const ROLE = DATA._role || 'admin';
+   role and get full access, since there is nothing to gate. `let`, because a
+   live access overlay (access.json) may adjust it before the UI is gated. */
+let ROLE = DATA._role || 'admin';
 const isAdmin = () => ROLE === 'admin';
 
 /* ===================== i18n ===================== */
@@ -1174,10 +1177,22 @@ const I18N = {
  permTitle:["User access","ສິດການເຂົ້າໃຊ້ຂອງຜູ້ໃຊ້"],
  permSub:["Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.","ເລືອກແຖບທີ່ແຕ່ລະຄົນເຫັນໄດ້. ຜູ້ຄຸ້ມຄອງເຫັນທັງໝົດ ພ້ອມທັງອັບໂຫຼດຂໍ້ມູນ, ຕັ້ງຄ່າ ແລະ ໜ້ານີ້."],
  permAdminFull:["Admin — full access","ຜູ້ຄຸ້ມຄອງ — ເຂົ້າເຖິງທັງໝົດ"],
- permDownload:["Save","ບັນທຶກ"],
+ permSave:["Save & publish","ບັນທຶກ & ເຜີຍແຜ່"],
  permReset:["Reset to current","ຕັ້ງຄືນຕາມປັດຈຸບັນ"],
- permBanner:["Set who sees which tabs, click Save, then double-click \"Apply access\" in the dashboard folder — everyone updates in about a minute, no commands to type. To see or change a password, open config/users.json on your computer: every password is there in plain text for you to edit. They are never put in the app — so that no one who logs in can read anyone else's password.","ຕັ້ງວ່າໃຜເຫັນແຖບໃດ, ກົດ Save, ແລ້ວກົດສອງເທື່ອທີ່ \"Apply access\" ໃນໂຟນເດີ dashboard — ທຸກຄົນຈະອັບເດດໃນປະມານ 1 ນາທີ, ບໍ່ຕ້ອງພິມຄຳສັ່ງ. ເພື່ອເບິ່ງ ຫຼື ປ່ຽນລະຫັດຜ່ານ ໃຫ້ເປີດ config/users.json ໃນຄອມພິວເຕີຂອງທ່ານ: ລະຫັດຜ່ານທຸກອັນຢູ່ທີ່ນັ້ນ ເປັນຕົວອັກສອນປົກກະຕິ ໃຫ້ແກ້ໄຂໄດ້. ບໍ່ໄດ້ໃສ່ໄວ້ໃນແອັບ — ເພື່ອບໍ່ໃຫ້ຜູ້ໃດທີ່ເຂົ້າສູ່ລະບົບ ອ່ານລະຫັດຜ່ານຂອງຄົນອື່ນໄດ້."],
- permHow:["Save downloads a small file. Then double-click \"Apply access.bat\" in the dashboard folder once — it applies the change and publishes for everyone (about a minute). A web page can't publish itself, so this one double-click does it.","Save ຈະດາວໂຫຼດໄຟລ໌ນ້ອຍ. ຈາກນັ້ນກົດສອງເທື່ອທີ່ \"Apply access.bat\" ໃນໂຟນເດີ dashboard ຄັ້ງດຽວ — ມັນຈະນຳໃຊ້ ແລະ ເຜີຍແຜ່ໃຫ້ທຸກຄົນ (ປະມານ 1 ນາທີ). ໜ້າເວັບເຜີຍແຜ່ຕົວເອງບໍ່ໄດ້, ດັ່ງນັ້ນການກົດສອງເທື່ອນີ້ຈຶ່ງເຮັດແທນ."],
+ permConnect:["Connect","ເຊື່ອມຕໍ່"],
+ permConnected:["Publishing connected","ເຊື່ອມຕໍ່ການເຜີຍແຜ່ແລ້ວ"],
+ permConnectedNow:["Connected. Now click Save & publish.","ເຊື່ອມຕໍ່ແລ້ວ. ດຽວນີ້ກົດ Save & publish."],
+ permDisconnect:["Disconnect","ຕັດການເຊື່ອມຕໍ່"],
+ permConnectHelp:["One-time setup: paste your GitHub access key so Save can publish for everyone. It is kept only in this browser — never in the app or the file.","ຕັ້ງຄ່າຄັ້ງດຽວ: ວາງກະແຈ GitHub ຂອງທ່ານ ເພື່ອໃຫ້ Save ເຜີຍແຜ່ໃຫ້ທຸກຄົນໄດ້. ເກັບໄວ້ໃນບຣາວເຊີນີ້ເທົ່ານັ້ນ — ບໍ່ຢູ່ໃນແອັບ ຫຼື ໄຟລ໌."],
+ permTokPlaceholder:["Paste GitHub token (github_pat_…)","ວາງ GitHub token (github_pat_…)"],
+ permNeedConnect:["Connect publishing first (below), then Save.","ເຊື່ອມຕໍ່ການເຜີຍແຜ່ກ່ອນ (ຂ້າງລຸ່ມ) ແລ້ວຈຶ່ງ Save."],
+ permPublishing:["Publishing…","ກຳລັງເຜີຍແຜ່…"],
+ permPublished:["Published ✓ Everyone updates within about a minute.","ເຜີຍແຜ່ແລ້ວ ✓ ທຸກຄົນຈະອັບເດດພາຍໃນປະມານ 1 ນາທີ."],
+ permTokBad:["The GitHub key was refused. Check it has \"Contents: read and write\" on this repository, then reconnect.","GitHub key ຖືກປະຕິເສດ. ກວດວ່າມີສິດ \"Contents: read and write\" ໃນ repository ນີ້ ແລ້ວເຊື່ອມຕໍ່ໃໝ່."],
+ permRepo404:["Couldn't reach the repository. Check the key's access, then reconnect.","ເຂົ້າ repository ບໍ່ໄດ້. ກວດສິດຂອງ key ແລ້ວເຊື່ອມຕໍ່ໃໝ່."],
+ permPublishErr:["Could not publish","ເຜີຍແຜ່ບໍ່ໄດ້"],
+ permBanner:["Set who sees which tabs, then click Save & publish — everyone updates in about a minute, live. Turn this on once with \"Connect\" below. Passwords are not here: to see or change one, open config/users.json on your computer — never in the app, so no one who logs in can read anyone else's password.","ຕັ້ງວ່າໃຜເຫັນແຖບໃດ, ແລ້ວກົດ Save & publish — ທຸກຄົນຈະອັບເດດພາຍໃນປະມານ 1 ນາທີ ແບບສົດ. ເປີດໃຊ້ຄັ້ງດຽວດ້ວຍ \"Connect\" ຂ້າງລຸ່ມ. ລະຫັດຜ່ານບໍ່ຢູ່ນີ້: ເພື່ອເບິ່ງ ຫຼື ປ່ຽນ ໃຫ້ເປີດ config/users.json ໃນຄອມພິວເຕີ — ບໍ່ຢູ່ໃນແອັບ ເພື່ອບໍ່ໃຫ້ຜູ້ເຂົ້າໃຊ້ອ່ານລະຫັດຜ່ານຂອງຄົນອື່ນ."],
+ permHow:["Save & publish sends the change straight to everyone — no file, no commands. It uses the one-time connection below.","Save & publish ສົ່ງການປ່ຽນແປງໄປຫາທຸກຄົນໂດຍກົງ — ບໍ່ມີໄຟລ໌, ບໍ່ມີຄຳສັ່ງ. ໃຊ້ການເຊື່ອມຕໍ່ຄັ້ງດຽວຂ້າງລຸ່ມ."],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
  tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
@@ -2508,11 +2523,50 @@ function renderPerms(){
     const on = u.tabs.has(id);
     b.setAttribute('aria-pressed', on); b.querySelector('.ck').textContent = on ? '✓' : '+';
   }));
+  renderPermConnect();
 }
-function downloadJson(name, obj){
-  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+/** The "connect publishing" area: paste the GitHub key once (kept only in this
+    browser), or show that it is connected. */
+function renderPermConnect(){
+  const box = $('#permConnect'); if (!box) return;
+  if (ghToken()){
+    box.innerHTML = `<span class="pill ok">${esc(t('permConnected'))}</span>`
+      + `<button class="btn" id="permDisconnect" style="margin-left:9px">${esc(t('permDisconnect'))}</button>`;
+    $('#permDisconnect').addEventListener('click', () => { ghSetToken(''); const m=$('#permMsg'); if(m) m.textContent=''; renderPermConnect(); });
+  } else {
+    box.innerHTML = `<div class="note" style="margin-bottom:7px">${esc(t('permConnectHelp'))}</div>
+      <div class="row">
+        <input type="password" id="permTok" autocomplete="off" spellcheck="false" placeholder="${esc(t('permTokPlaceholder'))}"
+          style="flex:1;min-width:240px;padding:8px 11px;border-radius:8px;border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-size:12px">
+        <button class="btn pri" id="permConnectBtn">${esc(t('permConnect'))}</button>
+      </div>`;
+    $('#permConnectBtn').addEventListener('click', () => {
+      const v = $('#permTok').value.trim(); if (!v) return;
+      ghSetToken(v);
+      const m = $('#permMsg'); if (m){ m.style.color = 'var(--in)'; m.textContent = t('permConnectedNow'); }
+      renderPermConnect();
+    });
+  }
+}
+async function permSaveClick(){
+  const msg = $('#permMsg');
+  if (!ghToken()){
+    if (msg){ msg.style.color = 'var(--warn)'; msg.textContent = t('permNeedConnect'); }
+    renderPermConnect();
+    return;
+  }
+  if (msg){ msg.style.color = 'var(--ink-2)'; msg.innerHTML = '<span class="spin"></span> ' + esc(t('permPublishing')); }
+  try {
+    await ghPublishAccess();
+    if (msg){ msg.style.color = 'var(--in)'; msg.textContent = t('permPublished'); }
+  } catch(e){
+    if (!msg) return;
+    msg.style.color = 'var(--bad)';
+    msg.textContent = e.message === 'NO_TOKEN' ? t('permNeedConnect')
+      : /GH_401|GH_403/.test(e.message) ? t('permTokBad')
+      : /GH_404/.test(e.message) ? t('permRepo404')
+      : t('permPublishErr') + ' (' + e.message + ')';
+  }
 }
 /* ===================== Weekly Report ===================== */
 const DAY = 86400000;
@@ -5017,7 +5071,7 @@ function initControls(){
   segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
   $('#rptCsv').addEventListener('click', rptCsv);
   // Access (permissions) editor buttons.
-  $('#permDownload').addEventListener('click', () => downloadJson('permissions.json', permConfig()));
+  $('#permSave').addEventListener('click', permSaveClick);
   $('#permReset').addEventListener('click', () => { permInit(); renderPerms(); });
   $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
   $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
@@ -5159,6 +5213,64 @@ function initMeta(){
     ? `ຂໍ້ມູນ ${esc(meta.dateMin)} ຫາ ${esc(meta.dateMax)} · ${int(meta.rows)} ລາຍການ · ປັບປຸງ ${esc(meta.generated)}`
     : `Data ${esc(meta.dateMin)} to ${esc(meta.dateMax)} · ${int(meta.rows)} records · updated ${esc(meta.generated)}`;
 }
+
+/* ---- live access overlay + publisher -----------------------------------
+   Who-sees-what is served as a small PUBLIC file, docs/access.json, so the
+   super admin can change it in the Access tab and have it reach everyone
+   without a rebuild. It is NOT a security boundary: every account decrypts
+   the same payload, and tabs are only a UI filter — the password is the wall.
+   So this file carries no secrets and is safe to serve in the clear. */
+const GH_REPO = 'ItwithYou/DataLive_BOP', GH_PATH = 'docs/access.json', GH_BRANCH = 'main';
+const ghToken = () => { try { return localStorage.getItem('itrs-gh-token') || ''; } catch(e){ return ''; } };
+const ghSetToken = tok => { try { tok ? localStorage.setItem('itrs-gh-token', tok) : localStorage.removeItem('itrs-gh-token'); } catch(e){} };
+async function applyAccessOverlay(){
+  try {
+    const r = await Promise.race([
+      fetch('access.json?v=' + Date.now(), {cache:'no-store'}),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2500)),
+    ]);
+    if (!r || !r.ok) return;
+    const map = (await r.json() || {}).users;
+    if (!map) return;
+    DATA._accessLive = map;
+    const me = map[DATA._userName];
+    if (me){
+      if (typeof me.admin === 'boolean') DATA._admin = me.admin;
+      if (me.tabs !== undefined) DATA._tabs = me.tabs;
+      DATA._role = DATA._admin ? 'admin' : 'viewer';
+      ROLE = DATA._role;
+    }
+    if (Array.isArray(DATA._users)) DATA._users.forEach(u => { const e = map[u.name]; if (e){ u.admin = !!e.admin; u.tabs = e.tabs; } });
+  } catch(e){ /* offline or not set up yet: keep the built-in access */ }
+}
+/** The access map the app would publish, from the Access-tab editor state. */
+function accessMap(){
+  const ids = PERM_TABS().map(x => x.id), out = {};
+  permWork.forEach(u => { out[u.name] = u.admin
+    ? {admin:true, tabs:'all'}
+    : {admin:false, tabs: ids.every(id => u.tabs.has(id)) ? 'all' : ids.filter(id => u.tabs.has(id))}; });
+  return {users: out};
+}
+/** Commit docs/access.json straight to the repo with the admin's token, so a
+    Save in the app publishes to everyone. The token lives only in this browser
+    (localStorage), never in the page or the repo. */
+async function ghPublishAccess(){
+  const token = ghToken();
+  if (!token) throw new Error('NO_TOKEN');
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(accessMap(), null, 2))));
+  const api = `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`;
+  const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json'};
+  let sha;
+  const cur = await fetch(api + '?ref=' + GH_BRANCH, {headers, cache:'no-store'});
+  if (cur.ok) sha = (await cur.json()).sha;
+  else if (cur.status !== 404) throw new Error('GH_' + cur.status);
+  const put = await fetch(api, {method:'PUT', headers:{...headers, 'Content-Type':'application/json'},
+    body: JSON.stringify({message:'Update user access (from dashboard)', content, branch: GH_BRANCH, sha})});
+  if (!put.ok) throw new Error('GH_' + put.status);
+  return true;
+}
+
+await applyAccessOverlay();     // adjust this account's access before the UI is gated
 initControls();
 applyI18n();
 initMeta();

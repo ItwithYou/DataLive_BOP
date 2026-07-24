@@ -1,0 +1,21 @@
+{
+  "users": {
+    "Super admin": {
+      "admin": true,
+      "tabs": "all"
+    },
+    "BOP team": {
+      "admin": false,
+      "tabs": "all"
+    },
+    "MPD": {
+      "admin": false,
+      "tabs": [
+        "overview",
+        "bop",
+        "timeseries",
+        "weekly"
+      ]
+    }
+  }
+}
