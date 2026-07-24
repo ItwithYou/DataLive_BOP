@@ -350,6 +350,10 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 #wkTable th:first-child,#wkTable td:first-child{width:28%;white-space:normal;overflow-wrap:anywhere}
 #wkTable th:not(:first-child),#wkTable td:not(:first-child){width:12%}
 #wkTable thead th{white-space:normal;vertical-align:bottom;line-height:1.25}
+/* The Report builder is a full-screen data explorer, so its table uses the
+   height available (filling the screen) rather than a short fixed box — the
+   frozen header and first column keep it readable while it scrolls inside. */
+#rptTable{max-height:calc(100vh - 400px);min-height:360px}
 
 .chart{width:100%;display:block;overflow:visible}
 .chart text{font-size:10px;fill:var(--ink-3)}
