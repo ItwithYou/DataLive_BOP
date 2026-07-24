@@ -1,0 +1,167 @@
+{
+ "fetched": "2026-07-24 07:43Z",
+ "sources": {
+  "bol": {
+   "date": "24-07-2026",
+   "url": "https://www.bol.gov.la/en/ExchangRate.php",
+   "rates": {
+    "AUD": {
+     "name": "Australia Dollar",
+     "buy": 15576.0,
+     "sell": 15888.0
+    },
+    "CAD": {
+     "name": "Canadian Dollar",
+     "buy": 15867.0,
+     "sell": 16184.0
+    },
+    "CHF": {
+     "name": "France Swiss",
+     "buy": 27349.0,
+     "sell": 27895.0
+    },
+    "CNY": {
+     "name": "Chinese Yuan",
+     "buy": 3313.0,
+     "sell": 3338.0
+    },
+    "EUR": {
+     "name": "Euro",
+     "buy": 25744.0,
+     "sell": 26004.0
+    },
+    "GBP": {
+     "name": "Pound Stering",
+     "buy": 29833.0,
+     "sell": 30430.0
+    },
+    "HKD": {
+     "name": "HongKong Dollar",
+     "buy": 2817.0,
+     "sell": 2874.0
+    },
+    "JPY": {
+     "name": "Japanese Yen",
+     "buy": 139.03,
+     "sell": 141.81
+    },
+    "KRW": {
+     "name": "Korean Won",
+     "buy": 14.96,
+     "sell": 15.25
+    },
+    "MYR": {
+     "name": "Malaysian Ringgit",
+     "buy": 5400.0,
+     "sell": 5508.0
+    },
+    "SGD": {
+     "name": "Singapore Dollar",
+     "buy": 17109.0,
+     "sell": 17449.0
+    },
+    "THB": {
+     "name": "Thai Baht",
+     "buy": 673.2,
+     "sell": 685.5
+    },
+    "USD": {
+     "name": "US DOLAR",
+     "buy": 22558.0,
+     "sell": 22768.0
+    },
+    "VND": {
+     "name": "Vietnamese Dong",
+     "buy": 0.8395,
+     "sell": 0.8563
+    }
+   }
+  },
+  "bcel": {
+   "date": "2026-07-24",
+   "url": "https://www.bcel.com.la/bcel/exchange-rate.html?lang=en",
+   "rates": {
+    "USD": {
+     "name": "US Dollar",
+     "buy": 22489.0,
+     "sell": 22775.0
+    },
+    "THB": {
+     "name": "Thai Baht",
+     "buy": 672.61,
+     "sell": 686.07
+    },
+    "EUR": {
+     "name": "Euro",
+     "buy": 25484.0,
+     "sell": 25993.0
+    },
+    "GBP": {
+     "name": "Pound Sterling",
+     "buy": 29955.0,
+     "sell": 30554.0
+    },
+    "AUD": {
+     "name": "Australian Dollar",
+     "buy": 15389.0,
+     "sell": 15943.0
+    },
+    "CAD": {
+     "name": "Canadian Dollar",
+     "buy": 15612.0,
+     "sell": 16184.0
+    },
+    "JPY": {
+     "name": "Japanese Yen",
+     "buy": 139.28,
+     "sell": 142.06
+    },
+    "CHF": {
+     "name": "Swiss Franc",
+     "buy": 26985.0,
+     "sell": 28136.0
+    },
+    "CNY": {
+     "name": "Renminbi Yuan",
+     "buy": 3264.0,
+     "sell": 3329.0
+    },
+    "DKK": {
+     "name": "Danish Krone",
+     "buy": 3512.0,
+     "sell": 3581.0
+    },
+    "NOK": {
+     "name": "Norwegian Krone",
+     "buy": 2491.0,
+     "sell": 2540.0
+    },
+    "SEK": {
+     "name": "Swedish Krona",
+     "buy": 2636.0,
+     "sell": 2688.0
+    },
+    "SGD": {
+     "name": "Singapore Dollar",
+     "buy": 17095.0,
+     "sell": 17641.0
+    },
+    "HKD": {
+     "name": "HongKong Dollar",
+     "buy": 2882.0,
+     "sell": 2939.0
+    },
+    "VND": {
+     "name": "Vietnamese Dong",
+     "buy": 0.855,
+     "sell": 0.872
+    },
+    "KRW": {
+     "name": "Korean Won",
+     "buy": 14.84,
+     "sell": 15.48
+    }
+   }
+  }
+ }
+}

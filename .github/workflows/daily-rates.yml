@@ -1,0 +1,46 @@
+# Refresh the published LAK exchange rates once each working morning.
+#
+# The dashboard cannot read bol.gov.la / bcel.com.la itself (neither allows
+# cross-origin requests), so this fetches them server-side and commits a small
+# docs/rates.json that the Daily rates tab reads from its own origin.
+#
+# Only rates.json is ever touched — never the encrypted report, users.json or
+# the accounts file. Paths are relative to the repo root, which is `dashboard`.
+name: Daily exchange rates
+
+on:
+  schedule:
+    - cron: "30 1 * * 1-5"      # 08:30 Vientiane (UTC+7), Mon-Fri
+  workflow_dispatch:             # plus a "Run workflow" button for a manual refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-rates
+  cancel-in-progress: false
+
+jobs:
+  rates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch rates
+        run: python fetch_rates.py
+
+      - name: Commit if the rates changed
+        run: |
+          if [ -n "$(git status --porcelain docs/rates.json)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/rates.json
+            git commit -m "Daily exchange rates $(date -u +%Y-%m-%d)"
+            git push
+          else
+            echo "Rates unchanged - nothing to publish."
+          fi

@@ -796,6 +796,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="report" aria-selected="false" data-t="tabReport">Report</button>
     <button data-tab="search" aria-selected="false" data-t="tabSearch">Search</button>
     <button data-tab="fx" aria-selected="false" data-t="tabFx">Exchange rate</button>
+    <button data-tab="rates" aria-selected="false" data-t="tabRates">Daily rates</button>
     <button data-tab="dups" aria-selected="false" data-t="tabDups">Duplicates</button>
     <button data-tab="officers" aria-selected="false" data-t="tabOfficers">Officers</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
@@ -895,6 +896,50 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <div class="card"><h3 data-t="tsTable">Series table</h3>
       <p class="sub" data-t="tsTableSub">USD millions. Tap a row to isolate it in the chart.</p>
       <div class="scroll freeze" id="tsTable"></div></div>
+  </section>
+
+  <section class="tab" id="tab-rates">
+    <div class="card">
+      <h3 data-t="rtTitle">Daily exchange rates</h3>
+      <p class="sub" data-t="rtSub">Published rates against the Kip, refreshed daily from the Bank of Lao PDR and BCEL.</p>
+      <div class="row" style="margin-bottom:11px">
+        <div class="ctl"><label data-t="rtSource">Source</label>
+          <div class="seg" id="rtSrcSeg">
+            <button data-v="bol" aria-pressed="true" data-t="rtBol">BOL</button>
+            <button data-v="bcel" aria-pressed="false" data-t="rtBcel">BCEL</button>
+          </div></div>
+        <div class="ctl"><label>&nbsp;</label><button class="btn" id="rtCsv" data-t="csv">Download CSV</button></div>
+      </div>
+      <p class="note" id="rtMeta"></p>
+    </div>
+    <div class="grid g-2">
+      <div class="card">
+        <h3 data-t="rtCalc">Converter</h3>
+        <p class="sub" data-t="rtCalcSub">Uses the rate from the source selected above.</p>
+        <div class="row" style="margin-bottom:9px">
+          <div class="ctl"><label data-t="rtAmount">Amount</label>
+            <input type="text" id="rtAmt" inputmode="decimal" value="1"
+              style="padding:8px 11px;border-radius:8px;border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink);min-height:34px;width:130px;font-variant-numeric:tabular-nums"></div>
+          <div class="ctl"><label data-t="rtCurrency">Currency</label><select id="rtCcy"></select></div>
+          <div class="ctl"><label data-t="rtSide">Rate</label>
+            <div class="seg" id="rtSideSeg">
+              <button data-v="buy" aria-pressed="true" data-t="rtBuy">Buy</button>
+              <button data-v="sell" aria-pressed="false" data-t="rtSell">Sell</button>
+            </div></div>
+        </div>
+        <div class="row" style="margin-bottom:11px">
+          <div class="ctl"><label data-t="rtDir">Direction</label>
+            <div class="seg" id="rtDirSeg">
+              <button data-v="toLak" aria-pressed="true" data-t="rtToLak">To Kip</button>
+              <button data-v="fromLak" aria-pressed="false" data-t="rtFromLak">From Kip</button>
+            </div></div>
+        </div>
+        <div id="rtResult"></div>
+      </div>
+      <div class="card"><h3 data-t="rtTable">Rate table</h3>
+        <p class="sub" data-t="rtTableSub">Kip per 1 unit of the currency</p>
+        <div class="scroll freeze" id="rtTable"></div></div>
+    </div>
   </section>
 
   <section class="tab" id="tab-report">
@@ -1201,6 +1246,19 @@ const I18N = {
  tabOverview:["Overview","ພາບລວມ"], tabBop:["Balance of Payments","ດຸນຊຳລະ"],
  tabTs:["Time Series","ຂໍ້ມູນຕາມເວລາ"], tabWeekly:["Period Report","ລາຍງານຕາມໄລຍະ"],
  tabReport:["Report","ບົດລາຍງານ"],
+ tabRates:["Daily rates","ອັດຕາປະຈຳວັນ"],
+ rtTitle:["Daily exchange rates","ອັດຕາແລກປ່ຽນປະຈຳວັນ"],
+ rtSub:["Published rates against the Kip, refreshed daily from the Bank of Lao PDR and BCEL.","ອັດຕາທີ່ປະກາດທຽບກັບເງິນກີບ, ດຶງມາໃໝ່ທຸກວັນຈາກ ທະນາຄານແຫ່ງ ສປປ ລາວ ແລະ BCEL."],
+ rtSource:["Source","ແຫຼ່ງ"], rtBol:["BOL","ທຫລ"], rtBcel:["BCEL","BCEL"],
+ rtCalc:["Converter","ຄິດໄລ່ແລກປ່ຽນ"],
+ rtCalcSub:["Uses the rate from the source selected above.","ໃຊ້ອັດຕາຈາກແຫຼ່ງທີ່ເລືອກຂ້າງເທິງ."],
+ rtAmount:["Amount","ຈຳນວນ"], rtCurrency:["Currency","ສະກຸນເງິນ"], rtName:["Name","ຊື່"],
+ rtSide:["Rate","ອັດຕາ"], rtBuy:["Buy","ຮັບຊື້"], rtSell:["Sell","ຂາຍອອກ"],
+ rtDir:["Direction","ທິດທາງ"], rtToLak:["To Kip","ເປັນກີບ"], rtFromLak:["From Kip","ຈາກກີບ"],
+ rtTable:["Rate table","ຕາຕະລາງອັດຕາ"], rtTableSub:["Kip per 1 unit of the currency","ກີບຕໍ່ 1 ໜ່ວຍສະກຸນເງິນ"],
+ rtAsOf:["Rates as of","ອັດຕາ ວັນທີ"], rtFetched:["fetched","ດຶງເມື່ອ"],
+ rtLoading:["Loading today's rates…","ກຳລັງໂຫຼດອັດຕາມື້ນີ້…"],
+ rtNoSource:["This source has no rates published yet.","ແຫຼ່ງນີ້ຍັງບໍ່ມີອັດຕາເຜີຍແຜ່."],
  rptTitle:["Custom report builder","ສ້າງບົດລາຍງານຕາມໃຈ"],
  rptSub:["Choose what goes down the side (Rows) and across the top (Columns) — bank, country, currency, sector or BOP item — to build any matrix you need, then export it. The period, bank, measure and basis chosen at the top apply.","ເລືອກສິ່ງທີ່ຢູ່ດ້ານຂ້າງ (ແຖວ) ແລະ ດ້ານເທິງ (ຖັນ) — ທະນາຄານ, ປະເທດ, ສະກຸນເງິນ, ຂະແໜງ ຫຼື ລາຍການ BOP — ເພື່ອສ້າງຕາຕະລາງໄຂວ້ຕາມຕ້ອງການ ແລ້ວສົ່ງອອກ. ໄລຍະ, ທະນາຄານ, ໜ່ວຍວັດ ແລະ ຖານທີ່ເລືອກຢູ່ດ້ານເທິງຈະຖືກນຳໃຊ້."],
  rptRow:["Rows","ແຖວ"], rptCol:["Columns","ຖັນ"], rptDir:["Direction","ທິດທາງ"],
@@ -1565,6 +1623,7 @@ const state = {
   purpParent:null, cpCountry:-1, hidden:{},
   tsDim:'tsBank', tsFreq:'M', tsFlow:1, tsPick:null,
   rptRow:'bank', rptCol:'country', rptDir:'net',
+  rateSrc:'bol', rateCcy:'USD', rateSide:'buy', rateDir:'toLak',
   wkFrom:null, wkTo:null, wkScope:'all', wkNarr:'detail', wkGoodsOpen:false, dupTier:'A', seQuery:'',
   sePick:new Set(),                   // entity rows chosen for the combined view
 };
@@ -2541,6 +2600,83 @@ function rptCsv(){
   downloadCsv(`ITRS_report_${state.rptRow}_by_${state.rptCol}_${state.rptDir}.csv`, out);
 }
 
+/* ===================== Daily exchange rates ==============================
+   Neither bol.gov.la nor bcel.com.la allows cross-origin reads, so the page
+   cannot call them directly. fetch_rates.py (a scheduled job) writes
+   docs/rates.json next to index.html, and this reads it from its own origin. */
+let RATES = null, ratesTried = false;
+async function loadRates(){
+  if (ratesTried) return;
+  ratesTried = true;
+  try {
+    const r = await Promise.race([
+      fetch('rates.json?v=' + Date.now(), {cache:'no-store'}),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('t')), 4000)),
+    ]);
+    if (r && r.ok) RATES = await r.json();
+  } catch(e){ /* offline, or not published yet */ }
+  if (state.tab === 'rates') renderRates();
+}
+const rtSrc = () => (RATES && RATES.sources && RATES.sources[state.rateSrc]) || null;
+/** Thousand-Kip rates (USD, EUR) read better whole; sub-1000 ones (THB 686.07,
+    JPY 139.03) must keep their decimals or the quote looks wrong. */
+const rtFmt = v => v >= 1000 ? int(Math.round(v)) : v.toFixed(2);
+function renderRates(){
+  const meta = $('#rtMeta'), tbl = $('#rtTable'), res = $('#rtResult');
+  if (!RATES){
+    tbl.innerHTML = `<p class="empty">${esc(t('rtLoading'))}</p>`;
+    meta.textContent = ''; res.innerHTML = '';
+    loadRates();
+    return;
+  }
+  const src = rtSrc();
+  if (!src){
+    tbl.innerHTML = `<p class="empty">${esc(t('rtNoSource'))}</p>`;
+    meta.textContent = ''; res.innerHTML = '';
+    return;
+  }
+  const codes = Object.keys(src.rates).sort();
+  meta.textContent = `${t('rtAsOf')} ${src.date || '—'} · ${t('rtFetched')} ${RATES.fetched} · ${src.url}`;
+  let h = `<table><thead><tr><th style="text-align:left">${esc(t('rtCurrency'))}</th>`
+    + `<th style="text-align:left">${esc(t('rtName'))}</th>`
+    + `<th>${esc(t('rtBuy'))}</th><th>${esc(t('rtSell'))}</th></tr></thead><tbody>`;
+  codes.forEach(c => { const r = src.rates[c];
+    h += `<tr><td><b>${esc(c)}</b></td><td class="name">${esc(r.name)}</td>`
+       + `<td class="num">${esc(rtFmt(r.buy))}</td><td class="num">${esc(rtFmt(r.sell))}</td></tr>`; });
+  tbl.innerHTML = h + '</tbody></table>';
+  const sel = $('#rtCcy');
+  if (sel.dataset.src !== state.rateSrc){          // rebuild only when the source changes
+    sel.dataset.src = state.rateSrc;
+    if (codes.indexOf(state.rateCcy) < 0) state.rateCcy = codes.indexOf('USD') >= 0 ? 'USD' : codes[0];
+    sel.innerHTML = codes.map(c => `<option value="${c}"${c===state.rateCcy?' selected':''}>${esc(c)}</option>`).join('');
+    if (sel._sel) sel._sel.refresh();
+  }
+  rtCalc();
+}
+function rtCalc(){
+  const src = rtSrc(); if (!src) return;
+  const r = src.rates[state.rateCcy]; if (!r) return;
+  const rate = state.rateSide === 'buy' ? r.buy : r.sell;
+  const amt = parseFloat(String($('#rtAmt').value).replace(/[, ]/g, '')) || 0;
+  const toLak = state.rateDir === 'toLak';
+  const out = toLak ? amt * rate : (rate ? amt / rate : 0);
+  const from = toLak ? state.rateCcy : 'LAK', to = toLak ? 'LAK' : state.rateCcy;
+  const nf = (v, dp) => v.toLocaleString('en-US', {maximumFractionDigits:dp});
+  $('#rtResult').innerHTML =
+    `<div style="font-size:13px;color:var(--ink-3)">${esc(nf(amt,4))} ${esc(from)} =</div>`
+  + `<div style="font-size:27px;font-weight:670;letter-spacing:-.7px;margin-top:2px;font-variant-numeric:tabular-nums">`
+  + `${esc(nf(out, to==='LAK' ? 0 : 4))} <span style="font-size:15px;color:var(--ink-3)">${esc(to)}</span></div>`
+  + `<p class="note" style="margin-top:8px">1 ${esc(state.rateCcy)} = ${esc(rtFmt(rate))} LAK · `
+  + `${esc(state.rateSide==='buy' ? t('rtBuy') : t('rtSell'))} · ${esc(state.rateSrc.toUpperCase())}</p>`;
+}
+function rtCsv(){
+  const src = rtSrc(); if (!src) return;
+  const out = [['Currency','Name','Buy','Sell']];
+  Object.keys(src.rates).sort().forEach(c => { const r = src.rates[c];
+    out.push([c, r.name, r.buy, r.sell]); });
+  downloadCsv(`ITRS_rates_${state.rateSrc}_${(src.date||'').replace(/\D/g,'')}.csv`, out);
+}
+
 /* ===================== User access (permissions) — admin only ============
    A visual editor for who sees which tabs. A static site has no server, so it
    cannot change the LIVE file: it produces a permissions.json that the build
@@ -2552,7 +2688,7 @@ const PERM_TABS = () => [
   {id:'search',     label:t('tabSearch')},   {id:'fx',       label:t('tabFx')},
   {id:'dups',       label:t('tabDups')},     {id:'officers', label:t('tabOfficers')},
   {id:'banks',      label:t('tabBanks')},    {id:'quality',  label:t('tabQuality')},
-  {id:'report',     label:t('tabReport')},
+  {id:'rates',      label:t('tabRates')},    {id:'report',   label:t('tabReport')},
   {id:'data',       label:isLo()?'ຈັດການຂໍ້ມູນ':'Data'},
   {id:'settings',   label:isLo()?'ຕັ້ງຄ່າ':'Settings'},
 ];
@@ -5093,7 +5229,7 @@ function renderData(){
   renderDsUploads();
 }
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
-  weekly:renderWeekly, report:renderReport, search:renderSearch, fx:renderFx, dups:renderDups,
+  weekly:renderWeekly, report:renderReport, search:renderSearch, fx:renderFx, rates:renderRates, dups:renderDups,
   officers:renderOfficers, banks:renderBanks, quality:renderQuality, perms:renderPerms,
   settings:renderSettings, data:renderData};
 let rendered = {};
@@ -5192,6 +5328,13 @@ function initControls(){
   $('#rptCol').addEventListener('change', e => { state.rptCol = e.target.value; renderReport(); });
   segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
   $('#rptCsv').addEventListener('click', rptCsv);
+  // Daily rates: source / side / direction / amount all just recompute.
+  segBind('#rtSrcSeg',  v => { state.rateSrc = v; $('#rtCcy').dataset.src = ''; renderRates(); });
+  segBind('#rtSideSeg', v => { state.rateSide = v; rtCalc(); });
+  segBind('#rtDirSeg',  v => { state.rateDir = v; rtCalc(); });
+  $('#rtCcy').addEventListener('change', e => { state.rateCcy = e.target.value; rtCalc(); });
+  $('#rtAmt').addEventListener('input', rtCalc);
+  $('#rtCsv').addEventListener('click', rtCsv);
   // Access (permissions) editor buttons.
   $('#permSave').addEventListener('click', permSaveClick);
   $('#permReset').addEventListener('click', () => { permInit(); renderPerms(); });
@@ -5310,6 +5453,7 @@ function initControls(){
   enhanceSelect($('#tsDim'));
   enhanceSelect($('#rptRow'));
   enhanceSelect($('#rptCol'));
+  enhanceSelect($('#rtCcy'));
 
   ITRSTheme.bind($('#themeBtn'), isLo()
     ? {toLight:'ປ່ຽນເປັນໂໝດແຈ້ງ', toDark:'ປ່ຽນເປັນໂໝດມືດ'}
