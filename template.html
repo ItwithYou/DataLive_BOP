@@ -358,6 +358,21 @@ tr.sub td:first-child{padding-left:22px;color:var(--ink-2)}
 .pill.ok{background:var(--in-soft);color:var(--in)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .pill.bad{background:var(--out-soft);color:var(--out)}
+/* Access (permissions) editor */
+.perm-user{padding:13px 0;border-top:1px solid var(--line)}
+.perm-user:first-child{border-top:0;padding-top:2px}
+.perm-hd{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-bottom:9px}
+.perm-hd .nm{font-weight:670;font-size:14px}
+.perm-admin{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.perm-admin input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.perm-chips{display:flex;flex-wrap:wrap;gap:6px}
+.perm-chips.dim{opacity:.4;pointer-events:none}
+.perm-chip{border:1px solid var(--glass-edge);background:var(--panel-2);color:var(--ink-3);
+  border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer;min-height:30px;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:background .15s,color .15s,border-color .15s}
+.perm-chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:transparent;font-weight:600}
+.perm-chip .ck{opacity:.85;margin-right:5px}
+.perm-all{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
 .crumb{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:12px;margin-bottom:9px}
 .crumb button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);font-size:12px;
   padding:5px 9px;border-radius:6px;cursor:pointer;min-height:32px}
@@ -753,6 +768,7 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
     <button data-tab="officers" aria-selected="false" data-t="tabOfficers">Officers</button>
     <button data-tab="banks" aria-selected="false" data-t="tabBanks">Banks</button>
     <button data-tab="quality" aria-selected="false" data-t="tabQuality">Data Quality</button>
+    <button data-tab="perms" aria-selected="false" data-t="tabPerms">Access</button>
   </nav>
 </header>
 
@@ -878,6 +894,26 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       </div>
       <p class="note" id="rptNote"></p>
       <div class="scroll" id="rptTable"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-perms">
+    <div class="banner" style="padding:0"><div class="in" id="permNote"></div></div>
+    <div class="card" style="margin-top:13px">
+      <h3 data-t="permTitle">User access</h3>
+      <p class="sub" data-t="permSub">Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.</p>
+      <div id="permList"></div>
+      <div class="row" style="margin-top:15px">
+        <button class="btn pri" id="permDownload" data-t="permDownload">Download permissions file</button>
+        <button class="btn" id="permCopy" data-t="permCopy">Copy for Claude</button>
+        <button class="btn" id="permReset" data-t="permReset">Reset to current</button>
+      </div>
+      <p class="note" data-t="permHow" style="margin-top:11px"></p>
+    </div>
+    <div class="card">
+      <h3 data-t="permPreview">Resulting permissions</h3>
+      <p class="sub" data-t="permPreviewSub">This is the config that will be published. Passwords are never shown or changed here.</p>
+      <pre id="permJson" style="margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;color:var(--ink-2);max-height:320px;overflow:auto"></pre>
     </div>
   </section>
 
@@ -1140,6 +1176,18 @@ const I18N = {
  rptGross:["Gross","ລວມ"], rptMonth:["Month","ເດືອນ"], rptQuarter:["Quarter","ໄຕມາດ"], rptYear:["Year","ປີ"],
  rptOthers:["Others","ອື່ນໆ"],
  rptInvalid:["Pick a time or bank column for this breakdown — two different dimensions can't be crossed without a rebuild.","ເລືອກຖັນເປັນເວລາ ຫຼື ທະນາຄານ — ສອງມິຕິທີ່ຕ່າງກັນຈັບຄູ່ບໍ່ໄດ້ຖ້າບໍ່ build ໃໝ່."],
+ tabPerms:["Access","ສິດເຂົ້າເຖິງ"],
+ permTitle:["User access","ສິດການເຂົ້າໃຊ້ຂອງຜູ້ໃຊ້"],
+ permSub:["Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.","ເລືອກແຖບທີ່ແຕ່ລະຄົນເຫັນໄດ້. ຜູ້ຄຸ້ມຄອງເຫັນທັງໝົດ ພ້ອມທັງອັບໂຫຼດຂໍ້ມູນ, ຕັ້ງຄ່າ ແລະ ໜ້ານີ້."],
+ permAdminFull:["Admin — full access","ຜູ້ຄຸ້ມຄອງ — ເຂົ້າເຖິງທັງໝົດ"],
+ permDownload:["Download permissions file","ດາວໂຫຼດໄຟລ໌ສິດ"],
+ permCopy:["Copy for Claude","ສຳເນົາໃຫ້ Claude"],
+ permCopied:["Copied ✓","ສຳເນົາແລ້ວ ✓"],
+ permReset:["Reset to current","ຕັ້ງຄືນຕາມປັດຈຸບັນ"],
+ permPreview:["Resulting permissions","ຜົນສິດທີ່ໄດ້"],
+ permPreviewSub:["This is the config that will be published. Passwords are never shown or changed here.","ນີ້ແມ່ນຄ່າຕັ້ງທີ່ຈະເຜີຍແຜ່. ລະຫັດຜ່ານບໍ່ຖືກສະແດງ ຫຼື ປ່ຽນຢູ່ນີ້."],
+ permBanner:["Changes here apply after the report is re-published (about 30 seconds) — nothing changes live yet. Passwords stay in config/users.json and are never shown or changed on this page.","ການປ່ຽນຢູ່ນີ້ຈະມີຜົນຫຼັງເຜີຍແຜ່ຄືນ (ປະມານ 30 ວິນາທີ) — ຍັງບໍ່ປ່ຽນທັນທີ. ລະຫັດຜ່ານຢູ່ໃນ config/users.json ບໍ່ຖືກສະແດງ ຫຼື ປ່ຽນຢູ່ໜ້ານີ້."],
+ permHow:["Download the permissions file and send it to me (or place it in config/ and re-publish). I'll apply it and publish — about 30 seconds.","ດາວໂຫຼດໄຟລ໌ສິດແລ້ວສົ່ງໃຫ້ຂ້ອຍ (ຫຼື ວາງໄວ້ໃນ config/ ແລ້ວເຜີຍແຜ່ຄືນ). ຂ້ອຍຈະນຳໃຊ້ ແລະ ເຜີຍແຜ່ — ປະມານ 30 ວິນາທີ."],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
  tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
@@ -2411,6 +2459,79 @@ function rptCsv(){
   const out = [head];
   M.rows.forEach(r => out.push([r.full, ...r.cells.map(v=>v.toFixed(4)), ...(M.hasOthers?[r.other.toFixed(4)]:[]), r.total.toFixed(4)]));
   downloadCsv(`ITRS_report_${state.rptRow}_by_${state.rptCol}_${state.rptDir}.csv`, out);
+}
+
+/* ===================== User access (permissions) — admin only ============
+   A visual editor for who sees which tabs. A static site has no server, so it
+   cannot change the LIVE file: it produces a permissions.json that the build
+   merges over users.json on the next publish. Passwords live in users.json and
+   never appear here. */
+const PERM_TABS = () => [
+  {id:'overview',   label:t('tabOverview')}, {id:'bop',      label:t('tabBop')},
+  {id:'timeseries', label:t('tabTs')},       {id:'weekly',   label:t('tabWeekly')},
+  {id:'search',     label:t('tabSearch')},   {id:'fx',       label:t('tabFx')},
+  {id:'dups',       label:t('tabDups')},     {id:'officers', label:t('tabOfficers')},
+  {id:'banks',      label:t('tabBanks')},    {id:'quality',  label:t('tabQuality')},
+  {id:'data',       label:isLo()?'ຈັດການຂໍ້ມູນ':'Data'},
+  {id:'settings',   label:isLo()?'ຕັ້ງຄ່າ':'Settings'},
+];
+let permWork = null;
+function permInit(){
+  const ids = PERM_TABS().map(x=>x.id);
+  permWork = (DATA._users||[]).map(u => ({
+    name:u.name, admin:!!u.admin,
+    tabs:new Set(u.admin ? ids : (u.tabs==='all' ? ids : (Array.isArray(u.tabs)?u.tabs.filter(x=>ids.includes(x)):[]))),
+  }));
+}
+function permConfig(){
+  const ids = PERM_TABS().map(x=>x.id);
+  return { users: permWork.map(u => u.admin
+    ? {name:u.name, admin:true, tabs:'all'}
+    : {name:u.name, admin:false, tabs: ids.every(id=>u.tabs.has(id)) ? 'all' : ids.filter(id=>u.tabs.has(id))}) };
+}
+function permPreview(){ const el=$('#permJson'); if(el) el.textContent = JSON.stringify(permConfig(), null, 2); }
+function renderPerms(){
+  if (!isAdmin()){ $('#permList').innerHTML=''; return; }         // admin-only, defence in depth
+  if (!permWork) permInit();
+  $('#permNote').innerHTML = '<span>&#128273;</span><div>' + esc(t('permBanner')) + '</div>';
+  $$('[data-t="permHow"]').forEach(el => el.textContent = t('permHow'));
+  const tabs = PERM_TABS();
+  $('#permList').innerHTML = permWork.map((u,ui) => `
+    <div class="perm-user">
+      <div class="perm-hd">
+        <span class="nm">${esc(u.name)}</span>
+        <label class="perm-admin"><input type="checkbox" class="pm-admin" data-u="${ui}" ${u.admin?'checked':''}>${esc(t('permAdminFull'))}</label>
+      </div>
+      <div class="perm-chips ${u.admin?'dim':''}">
+        ${tabs.map(x=>{ const on=u.admin||u.tabs.has(x.id);
+          return `<button type="button" class="perm-chip pm-tab" data-u="${ui}" data-tab="${x.id}" aria-pressed="${on}"><span class="ck">${on?'✓':'+'}</span>${esc(x.label)}</button>`;}).join('')}
+      </div>
+    </div>`).join('');
+  $$('#permList .pm-admin').forEach(cb => cb.addEventListener('change', e => {
+    const u = permWork[+e.target.dataset.u]; u.admin = e.target.checked;
+    if (u.admin) PERM_TABS().forEach(x => u.tabs.add(x.id));
+    renderPerms();
+  }));
+  $$('#permList .pm-tab').forEach(b => b.addEventListener('click', () => {
+    const u = permWork[+b.dataset.u]; if (u.admin) return;
+    const id = b.dataset.tab;
+    if (u.tabs.has(id)) u.tabs.delete(id); else u.tabs.add(id);
+    const on = u.tabs.has(id);
+    b.setAttribute('aria-pressed', on); b.querySelector('.ck').textContent = on ? '✓' : '+';
+    permPreview();
+  }));
+  permPreview();
+}
+function downloadJson(name, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+function permCopyForClaude(){
+  const cfg = permConfig();
+  const line = u => `- ${u.name}: ${u.admin ? 'admin (everything)' : (u.tabs==='all' ? 'all tabs' : (u.tabs.length ? u.tabs.join(', ') : 'no tabs'))}`;
+  const text = 'Please set these ITRS user permissions and re-publish:\n' + cfg.users.map(line).join('\n');
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
 }
 
 /* ===================== Weekly Report ===================== */
@@ -4817,7 +4938,8 @@ function renderData(){
 }
 const RENDERERS = {overview:renderOverview, bop:renderBop, timeseries:renderTimeSeries,
   weekly:renderWeekly, report:renderReport, search:renderSearch, fx:renderFx, dups:renderDups,
-  officers:renderOfficers, banks:renderBanks, quality:renderQuality, settings:renderSettings, data:renderData};
+  officers:renderOfficers, banks:renderBanks, quality:renderQuality, perms:renderPerms,
+  settings:renderSettings, data:renderData};
 let rendered = {};
 function renderBanner(){
   const msg = {
@@ -4914,6 +5036,13 @@ function initControls(){
   $('#rptCol').addEventListener('change', e => { state.rptCol = e.target.value; renderReport(); });
   segBind('#rptDirSeg', v => { state.rptDir = v; renderReport(); });
   $('#rptCsv').addEventListener('click', rptCsv);
+  // Access (permissions) editor buttons.
+  $('#permDownload').addEventListener('click', () => downloadJson('permissions.json', permConfig()));
+  $('#permReset').addEventListener('click', () => { permInit(); renderPerms(); });
+  $('#permCopy').addEventListener('click', e => {
+    permCopyForClaude(); const b = e.currentTarget, o = b.textContent;
+    b.textContent = t('permCopied'); setTimeout(() => { b.textContent = o; }, 1500);
+  });
   $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
   $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
   $('#fxCsv').addEventListener('click', () => $('#fxTable')._csv && $('#fxTable')._csv());
@@ -4996,12 +5125,12 @@ function initControls(){
   } else $('#importBtn').remove();
   if (!canSettings) $('#settingsBtn').remove();
 
-  // The Report builder exposes a free pivot over the whole dataset; it is super
-  // admin only, like the gross->BOP reconciliation card. Remove it for everyone
-  // else — including members granted "all" report tabs.
+  // The Report builder and the Access editor are super-admin only, like the
+  // gross->BOP reconciliation card — removed for everyone else, including
+  // members granted "all" tabs.
   if (!isAdmin()){
-    const rb = $('#nav button[data-tab="report"]'); if (rb) rb.remove();
-    if (state.tab === 'report') state.tab = 'overview';
+    ['report','perms'].forEach(tid => { const b = $(`#nav button[data-tab="${tid}"]`); if (b) b.remove(); });
+    if (state.tab === 'report' || state.tab === 'perms') state.tab = 'overview';
   }
 
   // A non-admin account sees only the report tabs it was granted; the rest are

@@ -50,3 +50,4 @@ ITRS_data_pack.json
 
 # Login accounts (passwords) - never commit
 config/users.json
+config/permissions.json
