@@ -905,7 +905,6 @@ footer{max-width:1500px;margin:28px auto 0;padding:15px 12px;border-top:1px soli
       <div id="permList"></div>
       <div class="row" style="margin-top:15px">
         <button class="btn pri" id="permDownload" data-t="permDownload">Download permissions file</button>
-        <button class="btn" id="permCopy" data-t="permCopy">Copy for Claude</button>
         <button class="btn" id="permReset" data-t="permReset">Reset to current</button>
       </div>
       <p class="note" data-t="permHow" style="margin-top:11px"></p>
@@ -1181,13 +1180,11 @@ const I18N = {
  permSub:["Tick the tabs each person may see. Admin gets everything, plus data upload, settings and this page.","ເລືອກແຖບທີ່ແຕ່ລະຄົນເຫັນໄດ້. ຜູ້ຄຸ້ມຄອງເຫັນທັງໝົດ ພ້ອມທັງອັບໂຫຼດຂໍ້ມູນ, ຕັ້ງຄ່າ ແລະ ໜ້ານີ້."],
  permAdminFull:["Admin — full access","ຜູ້ຄຸ້ມຄອງ — ເຂົ້າເຖິງທັງໝົດ"],
  permDownload:["Download permissions file","ດາວໂຫຼດໄຟລ໌ສິດ"],
- permCopy:["Copy for Claude","ສຳເນົາໃຫ້ Claude"],
- permCopied:["Copied ✓","ສຳເນົາແລ້ວ ✓"],
  permReset:["Reset to current","ຕັ້ງຄືນຕາມປັດຈຸບັນ"],
  permPreview:["Resulting permissions","ຜົນສິດທີ່ໄດ້"],
  permPreviewSub:["This is the config that will be published. Passwords are never shown or changed here.","ນີ້ແມ່ນຄ່າຕັ້ງທີ່ຈະເຜີຍແຜ່. ລະຫັດຜ່ານບໍ່ຖືກສະແດງ ຫຼື ປ່ຽນຢູ່ນີ້."],
  permBanner:["Changes here apply after the report is re-published (about 30 seconds) — nothing changes live yet. Passwords stay in config/users.json and are never shown or changed on this page.","ການປ່ຽນຢູ່ນີ້ຈະມີຜົນຫຼັງເຜີຍແຜ່ຄືນ (ປະມານ 30 ວິນາທີ) — ຍັງບໍ່ປ່ຽນທັນທີ. ລະຫັດຜ່ານຢູ່ໃນ config/users.json ບໍ່ຖືກສະແດງ ຫຼື ປ່ຽນຢູ່ໜ້ານີ້."],
- permHow:["Download the permissions file and send it to me (or place it in config/ and re-publish). I'll apply it and publish — about 30 seconds.","ດາວໂຫຼດໄຟລ໌ສິດແລ້ວສົ່ງໃຫ້ຂ້ອຍ (ຫຼື ວາງໄວ້ໃນ config/ ແລ້ວເຜີຍແຜ່ຄືນ). ຂ້ອຍຈະນຳໃຊ້ ແລະ ເຜີຍແຜ່ — ປະມານ 30 ວິນາທີ."],
+ permHow:["Download the file, put it in the config folder next to users.json, then re-publish (python reinject.py — about 30 seconds). It updates who sees what; the passwords in users.json are untouched.","ດາວໂຫຼດໄຟລ໌, ວາງໄວ້ໃນໂຟນເດີ config ຄຽງກັບ users.json, ແລ້ວເຜີຍແຜ່ຄືນ (python reinject.py — ປະມານ 30 ວິນາທີ). ມັນປັບວ່າໃຜເຫັນຫຍັງ; ລະຫັດຜ່ານໃນ users.json ບໍ່ຖືກແຕະຕ້ອງ."],
  tabSearch:["Search","ຄົ້ນຫາ"], tabChecks:["FX & Duplicates","ອັດຕາ & ຊ້ຳ"],
  tabFx:["Exchange rate","ອັດຕາແລກປ່ຽນ"], tabDups:["Duplicates","ລາຍການຊ້ຳ"],
  tabOfficers:["Officers","ຜູ້ຮັບຜິດຊອບ"],
@@ -2527,13 +2524,6 @@ function downloadJson(name, obj){
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 }
-function permCopyForClaude(){
-  const cfg = permConfig();
-  const line = u => `- ${u.name}: ${u.admin ? 'admin (everything)' : (u.tabs==='all' ? 'all tabs' : (u.tabs.length ? u.tabs.join(', ') : 'no tabs'))}`;
-  const text = 'Please set these ITRS user permissions and re-publish:\n' + cfg.users.map(line).join('\n');
-  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
-}
-
 /* ===================== Weekly Report ===================== */
 const DAY = 86400000;
 const toISO = d => d.toISOString().slice(0,10);
@@ -5039,10 +5029,6 @@ function initControls(){
   // Access (permissions) editor buttons.
   $('#permDownload').addEventListener('click', () => downloadJson('permissions.json', permConfig()));
   $('#permReset').addEventListener('click', () => { permInit(); renderPerms(); });
-  $('#permCopy').addEventListener('click', e => {
-    permCopyForClaude(); const b = e.currentTarget, o = b.textContent;
-    b.textContent = t('permCopied'); setTimeout(() => { b.textContent = o; }, 1500);
-  });
   $('#wkCsv').addEventListener('click', () => $('#wkTable')._csv && $('#wkTable')._csv());
   $('#dupCsv').addEventListener('click', () => $('#dupTable')._csv && $('#dupTable')._csv());
   $('#fxCsv').addEventListener('click', () => $('#fxTable')._csv && $('#fxTable')._csv());
