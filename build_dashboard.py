@@ -755,6 +755,40 @@ def build_cubes(con, dims):
         WHERE t.line_ix >= 0
         GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
 
+    # ---- cross-dimension cubes for the Report matrix builder -------------
+    # [year, flow, dimA, dimB, useFlag, count, usdMillions]. These let the Report
+    # tab cross ANY two of country / currency / sector (2-4 digit purpose) / BOP
+    # line, as a matrix. No bank axis (that would multiply the size) — a bank
+    # filter is ignored for these cross views. `sector` matches the tsPurpose
+    # definition (purpose_ix with pur5 <= 4 chars) so the indexes line up.
+    yjoin = "FROM txf t JOIN year_lk y ON y.yr = t.yr"
+    _SEC = "t.purpose_ix >= 0 AND LENGTH(t.pur5) <= 4"
+    cubes["crossCountryCurrency"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, c.ix, cu.ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} JOIN country_lk c ON c.code = t.country
+                JOIN curr_lk cu ON cu.code = t.currency
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+    cubes["crossCountrySector"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, c.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} JOIN country_lk c ON c.code = t.country
+        WHERE {_SEC} GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+    cubes["crossCountryLine"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, c.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} JOIN country_lk c ON c.code = t.country
+        WHERE t.line_ix >= 0 GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+    cubes["crossCurrencySector"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, cu.ix, t.purpose_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} JOIN curr_lk cu ON cu.code = t.currency
+        WHERE {_SEC} GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+    cubes["crossCurrencyLine"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, cu.ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} JOIN curr_lk cu ON cu.code = t.currency
+        WHERE t.line_ix >= 0 GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+    cubes["crossSectorLine"] = fetch_cube(con, f"""
+        SELECT y.ix, t.flow_ix, t.purpose_ix, t.line_ix, t.use_ix, COUNT(*), SUM(t.usd)/1e6
+        {yjoin} WHERE {_SEC} AND t.line_ix >= 0
+        GROUP BY 1,2,3,4,5 ORDER BY 1,2,3,4,5""")
+
     # [date, flow, currency, useFlag, usdMillions]
     cubes["dayCurrency"] = [
         [d, int(f), int(c), int(uix), r2(u)]
